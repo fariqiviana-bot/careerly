@@ -1,0 +1,6 @@
+=== CAREERLY DIAGNOSTIC ===
+root: D:\careerly
+scanned: 55 source files | mode: fast
+RESULT: 0 errors, 0 warnings
+
+No problems found.
