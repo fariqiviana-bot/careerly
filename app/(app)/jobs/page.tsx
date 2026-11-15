@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -18,9 +18,15 @@ function RiskBadge({ risk }: { risk: Job["risk"] }) {
   return <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", risk === "Low" ? "bg-[#e6f0e8] text-[#33613d]" : "bg-[#f6ecdd] text-[#7c5a2e]")}>{risk} ghost-job risk</span>;
 }
 
+function parseMaxSalaryK(sal: string): number {
+  const nums = sal.match(/\d+/g)?.map(Number) ?? [0];
+  const max = Math.max(...nums);
+  return sal.includes("/ hr") ? max * 2 : max;
+}
+
 export default function Jobs() {
   const router = useRouter();
-  const { jobs, savedJobs, toggleSaveJob, addTrack, credits, setCredits, autoConfigured } = useStore();
+  const { jobs, savedJobs, toggleSaveJob, addTrack, credits, autoConfigured } = useStore();
   const [q, setQ] = useState(""); const [loc, setLoc] = useState("");
   const [mode, setMode] = useState("any"); const [salary, setSalary] = useState([0]);
   const [alerts, setAlerts] = useState(true);
@@ -29,9 +35,11 @@ export default function Jobs() {
   const [feedback, setFeedback] = useState("");
 
   const list = useMemo(() => jobs.filter((j) =>
-    (j.title + j.company + j.tags.join()).toLowerCase().includes(q.toLowerCase()) &&
+    (j.title + " " + j.company + " " + j.tags.join(" ")).toLowerCase().includes(q.toLowerCase()) &&
     j.location.toLowerCase().includes(loc.toLowerCase()) &&
-    (mode === "any" || j.mode === mode)), [jobs, q, loc, mode]);
+    (mode === "any" || j.mode === mode) &&
+    parseMaxSalaryK(j.salary) >= salary[0]
+  ), [jobs, q, loc, mode, salary]);
 
   const save = (j: Job) => { toggleSaveJob(j.id); toast.success(savedJobs.includes(j.id) ? "Removed from saved" : "Saved to tracker"); if (!savedJobs.includes(j.id)) addTrack({ title: j.title, company: j.company, url: `https://example.com/${j.id}`, status: "shortlist", location: j.location, salary: j.salary, notes: "" }); };
   const autoApply = (j: Job) => {
@@ -77,10 +85,14 @@ export default function Jobs() {
         <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
           <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Remote product designer with Figma" /></div>
           <Input value={loc} onChange={(e) => setLoc(e.target.value)} placeholder="City, state, or country" />
-          <Button className="rounded-full"><Search className="mr-1 h-4 w-4" />Find jobs</Button>
+          <Button className="rounded-full" onClick={() => { setQ(""); setLoc(""); setMode("any"); setSalary([0]); }}><Search className="mr-1 h-4 w-4" />Reset</Button>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {["Product Designer near New York", "Remote with Figma", "Roles paying ~$80k"].map((s) => <Button key={s} variant="outline" size="sm" className="rounded-full text-xs" onClick={() => setQ(s)}>{s}</Button>)}
+          {[
+            { l: "Product Designer", fn: () => { setQ("Product Designer"); setLoc(""); setMode("any"); setSalary([0]); } },
+            { l: "Remote with Figma", fn: () => { setQ("Figma"); setLoc(""); setMode("Remote"); setSalary([0]); } },
+            { l: "Roles paying $80k+", fn: () => { setQ(""); setLoc(""); setMode("any"); setSalary([80]); } },
+          ].map((s) => <Button key={s.l} variant="outline" size="sm" className="rounded-full text-xs" onClick={s.fn}>{s.l}</Button>)}
           <Button variant="ghost" size="sm" className="ml-auto rounded-full" onClick={() => setFiltersOpen(true)}><SlidersHorizontal className="mr-1 h-3.5 w-3.5" />All filters</Button>
         </div>
       </div>
@@ -127,7 +139,7 @@ export default function Jobs() {
             <Select value={mode} onValueChange={setMode}><SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="any">Any</SelectItem><SelectItem value="Remote">Remote</SelectItem><SelectItem value="Hybrid">Hybrid</SelectItem><SelectItem value="On-site">On-site</SelectItem></SelectContent></Select>
           </Field>
-          <Field label={`Minimum salary — $${salary[0]}k`}><Slider value={salary} max={250} step={10} onValueChange={setSalary} /></Field>
+          <Field label={`Minimum salary — $${salary[0]}k`}><Slider value={salary} max={150} step={10} onValueChange={setSalary} /></Field>
           <Field label="Date posted">
             <Select defaultValue="any"><SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="any">Any time</SelectItem><SelectItem value="30">Past 30 days</SelectItem><SelectItem value="7">Past week</SelectItem></SelectContent></Select>

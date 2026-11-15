@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { FarnaviLogo } from "@/components/farnavi-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GradientPanel, Field } from "@/components/shared";
@@ -8,13 +9,15 @@ import { Sparkles } from "lucide-react";
 
 export default function Login() {
   const router = useRouter();
-  const go = () => { toast.success("Welcome back, Viana!"); router.push("/"); };
+  const go = () => { toast.success("Welcome back to Farnavi, Viana!"); router.push("/"); };
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <GradientPanel className="w-full max-w-md p-1.5">
-        <div className="glass rounded-xl bg-white/80 p-8">
-          <div className="font-serif text-3xl">Careerly</div>
-          <p className="mt-1 text-sm text-muted-foreground">Your resumes, jobs & interviews — in one calm place.</p>
+        <div className="glass rounded-xl bg-white/85 p-8">
+          <div className="flex justify-center">
+            <FarnaviLogo size="lg" />
+          </div>
+          <p className="mt-3 text-center text-sm text-muted-foreground">Your resumes, personal websites & global career tools — in one calm place.</p>
           <form className="mt-6 space-y-4" onSubmit={(e) => { e.preventDefault(); go(); }}>
             <Field label="Email"><Input type="email" defaultValue="fariqiviana@gmail.com" /></Field>
             <Field label="Password"><Input type="password" placeholder="••••••••" /></Field>

@@ -1,6 +1,6 @@
 "use client";
-import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useStore, type DocType } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -14,19 +14,25 @@ import { Plus, Files, LayoutGrid, List, Upload, Linkedin, Sparkles, FileText, Gl
 import { cn } from "@/lib/utils";
 
 const TABS: { id: DocType | "all"; label: string }[] = [
-  { id: "all", label: "All" }, { id: "resume", label: "Resumes" }, { id: "tailored", label: "Auto-tailored" },
-  { id: "cover", label: "Cover letters" }, { id: "resignation", label: "Resignation" }, { id: "website", label: "Websites" },
+  { id: "all", label: "All" }, { id: "resume", label: "Resumes" }, { id: "cover", label: "Cover Letters" },
+  { id: "resignation", label: "Resignation Letters" }, { id: "website", label: "Websites" }, { id: "tailored", label: "Auto-tailored" },
 ];
 
-export default function Documents() {
+function DocumentsInner() {
   const router = useRouter();
+  const sp = useSearchParams();
   const { docs, addDoc } = useStore();
-  const [tab, setTab] = useState<string>("all");
+  const [tab, setTab] = useState<string>(sp.get("tab") || "all");
   const [q, setQ] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [sort, setSort] = useState("updated");
   const [importModal, setImportModal] = useState<"" | "upload" | "linkedin">("");
   const [liUrl, setLiUrl] = useState("");
+
+  useEffect(() => {
+    const t = sp.get("tab");
+    if (t) setTab(t);
+  }, [sp]);
 
   const list = useMemo(() => docs
     .filter((d) => (tab === "all" || d.type === tab) && d.title.toLowerCase().includes(q.toLowerCase()))
@@ -35,13 +41,13 @@ export default function Documents() {
 
   const create = (type: DocType, title: string, via?: string) => {
     const d = addDoc(type, title);
-    if (via) toast.success(`${via} — imported & reformatted (demo)`);
+    if (via) toast.success(`${via} — imported & reformatted`);
     router.push(`/editor/${d.id}`);
   };
 
   const createMenu = (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild><Button className="rounded-full"><Plus className="mr-1 h-4 w-4" />Create new</Button></DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild><Button className="rounded-full"><Plus className="mr-1 h-4 w-4" />Create New</Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuItem onClick={() => create("resume", "New Resume")}><FileText className="mr-2 h-4 w-4" />Resume — start blank</DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/templates")}><LayoutGrid className="mr-2 h-4 w-4" />Resume — from template</DropdownMenuItem>
@@ -49,14 +55,18 @@ export default function Documents() {
         <DropdownMenuItem onClick={() => setImportModal("linkedin")}><Linkedin className="mr-2 h-4 w-4" />Import from LinkedIn</DropdownMenuItem>
         <DropdownMenuItem onClick={() => create("cover", "New Cover Letter", "AI")}><Sparkles className="mr-2 h-4 w-4" />Cover letter — with AI</DropdownMenuItem>
         <DropdownMenuItem onClick={() => create("resignation", "Resignation Letter")}><PenLine className="mr-2 h-4 w-4" />Resignation letter</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => create("website", "My Website")}><Globe className="mr-2 h-4 w-4" />Personal website</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => create("website", "Personal Website")}><Globe className="mr-2 h-4 w-4" />Personal website (Portfolio)</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 
   return (
     <div>
-      <PageHeader title="Documents" sub="Resumes, cover letters, resignation letters and your personal website." actions={createMenu} />
+      <PageHeader title="My Documents" sub="Resumes, cover letters, resignation letters and your personal websites." actions={
+        tab === "website" ? (
+          <Button className="rounded-full" onClick={() => create("website", "Personal Website")}><Plus className="mr-1 h-4 w-4" />Create New Website</Button>
+        ) : createMenu
+      } />
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <Tabs value={tab} onValueChange={setTab} className="min-w-0 flex-1">
           <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-full bg-muted p-1 scrollbar-thin">
@@ -78,7 +88,7 @@ export default function Documents() {
       </div>
 
       {list.length === 0 ? (
-        <EmptyState icon={<Files className="h-6 w-6" />} title="Your shining professional image" sub="Create your first document — start blank, import, or let AI draft it." action={createMenu} />
+        <EmptyState icon={<Files className="h-6 w-6" />} title="Your shining professional image" sub="Create your first document or personal website — start blank, import, or let AI draft it." action={createMenu} />
       ) : view === "grid" ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {list.map((d) => <DocCard key={d.id} doc={d} />)}
@@ -100,7 +110,10 @@ export default function Documents() {
           <Upload className="h-6 w-6 text-primary" />
           <span className="mt-2 text-sm font-medium">Drag & drop, or browse</span>
           <span className="text-xs text-muted-foreground">PDF or DOCX · up to 10MB</span>
-          <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={() => create("resume", "Imported Resume", "Resume uploaded")} />
+          <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => {
+            const f = e.target.files?.[0];
+            create("resume", f ? f.name.replace(/\.[^.]+$/, "") : "Imported Resume", "Resume uploaded");
+          }} />
         </label>
       </ResponsiveModal>
 
@@ -109,5 +122,13 @@ export default function Documents() {
         <Field label="LinkedIn URL"><Input value={liUrl} onChange={(e) => setLiUrl(e.target.value)} placeholder="linkedin.com/in/your-name" /></Field>
       </ResponsiveModal>
     </div>
+  );
+}
+
+export default function Documents() {
+  return (
+    <Suspense fallback={<div className="py-20 text-center text-sm text-muted-foreground">Loading documents…</div>}>
+      <DocumentsInner />
+    </Suspense>
   );
 }

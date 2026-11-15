@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { PageHeader, ResponsiveModal, Field, ScoreRing, DangerConfirm } from "@/components/shared";
+import { PageHeader, ResponsiveModal, Field, ScoreRing } from "@/components/shared";
 import { Plus, Trash2, Chrome, Linkedin, Smartphone, Sparkles, Lock, Globe } from "lucide-react";
 
 function Row({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
@@ -25,6 +25,10 @@ export default function Settings() {
   const [delText, setDelText] = useState("");
   const [qa, setQa] = useState<{ q: string; a: string }[]>([]);
   const [prefs, setPrefs] = useState({ matches: true, ats: true, activity: true, news: false });
+
+  useEffect(() => {
+    setName(user.name);
+  }, [user.name]);
 
   return (
     <div>
@@ -125,7 +129,7 @@ export default function Settings() {
             {[
               { icon: Chrome, t: "2-in-1 Chrome Extension", d: "Save jobs & autofill applications. 10k users · 4.5★", a: "Add to Chrome" },
               { icon: Linkedin, t: "LinkedIn Import", d: "Convert your public profile into a resume.", a: "Import profile" },
-              { icon: Sparkles, t: "Careerly GPT", d: "Use our assistant inside ChatGPT.", a: "Open GPT" },
+              { icon: Sparkles, t: "Farnavi GPT", d: "Use our assistant inside ChatGPT.", a: "Open GPT" },
               { icon: Smartphone, t: "Mobile App", d: "Edit and share anywhere — iOS & Android.", a: "Get the app" },
             ].map((c) => (
               <div key={c.t} className="rounded-2xl border border-border bg-card p-5">
@@ -147,10 +151,12 @@ export default function Settings() {
         <div className="space-y-4"><Field label="New email"><Input type="email" placeholder="new@email.com" /></Field><Field label="Confirm email"><Input type="email" /></Field></div>
       </ResponsiveModal>
 
-      <DangerConfirm open={del && delText === "DELETE"} onOpenChange={(b) => !b && setDel(false)} title="Delete account?" desc="This is permanent. All documents, jobs and settings will be erased." onConfirm={() => toast.success("Account deletion scheduled (demo)")} />
-      <ResponsiveModal open={del && delText !== "DELETE"} onOpenChange={(b) => { if (!b) { setDel(false); setDelText(""); } }} title="Delete account" description="Type DELETE to confirm."
-        footer={<Button variant="destructive" disabled={delText !== "DELETE"} onClick={() => { toast.success("Account deletion scheduled (demo)"); setDel(false); setDelText(""); }}>Keep account? No — delete</Button>}>
-        <Input value={delText} onChange={(e) => setDelText(e.target.value)} placeholder="DELETE" />
+      <ResponsiveModal open={del} onOpenChange={(b) => { if (!b) { setDel(false); setDelText(""); } }} title="Delete account?" description="This is permanent. Type DELETE to confirm erasing all documents, jobs and settings."
+        footer={<>
+          <Button variant="outline" onClick={() => { setDel(false); setDelText(""); }}>Cancel</Button>
+          <Button variant="destructive" disabled={delText !== "DELETE"} onClick={() => { toast.success("Account deletion scheduled (demo)"); setDel(false); setDelText(""); }}>Delete permanently</Button>
+        </>}>
+        <Input value={delText} onChange={(e) => setDelText(e.target.value)} placeholder="Type DELETE" />
       </ResponsiveModal>
     </div>
   );

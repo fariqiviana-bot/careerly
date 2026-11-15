@@ -240,3 +240,17 @@
   border: none;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a1aba0; }
+/* ---------- Print / ATS PDF Export ---------- */
+@media print {
+  @page { margin: 10mm; size: auto; }
+  body { background: #ffffff !important; color: #000000 !important; }
+  aside, header, nav, .no-print, [data-sonner-toaster] { display: none !important; }
+  main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+  #resume-print-area {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}

@@ -1,1 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#5d6f61"/><text x="16" y="22" font-family="Georgia" font-size="18" fill="#f6f8f5" text-anchor="middle">C</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#fbfaf6"/>
+  <path d="M26 30 V18 C26 11 31 9 41 9 C46 9 49 8 51 6 C49 11 45 12 39 11.5 C31 11 29 14 29 20 V26 Z" fill="#1e1f1d"/>
+  <path d="M26 39 C26 26 33 17 47 13 C45 21 41 24 35 27 C30 29.5 27.5 34 26 39 Z" fill="#7d897b"/>
+  <path d="M32 36 C33 29 38 26 44 25 C42 31 38 34 32 36 Z" fill="#b5a08a"/>
+  <path d="M22 49 C25 48 26 43 28 32 C29.5 40 35 47 45 47 C36 48.5 30 43 28.5 38 C28 45 26.5 49 22 49 Z" fill="#64574b"/>
+</svg>

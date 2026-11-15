@@ -39,3 +39,7 @@ globals.backup.css
 # editor
 .idea/
 diagnose-report.json
+
+*.py
+project-code.txt
+diagnose-report.txt
