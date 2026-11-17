@@ -1,0 +1,8 @@
+﻿lib/template-catalog.ts(332,5): error TS2353: Object literal may only specify known properties, and '"fileCount"' does not exist in type 'Tpl'.
+lib/template-catalog.ts(651,5): error TS2353: Object literal may only specify known properties, and '"fileCount"' does not exist in type 'Tpl'.
+lib/template-catalog.ts(945,5): error TS2353: Object literal may only specify known properties, and '"fileCount"' does not exist in type 'Tpl'.
+lib/template-catalog.ts(1201,5): error TS2353: Object literal may only specify known properties, and '"fileCount"' does not exist in type 'Tpl'.
+lib/template-catalog.ts(1462,5): error TS2353: Object literal may only specify known properties, and '"fileCount"' does not exist in type 'Tpl'.
+lib/template-catalog.ts(1714,5): error TS2353: Object literal may only specify known properties, and '"fileCount"' does not exist in type 'Tpl'.
+lib/template-catalog.ts(2032,5): error TS2353: Object literal may only specify known properties, and '"fileCount"' does not exist in type 'Tpl'.
+lib/template-catalog.ts(2368,5): error TS2353: Object literal may only specify known properties, and '"fileCount"' does not exist in type 'Tpl'.

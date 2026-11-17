@@ -1,0 +1,1121 @@
+{
+  "2": {
+    "rawDump": [
+      {
+        "raw": "Rubik",
+        "clean": "Rubik",
+        "chars": 6416,
+        "codes": [
+          82,
+          117,
+          98,
+          105,
+          107
+        ]
+      },
+      {
+        "raw": "Lato",
+        "clean": "Lato",
+        "chars": 1871,
+        "codes": [
+          76,
+          97,
+          116,
+          111
+        ]
+      },
+      {
+        "raw": "Libre Baskerville",
+        "clean": "Libre Baskerville",
+        "chars": 519,
+        "codes": [
+          76,
+          105,
+          98,
+          114,
+          101,
+          32,
+          66,
+          97,
+          115,
+          107,
+          101,
+          114,
+          118,
+          105,
+          108,
+          108,
+          101
+        ]
+      },
+      {
+        "raw": "Manrope",
+        "clean": "Manrope",
+        "chars": 496,
+        "codes": [
+          77,
+          97,
+          110,
+          114,
+          111,
+          112,
+          101
+        ]
+      }
+    ],
+    "byChars": [
+      {
+        "font": "Rubik",
+        "chars": 6416,
+        "maxPt": 10
+      },
+      {
+        "font": "Lato",
+        "chars": 1871,
+        "maxPt": 13
+      },
+      {
+        "font": "Libre Baskerville",
+        "chars": 519,
+        "maxPt": 26
+      },
+      {
+        "font": "Manrope",
+        "chars": 496,
+        "maxPt": null
+      }
+    ],
+    "bySize": [
+      {
+        "font": "Libre Baskerville",
+        "maxPt": 26,
+        "chars": 519
+      },
+      {
+        "font": "Lato",
+        "maxPt": 13,
+        "chars": 1871
+      },
+      {
+        "font": "Rubik",
+        "maxPt": 10,
+        "chars": 6416
+      }
+    ],
+    "substitutes": {},
+    "headingCandidate": "Libre Baskerville",
+    "bodyCandidate": "Rubik",
+    "docxColors": [
+      {
+        "hex": "#1F3C88",
+        "chars": 1871,
+        "sample": "<w:p w14:paraId=\"35B475BB\" w14:textId=\"24C7D844\" w"
+      },
+      {
+        "hex": "#44546A",
+        "chars": 496,
+        "sample": "<w:p w14:paraId=\"0EB77254\" w14:textId=\"25AAB12B\" w"
+      }
+    ]
+  },
+  "3": {
+    "rawDump": [
+      {
+        "raw": "Open Sans",
+        "clean": "Open Sans",
+        "chars": 6118,
+        "codes": [
+          79,
+          112,
+          101,
+          110,
+          32,
+          83,
+          97,
+          110,
+          115
+        ]
+      },
+      {
+        "raw": "Montserrat Medium",
+        "clean": "Montserrat",
+        "chars": 2330,
+        "codes": [
+          77,
+          111,
+          110,
+          116,
+          115,
+          101,
+          114,
+          114,
+          97,
+          116,
+          32,
+          77,
+          101,
+          100,
+          105,
+          117,
+          109
+        ]
+      },
+      {
+        "raw": "Playfair Display",
+        "clean": "Playfair Display",
+        "chars": 604,
+        "codes": [
+          80,
+          108,
+          97,
+          121,
+          102,
+          97,
+          105,
+          114,
+          32,
+          68,
+          105,
+          115,
+          112,
+          108,
+          97,
+          121
+        ]
+      },
+      {
+        "raw": "Lato",
+        "clean": "Lato",
+        "chars": 505,
+        "codes": [
+          76,
+          97,
+          116,
+          111
+        ]
+      }
+    ],
+    "byChars": [
+      {
+        "font": "Open Sans",
+        "chars": 6118,
+        "maxPt": 10
+      },
+      {
+        "font": "Montserrat",
+        "chars": 2330,
+        "maxPt": 13.5
+      },
+      {
+        "font": "Playfair Display",
+        "chars": 604,
+        "maxPt": 28
+      },
+      {
+        "font": "Lato",
+        "chars": 505,
+        "maxPt": null
+      }
+    ],
+    "bySize": [
+      {
+        "font": "Playfair Display",
+        "maxPt": 28,
+        "chars": 604
+      },
+      {
+        "font": "Montserrat",
+        "maxPt": 13.5,
+        "chars": 2330
+      },
+      {
+        "font": "Open Sans",
+        "maxPt": 10,
+        "chars": 6118
+      }
+    ],
+    "substitutes": {},
+    "headingCandidate": "Playfair Display",
+    "bodyCandidate": "Open Sans",
+    "docxColors": [
+      {
+        "hex": "#D0CECE",
+        "chars": 582,
+        "sample": "<w:p w14:paraId=\"596841B0\" w14:textId=\"140EDBC6\" w"
+      },
+      {
+        "hex": "#44546A",
+        "chars": 505,
+        "sample": "<w:p w14:paraId=\"0EB77254\" w14:textId=\"25AAB12B\" w"
+      }
+    ]
+  },
+  "4": {
+    "rawDump": [
+      {
+        "raw": "Merriweather 24pt",
+        "clean": "Merriweather",
+        "chars": 7832,
+        "codes": [
+          77,
+          101,
+          114,
+          114,
+          105,
+          119,
+          101,
+          97,
+          116,
+          104,
+          101,
+          114,
+          32,
+          50,
+          52,
+          112,
+          116
+        ]
+      },
+      {
+        "raw": "Source Sans 3",
+        "clean": "Source Sans 3",
+        "chars": 2535,
+        "codes": [
+          83,
+          111,
+          117,
+          114,
+          99,
+          101,
+          32,
+          83,
+          97,
+          110,
+          115,
+          32,
+          51
+        ]
+      },
+      {
+        "raw": "Rubik",
+        "clean": "Rubik",
+        "chars": 726,
+        "codes": [
+          82,
+          117,
+          98,
+          105,
+          107
+        ]
+      },
+      {
+        "raw": "Nunito Medium",
+        "clean": "Nunito",
+        "chars": 564,
+        "codes": [
+          78,
+          117,
+          110,
+          105,
+          116,
+          111,
+          32,
+          77,
+          101,
+          100,
+          105,
+          117,
+          109
+        ]
+      }
+    ],
+    "byChars": [
+      {
+        "font": "Merriweather",
+        "chars": 7832,
+        "maxPt": 9
+      },
+      {
+        "font": "Source Sans 3",
+        "chars": 2535,
+        "maxPt": 14.5
+      },
+      {
+        "font": "Rubik",
+        "chars": 726,
+        "maxPt": 28
+      },
+      {
+        "font": "Nunito",
+        "chars": 564,
+        "maxPt": null
+      }
+    ],
+    "bySize": [
+      {
+        "font": "Rubik",
+        "maxPt": 28,
+        "chars": 726
+      },
+      {
+        "font": "Source Sans 3",
+        "maxPt": 14.5,
+        "chars": 2535
+      },
+      {
+        "font": "Merriweather",
+        "maxPt": 9,
+        "chars": 7832
+      }
+    ],
+    "substitutes": {},
+    "headingCandidate": "Rubik",
+    "bodyCandidate": "Merriweather",
+    "docxColors": [
+      {
+        "hex": "#000000",
+        "chars": 738,
+        "sample": "<w:p w14:paraId=\"596841B0\" w14:textId=\"6AB354A0\" w"
+      },
+      {
+        "hex": "#44546A",
+        "chars": 564,
+        "sample": "<w:p w14:paraId=\"0EB77254\" w14:textId=\"25AAB12B\" w"
+      },
+      {
+        "hex": "#767171",
+        "chars": 16,
+        "sample": "ANDERSO"
+      },
+      {
+        "hex": "#8496B0",
+        "chars": 6,
+        "sample": "OLIVIA"
+      },
+      {
+        "hex": "#D0CECE",
+        "chars": 6,
+        "sample": "|"
+      }
+    ]
+  },
+  "11": {
+    "rawDump": [
+      {
+        "raw": "Merriweather 24pt Light",
+        "clean": "Merriweather",
+        "chars": 2247,
+        "codes": [
+          77,
+          101,
+          114,
+          114,
+          105,
+          119,
+          101,
+          97,
+          116,
+          104,
+          101,
+          114,
+          32,
+          50,
+          52,
+          112,
+          116,
+          32,
+          76,
+          105,
+          103,
+          104,
+          116
+        ]
+      },
+      {
+        "raw": "Source Sans 3",
+        "clean": "Source Sans 3",
+        "chars": 72,
+        "codes": [
+          83,
+          111,
+          117,
+          114,
+          99,
+          101,
+          32,
+          83,
+          97,
+          110,
+          115,
+          32,
+          51
+        ]
+      },
+      {
+        "raw": "Lato",
+        "clean": "Lato",
+        "chars": 15,
+        "codes": [
+          76,
+          97,
+          116,
+          111
+        ]
+      },
+      {
+        "raw": "Playfair Display",
+        "clean": "Playfair Display",
+        "chars": 12,
+        "codes": [
+          80,
+          108,
+          97,
+          121,
+          102,
+          97,
+          105,
+          114,
+          32,
+          68,
+          105,
+          115,
+          112,
+          108,
+          97,
+          121
+        ]
+      }
+    ],
+    "byChars": [
+      {
+        "font": "Merriweather",
+        "chars": 2247,
+        "maxPt": 10
+      },
+      {
+        "font": "Source Sans 3",
+        "chars": 72,
+        "maxPt": null
+      },
+      {
+        "font": "Lato",
+        "chars": 15,
+        "maxPt": 10
+      },
+      {
+        "font": "Playfair Display",
+        "chars": 12,
+        "maxPt": 28
+      }
+    ],
+    "bySize": [
+      {
+        "font": "Playfair Display",
+        "maxPt": 28,
+        "chars": 12
+      },
+      {
+        "font": "Merriweather",
+        "maxPt": 10,
+        "chars": 2247
+      },
+      {
+        "font": "Lato",
+        "maxPt": 10,
+        "chars": 15
+      }
+    ],
+    "substitutes": {},
+    "headingCandidate": "Playfair Display",
+    "bodyCandidate": "Merriweather",
+    "docxColors": [
+      {
+        "hex": "#000000",
+        "chars": 18,
+        "sample": "youremail@mail.com"
+      },
+      {
+        "hex": "#7F7F7F",
+        "chars": 15,
+        "sample": "YOUR PROFESSION"
+      },
+      {
+        "hex": "#D0CECE",
+        "chars": 3,
+        "sample": "|"
+      }
+    ]
+  },
+  "12": {
+    "rawDump": [
+      {
+        "raw": "Work Sans",
+        "clean": "Work Sans",
+        "chars": 2277,
+        "codes": [
+          87,
+          111,
+          114,
+          107,
+          32,
+          83,
+          97,
+          110,
+          115
+        ]
+      },
+      {
+        "raw": "Libre Baskerville",
+        "clean": "Libre Baskerville",
+        "chars": 57,
+        "codes": [
+          76,
+          105,
+          98,
+          114,
+          101,
+          32,
+          66,
+          97,
+          115,
+          107,
+          101,
+          114,
+          118,
+          105,
+          108,
+          108,
+          101
+        ]
+      },
+      {
+        "raw": "Manrope",
+        "clean": "Manrope",
+        "chars": 15,
+        "codes": [
+          77,
+          97,
+          110,
+          114,
+          111,
+          112,
+          101
+        ]
+      },
+      {
+        "raw": "Lato",
+        "clean": "Lato",
+        "chars": 12,
+        "codes": [
+          76,
+          97,
+          116,
+          111
+        ]
+      }
+    ],
+    "byChars": [
+      {
+        "font": "Work Sans",
+        "chars": 2277,
+        "maxPt": 10
+      },
+      {
+        "font": "Libre Baskerville",
+        "chars": 57,
+        "maxPt": 11
+      },
+      {
+        "font": "Manrope",
+        "chars": 15,
+        "maxPt": 10
+      },
+      {
+        "font": "Lato",
+        "chars": 12,
+        "maxPt": 28
+      }
+    ],
+    "bySize": [
+      {
+        "font": "Lato",
+        "maxPt": 28,
+        "chars": 12
+      },
+      {
+        "font": "Libre Baskerville",
+        "maxPt": 11,
+        "chars": 57
+      },
+      {
+        "font": "Work Sans",
+        "maxPt": 10,
+        "chars": 2277
+      },
+      {
+        "font": "Manrope",
+        "maxPt": 10,
+        "chars": 15
+      }
+    ],
+    "substitutes": {},
+    "headingCandidate": "Lato",
+    "bodyCandidate": "Work Sans",
+    "docxColors": [
+      {
+        "hex": "#44546A",
+        "chars": 15,
+        "sample": "YOUR PROFESSION"
+      }
+    ]
+  },
+  "14": {
+    "rawDump": [
+      {
+        "raw": "Inter 18pt",
+        "clean": "Inter",
+        "chars": 1708,
+        "codes": [
+          73,
+          110,
+          116,
+          101,
+          114,
+          32,
+          49,
+          56,
+          112,
+          116
+        ]
+      },
+      {
+        "raw": "Poppins",
+        "clean": "Poppins",
+        "chars": 101,
+        "codes": [
+          80,
+          111,
+          112,
+          112,
+          105,
+          110,
+          115
+        ]
+      },
+      {
+        "raw": "Source Sans 3",
+        "clean": "Source Sans 3",
+        "chars": 72,
+        "codes": [
+          83,
+          111,
+          117,
+          114,
+          99,
+          101,
+          32,
+          83,
+          97,
+          110,
+          115,
+          32,
+          51
+        ]
+      }
+    ],
+    "byChars": [
+      {
+        "font": "Inter",
+        "chars": 1708,
+        "maxPt": 10
+      },
+      {
+        "font": "Poppins",
+        "chars": 101,
+        "maxPt": 20
+      },
+      {
+        "font": "Source Sans 3",
+        "chars": 72,
+        "maxPt": 13
+      }
+    ],
+    "bySize": [
+      {
+        "font": "Poppins",
+        "maxPt": 20,
+        "chars": 101
+      },
+      {
+        "font": "Source Sans 3",
+        "maxPt": 13,
+        "chars": 72
+      },
+      {
+        "font": "Inter",
+        "maxPt": 10,
+        "chars": 1708
+      }
+    ],
+    "substitutes": {},
+    "headingCandidate": "Poppins",
+    "bodyCandidate": "Inter",
+    "docxColors": [
+      {
+        "hex": "#44546A",
+        "chars": 15,
+        "sample": "YOUR PROFESSION"
+      },
+      {
+        "hex": "#8496B0",
+        "chars": 8,
+        "sample": "CALDWELL"
+      }
+    ]
+  },
+  "22": {
+    "rawDump": [
+      {
+        "raw": "Source Sans 3",
+        "clean": "Source Sans 3",
+        "chars": 6750,
+        "codes": [
+          83,
+          111,
+          117,
+          114,
+          99,
+          101,
+          32,
+          83,
+          97,
+          110,
+          115,
+          32,
+          51
+        ]
+      },
+      {
+        "raw": "Open Sans",
+        "clean": "Open Sans",
+        "chars": 2250,
+        "codes": [
+          79,
+          112,
+          101,
+          110,
+          32,
+          83,
+          97,
+          110,
+          115
+        ]
+      },
+      {
+        "raw": "Merriweather 24pt",
+        "clean": "Merriweather",
+        "chars": 683,
+        "codes": [
+          77,
+          101,
+          114,
+          114,
+          105,
+          119,
+          101,
+          97,
+          116,
+          104,
+          101,
+          114,
+          32,
+          50,
+          52,
+          112,
+          116
+        ]
+      },
+      {
+        "raw": "Poppins",
+        "clean": "Poppins",
+        "chars": 579,
+        "codes": [
+          80,
+          111,
+          112,
+          112,
+          105,
+          110,
+          115
+        ]
+      }
+    ],
+    "byChars": [
+      {
+        "font": "Source Sans 3",
+        "chars": 6750,
+        "maxPt": 11
+      },
+      {
+        "font": "Open Sans",
+        "chars": 2250,
+        "maxPt": 14
+      },
+      {
+        "font": "Merriweather",
+        "chars": 683,
+        "maxPt": 28
+      },
+      {
+        "font": "Poppins",
+        "chars": 579,
+        "maxPt": 11
+      }
+    ],
+    "bySize": [
+      {
+        "font": "Merriweather",
+        "maxPt": 28,
+        "chars": 683
+      },
+      {
+        "font": "Open Sans",
+        "maxPt": 14,
+        "chars": 2250
+      },
+      {
+        "font": "Source Sans 3",
+        "maxPt": 11,
+        "chars": 6750
+      },
+      {
+        "font": "Poppins",
+        "maxPt": 11,
+        "chars": 579
+      }
+    ],
+    "substitutes": {},
+    "headingCandidate": "Merriweather",
+    "bodyCandidate": "Source Sans 3",
+    "docxColors": [
+      {
+        "hex": "#000000",
+        "chars": 683,
+        "sample": "<w:p w14:paraId=\"422A2B79\" w14:textId=\"77777777\" w"
+      },
+      {
+        "hex": "#44546A",
+        "chars": 579,
+        "sample": "<w:p w14:paraId=\"1AE55A78\" w14:textId=\"77777777\" w"
+      }
+    ]
+  },
+  "24": {
+    "rawDump": [
+      {
+        "raw": "Montserrat",
+        "clean": "Montserrat",
+        "chars": 5202,
+        "codes": [
+          77,
+          111,
+          110,
+          116,
+          115,
+          101,
+          114,
+          114,
+          97,
+          116
+        ]
+      },
+      {
+        "raw": "Inter 18pt",
+        "clean": "Inter",
+        "chars": 3742,
+        "codes": [
+          73,
+          110,
+          116,
+          101,
+          114,
+          32,
+          49,
+          56,
+          112,
+          116
+        ]
+      },
+      {
+        "raw": "Libre Baskerville",
+        "clean": "Libre Baskerville",
+        "chars": 445,
+        "codes": [
+          76,
+          105,
+          98,
+          114,
+          101,
+          32,
+          66,
+          97,
+          115,
+          107,
+          101,
+          114,
+          118,
+          105,
+          108,
+          108,
+          101
+        ]
+      },
+      {
+        "raw": "Open Sans",
+        "clean": "Open Sans",
+        "chars": 130,
+        "codes": [
+          79,
+          112,
+          101,
+          110,
+          32,
+          83,
+          97,
+          110,
+          115
+        ]
+      },
+      {
+        "raw": "Roboto",
+        "clean": "Roboto",
+        "chars": 80,
+        "codes": [
+          82,
+          111,
+          98,
+          111,
+          116,
+          111
+        ]
+      },
+      {
+        "raw": "Rubik",
+        "clean": "Rubik",
+        "chars": 20,
+        "codes": [
+          82,
+          117,
+          98,
+          105,
+          107
+        ]
+      },
+      {
+        "raw": "Work Sans",
+        "clean": "Work Sans",
+        "chars": 16,
+        "codes": [
+          87,
+          111,
+          114,
+          107,
+          32,
+          83,
+          97,
+          110,
+          115
+        ]
+      }
+    ],
+    "byChars": [
+      {
+        "font": "Montserrat",
+        "chars": 5202,
+        "maxPt": 13
+      },
+      {
+        "font": "Inter",
+        "chars": 3742,
+        "maxPt": 9.5
+      },
+      {
+        "font": "Libre Baskerville",
+        "chars": 445,
+        "maxPt": 36
+      },
+      {
+        "font": "Open Sans",
+        "chars": 130,
+        "maxPt": 10
+      },
+      {
+        "font": "Roboto",
+        "chars": 80,
+        "maxPt": 13
+      },
+      {
+        "font": "Rubik",
+        "chars": 20,
+        "maxPt": 24
+      },
+      {
+        "font": "Work Sans",
+        "chars": 16,
+        "maxPt": 11
+      }
+    ],
+    "bySize": [
+      {
+        "font": "Libre Baskerville",
+        "maxPt": 36,
+        "chars": 445
+      },
+      {
+        "font": "Rubik",
+        "maxPt": 24,
+        "chars": 20
+      },
+      {
+        "font": "Montserrat",
+        "maxPt": 13,
+        "chars": 5202
+      },
+      {
+        "font": "Roboto",
+        "maxPt": 13,
+        "chars": 80
+      },
+      {
+        "font": "Work Sans",
+        "maxPt": 11,
+        "chars": 16
+      },
+      {
+        "font": "Open Sans",
+        "maxPt": 10,
+        "chars": 130
+      },
+      {
+        "font": "Inter",
+        "maxPt": 9.5,
+        "chars": 3742
+      }
+    ],
+    "substitutes": {},
+    "headingCandidate": "Libre Baskerville",
+    "bodyCandidate": "Montserrat",
+    "docxColors": [
+      {
+        "hex": "#44546A",
+        "chars": 1933,
+        "sample": "<w:p w14:paraId=\"03C1F002\" w14:textId=\"7AEFAB89\" w"
+      },
+      {
+        "hex": "#D0CECE",
+        "chars": 6,
+        "sample": "|"
+      }
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "2": {
+    "accent": null,
+    "deep": null,
+    "tint": null,
+    "ink": null,
+    "muted": null,
+    "heading": null,
+    "body": null,
+    "columns": null,
+    "leftRatio": null
+  },
+  "3": {
+    "accent": null,
+    "deep": null,
+    "tint": null,
+    "ink": null,
+    "muted": null,
+    "heading": null,
+    "body": null,
+    "columns": null,
+    "leftRatio": null
+  },
+  "4": {
+    "accent": null,
+    "deep": null,
+    "tint": null,
+    "ink": null,
+    "muted": null,
+    "heading": null,
+    "body": null,
+    "columns": null,
+    "leftRatio": null
+  },
+  "11": {
+    "accent": null,
+    "deep": null,
+    "tint": null,
+    "ink": null,
+    "muted": null,
+    "heading": null,
+    "body": null,
+    "columns": null,
+    "leftRatio": null
+  },
+  "12": {
+    "accent": null,
+    "deep": null,
+    "tint": null,
+    "ink": null,
+    "muted": null,
+    "heading": null,
+    "body": null,
+    "columns": null,
+    "leftRatio": null
+  },
+  "14": {
+    "accent": null,
+    "deep": null,
+    "tint": null,
+    "ink": null,
+    "muted": null,
+    "heading": null,
+    "body": null,
+    "columns": null,
+    "leftRatio": null
+  },
+  "22": {
+    "accent": null,
+    "deep": null,
+    "tint": null,
+    "ink": null,
+    "muted": null,
+    "heading": null,
+    "body": null,
+    "columns": null,
+    "leftRatio": null
+  },
+  "24": {
+    "accent": null,
+    "deep": null,
+    "tint": null,
+    "ink": null,
+    "muted": null,
+    "heading": null,
+    "body": null,
+    "columns": null,
+    "leftRatio": null
+  },
+  "_readme": "Human-verified lock. Fill any field to override the machine proposal. null = keep proposal. Open _farnavi/swatches.html, use the eyedropper, then Copy overrides JSON and paste here."
+}

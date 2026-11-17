@@ -1,0 +1,44 @@
+// FARNAVI - TEMPLATE DESIGN INPUT
+// Edit values, save, re-run chunk-05.ps1.
+//   #RRGGBB = a color.   -  = this element does not exist (do NOT invent one).
+//   TODO    = unknown, you must fill it or set -
+//   checked=no  -> flip to yes after you verify the line against the real file.
+//
+// GET THE EXACT VALUE:
+//   Word: open public/templates/<id>/resume-1p-a4.docx, click the text.
+//         Home tab = font name. Font Color > More Colors > Custom = hex.
+//   PowerToys: Win+Shift+C on the preview PNG (click the CENTER of a stroke/fill).
+//   Or look in public/templates/<id>/<id>.restem/01-Start-Here-and-Fonts/
+//
+// accent  = color of the NAME and section titles (black is a valid answer)
+// ink     = color of body paragraphs
+// tint    = light filled block / sidebar background
+// deep    = dark filled bar
+// muted   = dates and locations
+// heading = font of name/titles   body = font of paragraphs
+//
+// Both font candidates found in the DOCX are noted above each line.
+
+// series 2 : Rubik (meta) or Libre Baskerville (largest size) - navy bar #002060 seen in pixels
+2 | accent=#1F3C88 | deep=#002060 | tint=#DDE0F7 | ink=#000000 | muted=#44546A | heading=Rubik | body=Rubik | checked=yes
+
+// series 3 : Open Sans (meta) or Playfair Display (largest size) - pixels are all grayscale
+3 | accent=#000000 | deep=- | tint=#D0CECE | ink=#000000 | muted=#44546A | heading=Open Sans | body=Open Sans | checked=yes
+
+// series 4 : Source Sans 3 (meta) or Rubik - light block #D0CECE seen in pixels
+4 | accent=#000000 | deep=- | tint=#D0CECE | ink=#000000 | muted=#767171 | heading=Source Sans 3 | body=Merriweather | checked=yes
+
+// series 11 : Merriweather (meta) or Playfair Display - single column ATS
+11 | accent=#000000 | deep=- | tint=#D0CECE | ink=#000000 | muted=#989898 | heading=Merriweather | body=Merriweather | checked=yes
+
+// series 12 : Work Sans (meta) or Lato - pale green #F1F8ED covers 68012 pixels
+12 | accent=#000000 | deep=- | tint=#F1F8ED | ink=#000000 | muted=#44546A | heading=Work Sans | body=Work Sans | checked=yes
+
+// series 14 : Inter (meta) or Poppins
+14 | accent=#000000 | deep=- | tint=#D0CECE | ink=#000000 | muted=#44546A | heading=Inter | body=Inter | checked=yes
+
+// series 22 : Source Sans 3 (meta) or Merriweather
+22 | accent=#000000 | deep=#000000 | tint=#F2F2F2 | ink=#000000 | muted=#B7B7B7 | heading=Source Sans 3 | body=Source Sans 3 | checked=yes
+
+// series 24 : Roboto/Inter (meta) or Libre Baskerville/Montserrat
+24 | accent=#000000 | deep=#000000 | tint=#F2F2F2 | ink=#000000 | muted=#727272 | heading=Roboto | body=Inter | checked=no

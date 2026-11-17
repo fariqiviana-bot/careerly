@@ -1,0 +1,513 @@
+{
+  "id": "12",
+  "truthVersion": 3,
+  "extractedAt": "2026-11-17T11:41:21.711Z",
+  "lockedBy": "machine-proposal",
+  "sources": {
+    "png": "preview-resume-1p-a4.png 910x1287",
+    "docx": "resume-1p-a4.docx run-level"
+  },
+  "colors": {
+    "accent": "#F1F8ED",
+    "deep": "#F1F8ED",
+    "tint": "#F1F8ED",
+    "ink": "#000000",
+    "muted": "#666666",
+    "rule": "#F1F8ED",
+    "page": "#FFFFFF"
+  },
+  "accentKind": "tint-only",
+  "isMonochrome": true,
+  "accentSource": "png",
+  "fonts": {
+    "heading": "Lato",
+    "body": "Work Sans",
+    "all": [
+      "Work Sans",
+      "Libre Baskerville",
+      "Manrope",
+      "Lato"
+    ],
+    "substitutes": {}
+  },
+  "margins": {
+    "top": 0.5,
+    "bottom": 0.5,
+    "left": 0.5,
+    "right": 0.5
+  },
+  "pageSize": {
+    "w": 210,
+    "h": 297,
+    "unit": "mm"
+  },
+  "columns": 1,
+  "leftRatio": null,
+  "columnEvidence": {
+    "pixelDetected": 1,
+    "gutters": [],
+    "userConfirmed": true
+  },
+  "photo": false,
+  "pages": [
+    1,
+    2
+  ],
+  "sizes": [
+    "a4",
+    "letter"
+  ],
+  "tier": "free",
+  "atsScore": 100,
+  "previews": {
+    "cover-a4": "/templates/12/preview-cover-a4.png",
+    "cover-letter": "/templates/12/preview-cover-letter.png",
+    "references-a4": "/templates/12/preview-references-a4.png",
+    "references-letter": "/templates/12/preview-references-letter.png",
+    "resume-1p-a4": "/templates/12/preview-resume-1p-a4.png",
+    "resume-1p-letter": "/templates/12/preview-resume-1p-letter.png",
+    "resume-2p-a4": "/templates/12/preview-resume-2p-a4.png",
+    "resume-2p-letter": "/templates/12/preview-resume-2p-letter.png"
+  },
+  "confidence": {
+    "colors": "medium",
+    "fonts": "high",
+    "typeScale": "heuristic"
+  },
+  "needsReview": [],
+  "evidence": {
+    "regions": {
+      "full": [
+        {
+          "hex": "#F1F8ED",
+          "px": 68012,
+          "fill": 0.1,
+          "lum": 0.964,
+          "sat": 0.044,
+          "box": {
+            "x": 0.057,
+            "y": 0.175,
+            "w": 0.885,
+            "h": 0.658
+          }
+        },
+        {
+          "hex": "#000000",
+          "px": 14458,
+          "fill": 0.017,
+          "lum": 0,
+          "sat": 0,
+          "box": {
+            "x": 0.062,
+            "y": 0.052,
+            "w": 0.877,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#F3F9F0",
+          "px": 5827,
+          "fill": 0.009,
+          "lum": 0.969,
+          "sat": 0.036,
+          "box": {
+            "x": 0.057,
+            "y": 0.175,
+            "w": 0.886,
+            "h": 0.658
+          }
+        },
+        {
+          "hex": "#E8E8E8",
+          "px": 5709,
+          "fill": 0.007,
+          "lum": 0.91,
+          "sat": 0,
+          "box": {
+            "x": 0.06,
+            "y": 0.052,
+            "w": 0.881,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#F0F0F0",
+          "px": 4576,
+          "fill": 0.005,
+          "lum": 0.941,
+          "sat": 0,
+          "box": {
+            "x": 0.06,
+            "y": 0.051,
+            "w": 0.882,
+            "h": 0.833
+          }
+        },
+        {
+          "hex": "#E0E0E0",
+          "px": 3974,
+          "fill": 0.005,
+          "lum": 0.878,
+          "sat": 0,
+          "box": {
+            "x": 0.06,
+            "y": 0.052,
+            "w": 0.881,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#666666",
+          "px": 3844,
+          "fill": 0.005,
+          "lum": 0.4,
+          "sat": 0,
+          "box": {
+            "x": 0.062,
+            "y": 0.051,
+            "w": 0.877,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#A8A8A8",
+          "px": 3733,
+          "fill": 0.004,
+          "lum": 0.659,
+          "sat": 0,
+          "box": {
+            "x": 0.063,
+            "y": 0.051,
+            "w": 0.877,
+            "h": 0.831
+          }
+        }
+      ],
+      "header": [
+        {
+          "hex": "#000000",
+          "px": 2544,
+          "fill": 0.039,
+          "lum": 0,
+          "sat": 0,
+          "box": {
+            "x": 0.159,
+            "y": 0.052,
+            "w": 0.626,
+            "h": 0.088
+          }
+        },
+        {
+          "hex": "#E9E8E8",
+          "px": 923,
+          "fill": 0.01,
+          "lum": 0.911,
+          "sat": 0.004,
+          "box": {
+            "x": 0.063,
+            "y": 0.052,
+            "w": 0.879,
+            "h": 0.088
+          }
+        },
+        {
+          "hex": "#F3F2F2",
+          "px": 920,
+          "fill": 0.01,
+          "lum": 0.95,
+          "sat": 0.004,
+          "box": {
+            "x": 0.063,
+            "y": 0.051,
+            "w": 0.88,
+            "h": 0.089
+          }
+        },
+        {
+          "hex": "#E2E0E0",
+          "px": 881,
+          "fill": 0.01,
+          "lum": 0.88,
+          "sat": 0.009,
+          "box": {
+            "x": 0.063,
+            "y": 0.052,
+            "w": 0.879,
+            "h": 0.088
+          }
+        },
+        {
+          "hex": "#B9B9B9",
+          "px": 124,
+          "fill": 0.002,
+          "lum": 0.725,
+          "sat": 0,
+          "box": {
+            "x": 0.153,
+            "y": 0.052,
+            "w": 0.624,
+            "h": 0.088
+          }
+        },
+        {
+          "hex": "#777777",
+          "px": 118,
+          "fill": 0.002,
+          "lum": 0.467,
+          "sat": 0,
+          "box": {
+            "x": 0.246,
+            "y": 0.051,
+            "w": 0.501,
+            "h": 0.089
+          }
+        },
+        {
+          "hex": "#0B0B0B",
+          "px": 100,
+          "fill": 0.002,
+          "lum": 0.043,
+          "sat": 0,
+          "box": {
+            "x": 0.164,
+            "y": 0.052,
+            "w": 0.582,
+            "h": 0.088
+          }
+        },
+        {
+          "hex": "#1F1F1F",
+          "px": 96,
+          "fill": 0.002,
+          "lum": 0.122,
+          "sat": 0,
+          "box": {
+            "x": 0.247,
+            "y": 0.051,
+            "w": 0.531,
+            "h": 0.089
+          }
+        }
+      ],
+      "left": [
+        {
+          "hex": "#F1F8ED",
+          "px": 28532,
+          "fill": 0.102,
+          "lum": 0.964,
+          "sat": 0.044,
+          "box": {
+            "x": 0.057,
+            "y": 0.175,
+            "w": 0.363,
+            "h": 0.658
+          }
+        },
+        {
+          "hex": "#000000",
+          "px": 7218,
+          "fill": 0.021,
+          "lum": 0,
+          "sat": 0,
+          "box": {
+            "x": 0.062,
+            "y": 0.052,
+            "w": 0.358,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#E8E8E8",
+          "px": 2617,
+          "fill": 0.008,
+          "lum": 0.91,
+          "sat": 0,
+          "box": {
+            "x": 0.06,
+            "y": 0.054,
+            "w": 0.359,
+            "h": 0.829
+          }
+        },
+        {
+          "hex": "#F3F9F0",
+          "px": 2401,
+          "fill": 0.009,
+          "lum": 0.969,
+          "sat": 0.036,
+          "box": {
+            "x": 0.057,
+            "y": 0.175,
+            "w": 0.363,
+            "h": 0.658
+          }
+        },
+        {
+          "hex": "#F0F0F0",
+          "px": 2037,
+          "fill": 0.006,
+          "lum": 0.941,
+          "sat": 0,
+          "box": {
+            "x": 0.06,
+            "y": 0.052,
+            "w": 0.359,
+            "h": 0.832
+          }
+        },
+        {
+          "hex": "#E0E0E0",
+          "px": 1893,
+          "fill": 0.005,
+          "lum": 0.878,
+          "sat": 0,
+          "box": {
+            "x": 0.06,
+            "y": 0.052,
+            "w": 0.359,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#666666",
+          "px": 1823,
+          "fill": 0.005,
+          "lum": 0.4,
+          "sat": 0,
+          "box": {
+            "x": 0.062,
+            "y": 0.051,
+            "w": 0.358,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#A8A8A8",
+          "px": 1621,
+          "fill": 0.005,
+          "lum": 0.659,
+          "sat": 0,
+          "box": {
+            "x": 0.063,
+            "y": 0.054,
+            "w": 0.357,
+            "h": 0.828
+          }
+        }
+      ],
+      "body": [
+        {
+          "hex": "#F1F8ED",
+          "px": 39480,
+          "fill": 0.098,
+          "lum": 0.964,
+          "sat": 0.044,
+          "box": {
+            "x": 0.42,
+            "y": 0.176,
+            "w": 0.522,
+            "h": 0.657
+          }
+        },
+        {
+          "hex": "#000000",
+          "px": 7240,
+          "fill": 0.014,
+          "lum": 0,
+          "sat": 0,
+          "box": {
+            "x": 0.42,
+            "y": 0.052,
+            "w": 0.519,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#F3F9F0",
+          "px": 3426,
+          "fill": 0.008,
+          "lum": 0.969,
+          "sat": 0.036,
+          "box": {
+            "x": 0.42,
+            "y": 0.175,
+            "w": 0.523,
+            "h": 0.658
+          }
+        },
+        {
+          "hex": "#E8E8E8",
+          "px": 3092,
+          "fill": 0.006,
+          "lum": 0.91,
+          "sat": 0,
+          "box": {
+            "x": 0.42,
+            "y": 0.052,
+            "w": 0.522,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#F3F2F2",
+          "px": 2539,
+          "fill": 0.005,
+          "lum": 0.95,
+          "sat": 0.004,
+          "box": {
+            "x": 0.42,
+            "y": 0.051,
+            "w": 0.523,
+            "h": 0.832
+          }
+        },
+        {
+          "hex": "#A8A8A8",
+          "px": 2112,
+          "fill": 0.004,
+          "lum": 0.659,
+          "sat": 0,
+          "box": {
+            "x": 0.42,
+            "y": 0.051,
+            "w": 0.52,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#E0E0E0",
+          "px": 2081,
+          "fill": 0.004,
+          "lum": 0.878,
+          "sat": 0,
+          "box": {
+            "x": 0.42,
+            "y": 0.052,
+            "w": 0.522,
+            "h": 0.831
+          }
+        },
+        {
+          "hex": "#666666",
+          "px": 2021,
+          "fill": 0.004,
+          "lum": 0.4,
+          "sat": 0,
+          "box": {
+            "x": 0.42,
+            "y": 0.051,
+            "w": 0.519,
+            "h": 0.828
+          }
+        }
+      ]
+    },
+    "docxColors": [
+      {
+        "hex": "#44546A",
+        "chars": 15,
+        "sample": "YOUR PROFESSION"
+      }
+    ]
+  }
+}

@@ -1,0 +1,309 @@
+{
+  "2": {
+    "accent": "#1F3C88",
+    "deep": "#002060",
+    "tint": "#DDE0F7",
+    "ink": "#595959",
+    "muted": "#605E5C",
+    "rule": "#DDE0F7",
+    "page": "#FFFFFF",
+    "heading": "Rubik",
+    "body": "Rubik",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": true,
+    "typeScale": {
+      "name": 28,
+      "sectionTitle": 13,
+      "body": 10,
+      "minor": 6
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "layout ambiguous: docxCols=1 but 22 text boxes (meta.columns=1) — verify visually"
+    ]
+  },
+  "3": {
+    "accent": "#2F5496",
+    "deep": "#2F5496",
+    "tint": null,
+    "ink": "#595959",
+    "muted": "#605E5C",
+    "rule": "#595959",
+    "page": "#FFFFFF",
+    "heading": "Open Sans",
+    "body": "Open Sans",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": true,
+    "typeScale": {
+      "name": 28,
+      "sectionTitle": 13.5,
+      "body": 10,
+      "minor": 6
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "layout ambiguous: docxCols=1 but 24 text boxes (meta.columns=1) — verify visually"
+    ]
+  },
+  "4": {
+    "accent": "#2F5496",
+    "deep": "#2F5496",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#767171",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Source Sans 3",
+    "body": "Merriweather",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 2,
+    "photo": true,
+    "typeScale": {
+      "name": 28,
+      "sectionTitle": 14.5,
+      "body": 9,
+      "minor": 6
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "layout ambiguous: docxCols=1 but 26 text boxes (meta.columns=2) — verify visually"
+    ]
+  },
+  "11": {
+    "accent": "#2F5496",
+    "deep": "#2F5496",
+    "tint": null,
+    "ink": "#595959",
+    "muted": "#7F7F7F",
+    "rule": "#595959",
+    "page": "#FFFFFF",
+    "heading": "Merriweather",
+    "body": "Merriweather",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": false,
+    "typeScale": {
+      "name": 28,
+      "sectionTitle": 28,
+      "body": 10,
+      "minor": 3
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "meta heading font 'Merriweather' not present in docx rFonts (Merriweather 24pt, Open Sans, Source Sans 3, Lato, Playfair Display)"
+    ]
+  },
+  "12": {
+    "accent": "#2F5496",
+    "deep": "#2F5496",
+    "tint": null,
+    "ink": "#595959",
+    "muted": "#555555",
+    "rule": "#595959",
+    "page": "#FFFFFF",
+    "heading": "Work Sans",
+    "body": "Work Sans",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": false,
+    "typeScale": {
+      "name": 28,
+      "sectionTitle": 14,
+      "body": 10,
+      "minor": 2
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "muted color defaulted to #555555"
+    ]
+  },
+  "14": {
+    "accent": "#2F5496",
+    "deep": "#2F5496",
+    "tint": null,
+    "ink": "#595959",
+    "muted": "#555555",
+    "rule": "#595959",
+    "page": "#FFFFFF",
+    "heading": "Inter",
+    "body": "Inter",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": false,
+    "typeScale": {
+      "name": 28,
+      "sectionTitle": 13,
+      "body": 10,
+      "minor": 1
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "muted color defaulted to #555555",
+      "meta heading font 'Inter' not present in docx rFonts (Inter 18pt, Poppins, Source Sans 3, Times New Roman, Open Sans)"
+    ]
+  },
+  "22": {
+    "accent": "#2F5496",
+    "deep": "#2F5496",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#605E5C",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Source Sans 3",
+    "body": "Source Sans 3",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": true,
+    "typeScale": {
+      "name": 28,
+      "sectionTitle": 14,
+      "body": 11,
+      "minor": 6
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "layout ambiguous: docxCols=1 but 24 text boxes (meta.columns=1) — verify visually"
+    ]
+  },
+  "24": {
+    "accent": "#2F5496",
+    "deep": "#2F5496",
+    "tint": null,
+    "ink": "#595959",
+    "muted": "#555555",
+    "rule": "#595959",
+    "page": "#FFFFFF",
+    "heading": "Roboto",
+    "body": "Inter",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 2,
+    "photo": true,
+    "typeScale": {
+      "name": 36,
+      "sectionTitle": 10,
+      "body": 9.5,
+      "minor": 6
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "muted color defaulted to #555555",
+      "layout ambiguous: docxCols=1 but 22 text boxes (meta.columns=2) — verify visually"
+    ]
+  },
+  "_comment": "GENERATED by CHUNK 01 from real DOCX + meta.json. READ-ONLY. Never the UI palette."
+}

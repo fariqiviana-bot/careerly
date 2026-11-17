@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import type { TrackStatus } from "./catalog";
-import { TEMPLATES } from "./catalog";
+import { EDITOR_TEMPLATES as TEMPLATES, resolveTemplate } from "./editor/templates";
 
 export const uid = () => Math.random().toString(36).slice(2, 9);
 export type DocType = "resume" | "cover" | "resignation" | "website" | "tailored";
@@ -56,6 +56,9 @@ export type Doc = {
   type: DocType;
   title: string;
   template: string;
+  series?: string;
+  variant?: "design" | "ats";
+  visibility?: Record<string, boolean>;
   accent: string;
   font: string;
   secondaryFont?: string;
@@ -365,14 +368,32 @@ const seedTrack: TrackItem[] = [
   { id: "t6", title: "Senior Product Designer", company: "Nova Labs", url: "https://example.com/j2", status: "interviewing", location: "Tehran", salary: "$10k–20k", notes: "Round 2 with HM", date: now() },
 ];
 
-const VALID_TEMPLATE_IDS = new Set(TEMPLATES.map((t) => t.id));
+const VALID_TEMPLATE_IDS: Set<string> = new Set(TEMPLATES.map((t) => t.id));
+/** Confirmed map: legacy ids -> real series (2,3,4,11,12,14,22,24). */
 function normalizeTemplateId(tplId?: string): string {
   if (tplId && VALID_TEMPLATE_IDS.has(tplId)) return tplId;
-  if (tplId === "prime-ats") return "prime-ats-11";
-  if (tplId === "pure-ats") return "pure-ats-14";
-  if (tplId === "modern") return "harmonized-12";
-  if (tplId === "executive") return "crest-22";
-  return "editorial-11";
+  const r = resolveTemplate(tplId);
+  return r ? r.series : "11";
+}
+/** Single normalizer used by seeds, hydration and addDoc. */
+function normalizeDoc(d: Doc): Doc {
+  const r = resolveTemplate(d.series ?? d.template);
+  const series = r ? r.series : "11";
+  const tpl = TEMPLATES.find((x) => x.id === series) ?? TEMPLATES[0];
+  return {
+    ...d,
+    template: series,
+    series,
+    variant: r ? r.variant : (/ats/i.test(d.template || "") ? "ats" : "design"),
+    accent: (r && r.design && r.design.accent) || tpl.accent || d.accent,
+    font: (r && r.design && r.design.heading) || tpl.headingFont || d.font,
+    secondaryFont: (r && r.design && r.design.body) || tpl.bodyFont || d.secondaryFont,
+    settings: { ...defaultSettings(tpl.twoCol), ...(d.settings || {}) },
+    visibility: d.visibility ?? {},
+    ...(d.type === "website"
+      ? { webTemplate: d.webTemplate ?? "editorial", slug: d.slug ?? "viana-fariqi", published: d.published ?? true }
+      : {}),
+  };
 }
 
 type Store = {
@@ -412,7 +433,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     resumeUploaded: true,
     matchChecked: false,
   });
-  const [docs, setDocs] = useState<Doc[]>(seedDocs);
+  const [docs, setDocs] = useState<Doc[]>(() => seedDocs.map(normalizeDoc));
   const [tracker, setTracker] = useState<TrackItem[]>(seedTrack);
   const [interviews, setInterviews] = useState<Interview[]>([
     { id: "i1", title: "Senior Product Designer", company: "Nova Labs", seniority: "Senior", mode: "Personalized", createdAt: now() }
@@ -424,23 +445,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("farnavi_store_v2") ?? localStorage.getItem("farnavi_store");
+      const raw = localStorage.getItem("farnavi_store_v3") ?? localStorage.getItem("farnavi_store_v3") ?? localStorage.getItem("farnavi_store_v2") ?? localStorage.getItem("farnavi_store");
       if (raw) {
         const s = JSON.parse(raw);
         if (s.user) setUserState((p) => ({ ...p, ...s.user }));
         if (Array.isArray(s.docs) && s.docs.length > 0) {
-          const migrated = s.docs.map((d: Doc) => {
-            const tplId = normalizeTemplateId(d.template);
-            const tplObj = TEMPLATES.find((t) => t.id === tplId) ?? TEMPLATES[0];
-            return {
-              ...d,
-              template: tplId,
-              font: d.font && d.font !== "Instrument Sans" ? d.font : tplObj.headingFont,
-              secondaryFont: d.secondaryFont ?? tplObj.bodyFont,
-              settings: { ...defaultSettings(tplObj.twoCol), ...(d.settings || {}) },
-              ...(d.type === "website" ? { webTemplate: d.webTemplate ?? "editorial", slug: d.slug ?? "viana-fariqi", published: d.published ?? true } : {}),
-            };
-          });
+          const migrated = s.docs.map((d: Doc) => normalizeDoc(d));
           setDocs(migrated);
         }
         if (Array.isArray(s.tracker)) setTracker(s.tracker);
@@ -456,7 +466,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hydrated) {
       localStorage.setItem(
-        "farnavi_store_v2",
+        "farnavi_store_v3",
         JSON.stringify({ user, docs, tracker, interviews, credits, autoConfigured, savedJobs })
       );
     }

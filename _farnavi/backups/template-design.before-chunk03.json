@@ -1,0 +1,297 @@
+{
+  "2": {
+    "accent": "#1F3C88",
+    "deep": "#001F5F",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#5E5E5E",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Libre Baskerville",
+    "body": "Rubik",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 2,
+    "photo": true,
+    "typeScale": {
+      "name": null,
+      "sectionTitle": null,
+      "body": null,
+      "minor": null
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "pixel gutter says 1 col, locked value 2 - check"
+    ]
+  },
+  "3": {
+    "accent": "#44546A",
+    "deep": "#44546A",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#555555",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Playfair Display",
+    "body": "Open Sans",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 2,
+    "photo": true,
+    "typeScale": {
+      "name": null,
+      "sectionTitle": null,
+      "body": null,
+      "minor": null
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": []
+  },
+  "4": {
+    "accent": "#8496B0",
+    "deep": "#8496B0",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#767070",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Rubik",
+    "body": "Merriweather",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 2,
+    "photo": true,
+    "typeScale": {
+      "name": null,
+      "sectionTitle": null,
+      "body": null,
+      "minor": null
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "pixel gutter says 1 col, locked value 2 - check"
+    ]
+  },
+  "11": {
+    "accent": "#000000",
+    "deep": "#000000",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#989898",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Playfair Display",
+    "body": "Merriweather",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": false,
+    "typeScale": {
+      "name": null,
+      "sectionTitle": null,
+      "body": null,
+      "minor": null
+    },
+    "confidence": {
+      "colors": "medium",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": []
+  },
+  "12": {
+    "accent": "#F1F8ED",
+    "deep": "#F1F8ED",
+    "tint": "#F1F8ED",
+    "ink": "#000000",
+    "muted": "#666666",
+    "rule": "#F1F8ED",
+    "page": "#FFFFFF",
+    "heading": "Lato",
+    "body": "Work Sans",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": false,
+    "typeScale": {
+      "name": null,
+      "sectionTitle": null,
+      "body": null,
+      "minor": null
+    },
+    "confidence": {
+      "colors": "medium",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": []
+  },
+  "14": {
+    "accent": "#8496B0",
+    "deep": "#8496B0",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#A0A0A0",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Poppins",
+    "body": "Inter",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 1,
+    "photo": false,
+    "typeScale": {
+      "name": null,
+      "sectionTitle": null,
+      "body": null,
+      "minor": null
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": []
+  },
+  "22": {
+    "accent": "#000000",
+    "deep": "#000000",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#B7B7B7",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Merriweather",
+    "body": "Source Sans 3",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 2,
+    "photo": true,
+    "typeScale": {
+      "name": null,
+      "sectionTitle": null,
+      "body": null,
+      "minor": null
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": []
+  },
+  "24": {
+    "accent": "#44546A",
+    "deep": "#44546A",
+    "tint": null,
+    "ink": "#000000",
+    "muted": "#727272",
+    "rule": "#000000",
+    "page": "#FFFFFF",
+    "heading": "Libre Baskerville",
+    "body": "Montserrat",
+    "margins": {
+      "top": 0.5,
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5
+    },
+    "pageSize": {
+      "w": 210,
+      "h": 297,
+      "unit": "mm"
+    },
+    "columns": 2,
+    "photo": true,
+    "typeScale": {
+      "name": null,
+      "sectionTitle": null,
+      "body": null,
+      "minor": null
+    },
+    "confidence": {
+      "colors": "high",
+      "fonts": "high",
+      "typeScale": "heuristic"
+    },
+    "needsReview": [
+      "pixel gutter says 1 col, locked value 2 - check"
+    ]
+  },
+  "_comment": "GENERATED by CHUNK 03. Machine proposal + human overrides. READ-ONLY. Never the UI palette."
+}

@@ -9,7 +9,7 @@ export type Tpl = { id: string; name: string; tier: "free" | "premium" | "unknow
   ats: boolean; atsScore: number; columns: number; photo: boolean;
   pages: number[]; sizes: ("a4" | "letter")[]; fonts: TplFonts;
   previews: Record<string, string>; files: TplFile[]; gdocs: GDoc[];
-  hasCover: boolean; hasReferences: boolean };
+  hasCover: boolean; hasReferences: boolean; fileCount?: number };
 
 export const TEMPLATE_CATALOG: Tpl[] = [
   {

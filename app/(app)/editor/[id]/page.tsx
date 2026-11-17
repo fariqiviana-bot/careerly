@@ -489,11 +489,11 @@ function EditorInner() {
 
   const customize = (
     <Tabs defaultValue="template">
-      <TabsList className="w-full rounded-full"><TabsTrigger value="template" className="flex-1 rounded-full">Template & Colors</TabsTrigger><TabsTrigger value="text" className="flex-1 rounded-full">Text</TabsTrigger><TabsTrigger value="layout" className="flex-1 rounded-full">Layout</TabsTrigger></TabsList>
+      <TabsList className="w-full rounded-full"><TabsTrigger value="template" className="flex-1 rounded-full">Template</TabsTrigger><TabsTrigger value="text" className="flex-1 rounded-full">Text</TabsTrigger><TabsTrigger value="layout" className="flex-1 rounded-full">Layout</TabsTrigger></TabsList>
       <TabsContent value="template" className="mt-4 space-y-4">
         <div className="grid grid-cols-3 gap-2">
           {TEMPLATES.slice(0, 9).map((t) => (
-            <button key={t.id} onClick={() => { updateDoc(doc.id, { template: t.id, accent: t.accent }); setTwoCol(t.twoCol); }} className={cn("rounded-xl border p-2 text-left text-xs transition-colors", doc.template === t.id ? "border-primary bg-sage-mist" : "border-border hover:bg-muted")}>
+            <button key={t.id} onClick={() => { updateDoc(doc.id, { template: t.id }); setTwoCol(t.twoCol); }} className={cn("rounded-xl border p-2 text-left text-xs transition-colors", doc.template === t.id ? "border-primary bg-sage-mist" : "border-border hover:bg-muted")}>
               <div className="mb-1 h-12 rounded bg-white" style={{ borderTop: `3px solid ${t.accent}` }} />{t.name}{t.pro && <Lock className="ml-1 inline h-3 w-3 text-muted-foreground" />}
             </button>
           ))}
@@ -501,7 +501,7 @@ function EditorInner() {
         {/* Template colors are locked brand assets — no picker. */}
       </TabsContent>
       <TabsContent value="text" className="mt-4 space-y-4">
-        <Field label="Font"><Select value={doc.font} onValueChange={(v) => updateDoc(doc.id, { font: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{FONTS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent></Select></Field>
+        <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs"><div className="mb-1 flex items-center gap-1.5 font-medium"><Lock className="h-3 w-3" />Template typography — locked</div><div className="text-muted-foreground">{doc.font}{doc.secondaryFont && doc.secondaryFont !== doc.font ? " + " + doc.secondaryFont : ""} · font &amp; color controls arrive with the Design panel.</div></div>
         <Field label={`Body size — ${fontSize}pt`}><Slider value={[fontSize]} min={9} max={14} step={0.5} onValueChange={([v]) => setFontSize(v)} /></Field>
       </TabsContent>
       <TabsContent value="layout" className="mt-4 space-y-4">

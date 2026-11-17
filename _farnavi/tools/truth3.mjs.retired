@@ -1,0 +1,265 @@
+import fs from "node:fs"; import path from "node:path"; import zlib from "node:zlib";
+const ROOT=process.cwd(), IDS=["2","3","4","11","12","14","22","24"];
+const TWO=["2","3","4","22","24"], ONE=["11","12","14"];      // user-confirmed
+const read=p=>{try{return fs.readFileSync(p,"utf8")}catch{return null}};
+const jread=p=>{try{return JSON.parse(fs.readFileSync(p,"utf8"))}catch{return null}};
+const wj=(p,o)=>{fs.mkdirSync(path.dirname(p),{recursive:true});fs.writeFileSync(p,JSON.stringify(o,null,2),"utf8")};
+const hx=n=>"#"+(n>>>0).toString(16).padStart(6,"0").toUpperCase();
+const L=n=>{const r=((n>>16)&255)/255,g=((n>>8)&255)/255,b=(n&255)/255;return .2126*r+.7152*g+.0722*b};
+const S=n=>{const r=((n>>16)&255)/255,g=((n>>8)&255)/255,b=(n&255)/255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);return mx===0?0:(mx-mn)/mx};
+const D=(a,b)=>Math.hypot((a>>16&255)-(b>>16&255),(a>>8&255)-(b>>8&255),(a&255)-(b&255));
+const bump=(m,k,w=1)=>m.set(k,(m.get(k)||0)+w);
+const top=m=>[...m.entries()].sort((a,b)=>b[1]-a[1]);
+const isNull=v=>v===null||v===undefined;                       // NEVER use !v (0 is black)
+
+function decodePng(buf){
+  if(buf.readUInt32BE(0)!==0x89504E47) throw new Error("not png");
+  let o=8,ih=null,pl=null;const id=[];
+  while(o+8<=buf.length){const len=buf.readUInt32BE(o),t=buf.toString("ascii",o+4,o+8),d=buf.subarray(o+8,o+8+len);
+    if(t==="IHDR")ih={w:d.readUInt32BE(0),h:d.readUInt32BE(4),depth:d[8],color:d[9],inter:d[12]};
+    else if(t==="PLTE")pl=d; else if(t==="IDAT")id.push(d); else if(t==="IEND")break; o+=12+len;}
+  if(!ih)throw new Error("no IHDR");
+  if(ih.depth!==8||ih.inter!==0)throw new Error("unsupported png");
+  const ch=ih.color===6?4:ih.color===2?3:(ih.color===0||ih.color===3)?1:0;
+  if(!ch)throw new Error("color type "+ih.color);
+  const raw=zlib.inflateSync(Buffer.concat(id)),stride=ih.w*ch,out=Buffer.alloc(ih.h*stride);let p=0;
+  for(let y=0;y<ih.h;y++){const f=raw[p++],line=raw.subarray(p,p+stride);p+=stride;
+    const cur=out.subarray(y*stride,(y+1)*stride),prev=y>0?out.subarray((y-1)*stride,y*stride):null;
+    for(let x=0;x<stride;x++){const a=x>=ch?cur[x-ch]:0,b=prev?prev[x]:0,c=(prev&&x>=ch)?prev[x-ch]:0;let v=line[x];
+      if(f===1)v+=a;else if(f===2)v+=b;else if(f===3)v+=(a+b)>>1;
+      else if(f===4){const pa=Math.abs(b-c),pb=Math.abs(a-c),pc=Math.abs(a+b-2*c);v+=(pa<=pb&&pa<=pc)?a:(pb<=pc?b:c);}
+      cur[x]=v&255;}}
+  return {w:ih.w,h:ih.h,ch,color:ih.color,plte:pl,data:out};
+}
+
+function analyze(file){
+  const g=decodePng(fs.readFileSync(file)); const {w,h,ch,color,plte,data}=g, stride=w*ch;
+  const px=(x,y)=>{const i=y*stride+x*ch;
+    if(color===3){const k=data[i]*3;return (plte[k]<<16)|(plte[k+1]<<8)|plte[k+2];}
+    if(ch===1)return (data[i]<<16)|(data[i]<<8)|data[i];
+    return (data[i]<<16)|(data[i+1]<<8)|data[i+2];};
+  const white=n=>((n>>16&255)>247)&&((n>>8&255)>247)&&((n&255)>247);
+  const regions={full:[0,0,w,h],header:[0,0,w,Math.round(h*.14)],left:[0,0,Math.round(w*.42),h],body:[Math.round(w*.42),0,w,h]};
+  const out={w,h,regions:{},dens:new Float64Array(w)};
+  for(const [name,[x0,y0,x1,y1]] of Object.entries(regions)){
+    const m=new Map();
+    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){const n=px(x,y); if(white(n))continue;
+      const key=((n>>19)<<10)|(((n>>8&255)>>3)<<5)|((n&255)>>3);
+      let s=m.get(key); if(!s){s={n:0,ex:new Map(),x0:x,x1:x,y0:y,y1:y};m.set(key,s);}
+      s.n++; bump(s.ex,n); if(x<s.x0)s.x0=x; if(x>s.x1)s.x1=x; if(y<s.y0)s.y0=y; if(y>s.y1)s.y1=y;}
+    const area=(x1-x0)*(y1-y0), min=Math.max(80,Math.round(area*0.0004));
+    const rows=[];
+    for(const s of m.values()){ if(s.n<min)continue; const hex=top(s.ex)[0][0];
+      const bb=(s.x1-s.x0+1)*(s.y1-s.y0+1);
+      rows.push({hex,n:s.n,fill:+(s.n/bb).toFixed(3),lum:+L(hex).toFixed(3),sat:+S(hex).toFixed(3),
+        box:{x:+(s.x0/w).toFixed(3),y:+(s.y0/h).toFixed(3),w:+((s.x1-s.x0+1)/w).toFixed(3),h:+((s.y1-s.y0+1)/h).toFixed(3)}});}
+    rows.sort((a,b)=>b.n-a.n); out.regions[name]=rows.slice(0,14);
+  }
+  for(let x=0;x<w;x++){let c=0;for(let y=0;y<h;y+=2){if(!white(px(x,y)))c++;}out.dens[x]=c/(h/2);}
+  // gutter detection -> real column evidence
+  const sm=new Float64Array(w), win=Math.max(2,Math.round(w*.008));
+  for(let x=0;x<w;x++){let s=0,n=0;for(let k=-win;k<=win;k++){const i=x+k;if(i>=0&&i<w){s+=out.dens[i];n++;}}sm[x]=s/n;}
+  const mx=Math.max(...sm)||1; const gutters=[]; let run=null;
+  for(let x=Math.round(w*.12);x<Math.round(w*.78);x++){
+    if(sm[x]<mx*.08){ if(!run)run={a:x,b:x}; else run.b=x; }
+    else if(run){ if(run.b-run.a>w*.015)gutters.push(run); run=null; }}
+  if(run&&run.b-run.a>w*.015)gutters.push(run);
+  let detected=1,leftRatio=null;
+  if(gutters.length){const g0=gutters[0],mid=(g0.a+g0.b)/2;
+    const lft=sm.slice(Math.round(w*.03),g0.a), rgt=sm.slice(g0.b,Math.round(w*.97));
+    const avg=a=>a.reduce((x,y)=>x+y,0)/(a.length||1);
+    if(avg(lft)>mx*.12&&avg(rgt)>mx*.12&&mid/w>.18&&mid/w<.5){detected=2;leftRatio=+(mid/w).toFixed(3);}}
+  out.gutters=gutters.map(g=>({from:+(g.a/w).toFixed(3),to:+(g.b/w).toFixed(3)}));
+  out.detected=detected; out.leftRatio=leftRatio;
+  return out;
+}
+
+/* ---- fonts: robust normalize + RAW dump ---- */
+const STYLE=/[\s\u00A0]+(Medium|Light|Bold|Regular|Semibold|SemiBold|Italic|Oblique|Black|Thin|ExtraBold|Condensed|Book|Demi)$/i;
+const SIZE=/[\s\u00A0]*\d+(\.\d+)?[\s\u00A0]*(pt|PT|Pt)[\s\u00A0]*$/;
+function cleanFont(s){let v=String(s).replace(/[\u00A0\u2007\u202F]/g," ").trim();
+  for(let i=0;i<4;i++){const b=v;v=v.replace(SIZE,"").replace(STYLE,"").trim();if(v===b)break;}return v;}
+const SUB={"Times New Roman":"Tinos","Calibri":"Carlito","Cambria":"Caladea","Arial":"Arimo","Helvetica":"Arimo"};
+
+function fonts(id){
+  const doc=read(path.join(ROOT,"_farnavi","_xml",id,"document.xml"))||"";
+  const raw=new Map(),chars=new Map(),maxsz=new Map(),colw=new Map(),samples=new Map();
+  for(const m of doc.matchAll(/<w:r\b[^>]*>([\s\S]*?)<\/w:r>/g)){
+    const b=m[1];
+    const txt=[...b.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)].map(x=>x[1]).join("").trim();
+    if(!txt)continue;
+    const rf=(b.match(/<w:rFonts\b[^>]*>/)||[""])[0];
+    const fn=(rf.match(/w:(?:ascii|hAnsi)="([^"]+)"/)||[])[1];
+    const sz=Number((b.match(/<w:sz\b[^>]*w:val="(\d+)"/)||[0,0])[1])/2||null;
+    if(fn){bump(raw,fn,txt.length);const f=cleanFont(fn);bump(chars,f,txt.length);
+      if(sz)maxsz.set(f,Math.max(maxsz.get(f)||0,sz));}
+    const c=(b.match(/<w:color\b[^>]*w:val="([0-9A-Fa-f]{6})"/)||[])[1];
+    if(c){const n=parseInt(c,16);bump(colw,n,txt.length);if(!samples.has(n))samples.set(n,txt.slice(0,50));}
+  }
+  const byChars=top(chars).map(([f,n])=>({font:f,chars:n,maxPt:maxsz.get(f)||null}));
+  const bySize=[...maxsz.entries()].sort((a,b)=>b[1]-a[1]||(chars.get(b[0])||0)-(chars.get(a[0])||0)).map(([f,s])=>({font:f,maxPt:s,chars:chars.get(f)||0}));
+  const subs={}; for(const f of chars.keys()) if(SUB[f]) subs[f]=SUB[f];
+  return {rawDump:top(raw).slice(0,12).map(([s,n])=>({raw:s,clean:cleanFont(s),chars:n,codes:[...s].map(c=>c.charCodeAt(0))})),
+    byChars,bySize,substitutes:subs,
+    headingCandidate:bySize[0]?.font||byChars[0]?.font||null,
+    bodyCandidate:byChars[0]?.font||null,
+    docxColors:top(colw).slice(0,14).map(([n,c])=>({hex:hx(n),chars:c,sample:samples.get(n)||""}))};
+}
+
+function roles(a,f){
+  const pool=f.docxColors.map(c=>parseInt(c.hex.slice(1),16));
+  const snap=n=>{if(!pool.length)return{hex:n,src:"png"};let b=null,bd=1e9;for(const c of pool){const d=D(n,c);if(d<bd){bd=d;b=c;}}
+    return bd<40?{hex:b,src:"png+docx"}:{hex:n,src:"png"};};
+  const F=a.regions.full,H=a.regions.header,Lf=a.regions.left;
+  const chroma=F.filter(r=>r.sat>0.10);
+  const mono=chroma.length===0;
+  const nearWhite=r=>r.lum>0.985;
+  const tintCand=F.filter(r=>!nearWhite(r)&&r.lum>0.78&&r.sat>0.02&&r.n>F[0].n*0.15).sort((x,y)=>y.n-x.n);
+  const deepCand=F.filter(r=>r.fill>0.35&&r.lum<0.45).sort((x,y)=>x.lum-y.lum);
+  const inkCand=F.filter(r=>r.sat<=0.16&&r.lum<0.30).sort((x,y)=>y.n-x.n);
+  const midCand=F.filter(r=>r.sat<=0.16&&r.lum>=0.30&&r.lum<0.72).sort((x,y)=>y.n-x.n);
+  const textChroma=[...H,...Lf,...F].filter(r=>r.sat>0.10&&r.fill<=0.45).sort((x,y)=>y.n-x.n);
+  let accent=null,src="none",kind="none";
+  if(textChroma.length){const s=snap(textChroma[0].hex);accent=s.hex;src=s.src;kind="chromatic";}
+  else if(tintCand.length){const s=snap(tintCand[0].hex);accent=s.hex;src=s.src;kind="tint-only";}
+  else if(inkCand.length){accent=inkCand[0].hex;src="png";kind="ink";}
+  const ink=inkCand.length?inkCand[0].hex:0x000000;
+  let muted=midCand.find(r=>r.hex!==accent&&r.hex!==ink)?.hex;
+  if(isNull(muted))muted=0x555555;
+  let deep=deepCand.length?deepCand[0].hex:null;
+  if(isNull(deep))deep=accent;
+  if(deep===accent&&deepCand.length>1)deep=deepCand[1].hex;
+  const tint=tintCand.length?tintCand[0].hex:null;
+  return {accent,deep,tint,ink,muted,kind,mono,src,
+    confidence:{colors:src==="png+docx"?"high":(src==="png"?"medium":"low"),fonts:f.byChars.length?"high":"low",typeScale:"heuristic"}};
+}
+
+const ovPath=path.join(ROOT,"_farnavi","design-overrides.json");
+if(!fs.existsSync(ovPath)){
+  const sk={_readme:"Human-verified lock. Fill any field to override the machine proposal. null = keep proposal. Open _farnavi/swatches.html, use the eyedropper, then Copy overrides JSON and paste here."};
+  for(const id of IDS) sk[id]={accent:null,deep:null,tint:null,ink:null,muted:null,heading:null,body:null,columns:null,leftRatio:null};
+  wj(ovPath,sk);
+}
+const OV=jread(ovPath)||{};
+const out={},fontsReport={},md=[],html=[];
+html.push('<!doctype html><meta charset="utf-8"><title>Farnavi - verify & lock design</title>');
+html.push(`<style>
+body{font:14px system-ui;margin:22px;background:#f1efe9;color:#2b2f2a}
+h1{font-size:20px}section{background:#fff;border:1px solid #e4e2d8;border-radius:12px;padding:16px;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:150px 150px 260px 1fr;gap:14px;align-items:start}
+.crop{border:1px solid #ddd;background-repeat:no-repeat;background-color:#fff}
+table{border-collapse:collapse;font-size:12px;width:100%}td,th{border:1px solid #e4e2d8;padding:4px 6px;text-align:left}
+.chip{display:inline-block;width:15px;height:15px;border-radius:3px;border:1px solid #bbb;vertical-align:-3px;margin-right:5px}
+button{font:12px system-ui;padding:3px 8px;border:1px solid #bfcac0;background:#eaf0ea;border-radius:6px;cursor:pointer}
+textarea{width:100%;height:150px;font:12px ui-monospace,Consolas;margin-top:10px}
+.note{color:#8a5138;font-size:12px}.ok{color:#33613d}
+</style>`);
+html.push('<h1>Farnavi - verify &amp; lock template design</h1><p>Click <b>Pick</b> then click the exact color in the image (Chrome/Edge). When all 8 look right, press <b>Copy overrides JSON</b> at the bottom and paste into <code>_farnavi/design-overrides.json</code>, then re-run chunk-03.</p>');
+
+for(const id of IDS){
+  const meta=jread(path.join(ROOT,"public","templates",id,"meta.json"))||{};
+  const f=fonts(id); fontsReport[id]=f;
+  let a=null,err=null;
+  try{a=analyze(path.join(ROOT,"public","templates",id,"preview-resume-1p-a4.png"));}catch(e){err=String(e.message||e);}
+  const review=[]; if(err)review.push("png: "+err);
+  const R=a?roles(a,f):{accent:null,deep:null,tint:null,ink:0,muted:0x555555,kind:"none",mono:false,src:"none",confidence:{colors:"none",fonts:"low",typeScale:"heuristic"}};
+  const columns=isNull(OV[id]?.columns)?(TWO.includes(id)?2:ONE.includes(id)?1:(a?.detected??meta.columns??1)):OV[id].columns;
+  if(a&&a.detected!==columns)review.push("pixel gutter says "+a.detected+" col, locked value "+columns+" - check");
+  if(Object.keys(f.substitutes).length)review.push("substitute non-web fonts: "+JSON.stringify(f.substitutes));
+  const headingRaw=f.headingCandidate||meta.fonts?.heading||null;
+  const bodyRaw=f.bodyCandidate||meta.fonts?.body||headingRaw;
+  const o=OV[id]||{};
+  const pick=(k,prop)=>isNull(o[k])?prop:o[k];
+  const C={accent:pick("accent",isNull(R.accent)?null:hx(R.accent)),deep:pick("deep",isNull(R.deep)?null:hx(R.deep)),
+    tint:pick("tint",isNull(R.tint)?null:hx(R.tint)),ink:pick("ink",hx(R.ink)),muted:pick("muted",hx(R.muted))};
+  const heading=pick("heading",headingRaw), body=pick("body",bodyRaw);
+  const leftRatio=isNull(o.leftRatio)?(a?.leftRatio??null):o.leftRatio;
+  const manual=Object.keys(o).some(k=>k!=="_readme"&&!isNull(o[k]));
+  const d={id,truthVersion:3,extractedAt:new Date().toISOString(),lockedBy:manual?"manual":"machine-proposal",
+    sources:{png:a?("preview-resume-1p-a4.png "+a.w+"x"+a.h):null,docx:"resume-1p-a4.docx run-level"},
+    colors:{...C,rule:C.tint||C.ink,page:"#FFFFFF"},
+    accentKind:R.kind,isMonochrome:R.mono,accentSource:R.src,
+    fonts:{heading,body,all:f.byChars.map(x=>x.font),substitutes:f.substitutes},
+    margins:meta.margins||null,pageSize:{w:210,h:297,unit:"mm"},
+    columns,leftRatio,columnEvidence:{pixelDetected:a?.detected??null,gutters:a?.gutters??[],userConfirmed:true},
+    photo:!!meta.photo,pages:meta.pages||[1],sizes:meta.sizes||["a4","letter"],
+    tier:meta.tier||"unknown",atsScore:meta.atsScore??null,previews:meta.previews||{},
+    confidence:R.confidence,needsReview:review,
+    evidence:{regions:a?Object.fromEntries(Object.entries(a.regions).map(([k,v])=>[k,v.slice(0,8).map(r=>({hex:hx(r.hex),px:r.n,fill:r.fill,lum:r.lum,sat:r.sat,box:r.box}))])):{},docxColors:f.docxColors.slice(0,8)}};
+  wj(path.join(ROOT,"public","templates",id,"design.json"),d); out[id]=d;
+
+  md.push("## series "+id+" - "+d.tier+" - "+columns+"col - mono="+R.mono+" - accentKind="+R.kind);
+  md.push("| role | value | | role | value |"); md.push("|---|---|---|---|---|");
+  md.push("| accent | "+(C.accent||"-")+" | | ink | "+C.ink+" |");
+  md.push("| deep | "+(C.deep||"-")+" | | muted | "+C.muted+" |");
+  md.push("| tint | "+(C.tint||"-")+" | | leftRatio | "+(leftRatio??"-")+" |");
+  md.push("fonts: heading **"+(heading||"?")+"** / body **"+(body||"?")+"**  - lockedBy: "+d.lockedBy);
+  md.push("font candidates by size: "+f.bySize.slice(0,4).map(x=>x.font+"@"+x.maxPt+"pt").join(", "));
+  md.push("font candidates by chars: "+f.byChars.slice(0,4).map(x=>x.font+"("+x.chars+")").join(", "));
+  if(review.length)md.push("review: "+review.join(" | ")); md.push("");
+
+  const img="../public/templates/"+id+"/preview-resume-1p-a4.png";
+  const crop=(fx,fy,fw,fh,px)=>{const sx=100/fw,sy=100/fh,posx=fw>=1?0:fx/(1-fw)*100,posy=fh>=1?0:fy/(1-fh)*100;
+    return `<div class="crop" style="width:${px}px;height:${Math.round(px*fh/fw*(210/297))}px;background-image:url('${img}');background-size:${sx.toFixed(2)}% ${sy.toFixed(2)}%;background-position:${posx.toFixed(2)}% ${posy.toFixed(2)}%"></div>`;};
+  html.push('<section data-id="'+id+'"><h2 style="font-size:16px;margin:0 0 8px">Series '+id+' - '+d.tier+' - '+columns+' column - '+(R.mono?'monochrome':'chromatic')+'</h2><div class="grid">');
+  html.push('<div>'+crop(0,0,1,1,150)+'<div style="font-size:11px">full</div></div>');
+  html.push('<div>'+crop(0,0,1,.16,150)+'<div style="font-size:11px">header</div></div>');
+  html.push('<div>'+crop(0,0,.45,1,150)+'<div style="font-size:11px">left band</div></div>');
+  html.push('<div><table><tr><th>role</th><th>machine</th><th>lock</th><th></th></tr>');
+  for(const k of ["accent","deep","tint","ink","muted"]){
+    const v=C[k]||"#000000";
+    html.push('<tr><td>'+k+'</td><td><span class="chip" style="background:'+(C[k]||"transparent")+'"></span>'+(C[k]||"-")+'</td>'+
+      '<td><input type="color" data-k="'+k+'" value="'+v+'"></td><td><button data-pick="'+k+'">Pick</button></td></tr>');
+  }
+  html.push('<tr><td>heading</td><td>'+(headingRaw||"?")+'</td><td colspan="2"><input type="text" data-k="heading" value="'+(heading||"")+'" style="width:98%"></td></tr>');
+  html.push('<tr><td>body</td><td>'+(bodyRaw||"?")+'</td><td colspan="2"><input type="text" data-k="body" value="'+(body||"")+'" style="width:98%"></td></tr>');
+  html.push('<tr><td>columns</td><td>pixel='+(a?.detected??"?")+'</td><td colspan="2"><input type="number" min="1" max="2" data-k="columns" value="'+columns+'" style="width:60px"> leftRatio <input type="text" data-k="leftRatio" value="'+(leftRatio??"")+'" style="width:70px"></td></tr>');
+  html.push('</table>');
+  if(a){const t=a.regions.full.slice(0,6).map(r=>'<span class="chip" style="background:'+hx(r.hex)+'"></span>'+hx(r.hex)+' ('+r.n+'px, fill '+r.fill+')').join(" &nbsp; ");
+    html.push('<p style="font-size:11px"><b>top pixels:</b> '+t+'</p>');}
+  if(review.length)html.push('<p class="note">'+review.join(" - ")+'</p>');
+  html.push('</div></div></section>');
+}
+html.push('<section><button id="copy" style="font-size:14px;padding:8px 16px">Copy overrides JSON</button> <span id="msg" class="ok"></span><textarea id="out" readonly></textarea></section>');
+html.push(`<script>
+document.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',async()=>{
+  const k=b.getAttribute('data-pick'), inp=b.closest('tr').querySelector('input[data-k="'+k+'"]');
+  if(!window.EyeDropper){alert('EyeDropper needs Chrome/Edge. Use the color input instead.');return;}
+  try{const r=await new EyeDropper().open();inp.value=r.sRGBHex;}catch(e){}
+}));
+document.getElementById('copy').addEventListener('click',()=>{
+  const o={_readme:"Human-verified lock. null = keep machine proposal."};
+  document.querySelectorAll('section[data-id]').forEach(s=>{
+    const id=s.getAttribute('data-id'),v={};
+    s.querySelectorAll('input[data-k]').forEach(i=>{
+      const k=i.getAttribute('data-k');let val=i.value;
+      if(k==='columns')val=val===''?null:Number(val);
+      else if(k==='leftRatio')val=val===''?null:Number(val);
+      else if(k==='heading'||k==='body')val=val.trim()||null;
+      else val=val.toUpperCase();
+      v[k]=val;
+    });
+    o[id]=v;
+  });
+  const t=document.getElementById('out');t.value=JSON.stringify(o,null,2);t.select();
+  navigator.clipboard.writeText(t.value).then(()=>document.getElementById('msg').textContent='Copied. Paste into _farnavi/design-overrides.json and re-run chunk-03.');
+});
+</script>`);
+fs.writeFileSync(path.join(ROOT,"_farnavi","swatches.html"),html.join("\n"),"utf8");
+
+const aggPath=path.join(ROOT,"lib","template-design.json"),prev=jread(aggPath);
+if(prev)wj(path.join(ROOT,"_farnavi","backups","template-design.before-chunk03.json"),prev);
+const agg={_comment:"GENERATED by CHUNK 03. Machine proposal + human overrides. READ-ONLY. Never the UI palette."};
+for(const id of IDS){const d=out[id];agg[id]={accent:d.colors.accent,deep:d.colors.deep,tint:d.colors.tint,ink:d.colors.ink,
+  muted:d.colors.muted,rule:d.colors.rule,page:d.colors.page,heading:d.fonts.heading,body:d.fonts.body,
+  margins:d.margins||{top:.5,right:.5,bottom:.5,left:.5},pageSize:d.pageSize,columns:d.columns,photo:d.photo,
+  typeScale:{name:null,sectionTitle:null,body:null,minor:null},confidence:d.confidence,needsReview:d.needsReview};}
+wj(aggPath,agg);
+wj(path.join(ROOT,"_farnavi","fonts-raw.json"),fontsReport);
+fs.writeFileSync(path.join(ROOT,"_farnavi","SWATCHES.md"),"# FARNAVI - DESIGN TRUTH v3\n\n"+md.join("\n"),"utf8");
+const RPT=["# CHUNK 03 - TRUTH v3","","| series | accent | kind | mono | ink | muted | heading | body | cols | pixelCols | lockedBy |","|---|---|---|---|---|---|---|---|---|---|---|"];
+for(const id of IDS){const d=out[id];RPT.push("| "+id+" | "+(d.colors.accent||"-")+" | "+d.accentKind+" | "+d.isMonochrome+" | "+d.colors.ink+" | "+d.colors.muted+" | "+(d.fonts.heading||"-")+" | "+(d.fonts.body||"-")+" | "+d.columns+" | "+(d.columnEvidence.pixelDetected??"?")+" | "+d.lockedBy+" |");}
+RPT.push("","Open _farnavi/swatches.html, verify with the eyedropper, Copy overrides JSON -> _farnavi/design-overrides.json -> re-run chunk-03.","");
+fs.writeFileSync(path.join(ROOT,"_farnavi","TRUTH-03.md"),RPT.join("\n"),"utf8");
+console.log("[truth3] wrote design.json v3 x8, aggregate, swatches.html, SWATCHES.md, fonts-raw.json, TRUTH-03.md");
+for(const id of IDS)console.log("  "+id+": accent="+out[id].colors.accent+" kind="+out[id].accentKind+" mono="+out[id].isMonochrome+" ink="+out[id].colors.ink+" cols="+out[id].columns+" pixelCols="+out[id].columnEvidence.pixelDetected);

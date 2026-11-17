@@ -1,0 +1,302 @@
+{
+  "generatedAt": "2026-11-17T08:27:44.545Z",
+  "root": "D:\\careerly",
+  "package": "farnavi",
+  "counts": {
+    "sourceFiles": 64,
+    "series": 8
+  },
+  "rendererKeys": [
+    "2"
+  ],
+  "missingRenderers": [
+    "3",
+    "4",
+    "11",
+    "12",
+    "14",
+    "22",
+    "24"
+  ],
+  "catalogIds": [],
+  "legacyCatalogIds": [
+    "editorial-11",
+    "prime-ats-11",
+    "harmonized-12",
+    "precision-ats-12",
+    "calligraphic-14",
+    "pure-ats-14",
+    "crest-22",
+    "momentum-ats-22",
+    "cover-editorial-11",
+    "cover-harmonized-12",
+    "cover-calligraphic-14",
+    "cover-crest-22",
+    "ex-product-designer",
+    "ex-marketing-manager",
+    "ex-software-engineer",
+    "ex-molecular-biologist"
+  ],
+  "storeTemplateIds": [
+    "editorial-11",
+    "prime-ats-11",
+    "harmonized-12",
+    "calligraphic-14",
+    "crest-22"
+  ],
+  "idMismatch": [
+    "editorial-11",
+    "prime-ats-11",
+    "harmonized-12",
+    "calligraphic-14",
+    "crest-22"
+  ],
+  "templateSeriesTruncated": false,
+  "templateSeriesTail": "1) =>\r\n  seriesById(id)?.gdocs.find((g) => g.doc === doc && g.size === size && (doc !== \"resume\" || g.pages === pages));",
+  "hardRule0Violations": [
+    {
+      "file": "app/(app)/editor/[id]/page.tsx",
+      "line": 193,
+      "code": "accent: doc.accent,"
+    },
+    {
+      "file": "app/(app)/editor/[id]/page.tsx",
+      "line": 369,
+      "code": "<button key={c} onClick={() => updateDoc(doc.id, { accent: c })} className={cn(\"h-8 w-8 rounded-full border-2\", doc.accent === c ? \"border-foreground\" : \"border"
+    },
+    {
+      "file": "app/(app)/editor/[id]/page.tsx",
+      "line": 374,
+      "code": "<Select value={doc.font} onValueChange={(v) => updateDoc(doc.id, { font: v })}>"
+    },
+    {
+      "file": "app/(app)/editor/[id]/page.tsx",
+      "line": 492,
+      "code": "<TabsList className=\"w-full rounded-full\"><TabsTrigger value=\"template\" className=\"flex-1 rounded-full\">Template & Colors</TabsTrigger><TabsTrigger value=\"text\""
+    },
+    {
+      "file": "app/(app)/editor/[id]/page.tsx",
+      "line": 496,
+      "code": "<button key={t.id} onClick={() => { updateDoc(doc.id, { template: t.id, accent: t.accent }); setTwoCol(t.twoCol); }} className={cn(\"rounded-xl border p-2 text-l"
+    },
+    {
+      "file": "app/(app)/editor/[id]/page.tsx",
+      "line": 504,
+      "code": "<Field label=\"Font\"><Select value={doc.font} onValueChange={(v) => updateDoc(doc.id, { font: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>"
+    }
+  ],
+  "importers": {
+    "template-series": [],
+    "template-catalog": [
+      "app/(app)/templates/page.tsx",
+      "components/doc-card.tsx"
+    ],
+    "lib/catalog": [
+      "app/(app)/ai/linkedin/page.tsx",
+      "app/(app)/checker/page.tsx",
+      "app/(app)/editor/[id]/page.tsx",
+      "app/(app)/help/page.tsx",
+      "app/(app)/interviews/page.tsx",
+      "app/(app)/tools/page.tsx",
+      "app/(app)/tracker/page.tsx",
+      "components/shared.tsx"
+    ],
+    "template-assets": []
+  },
+  "assets": [
+    {
+      "id": "2",
+      "meta": true,
+      "gdocs": true,
+      "design": true,
+      "previews": 10,
+      "docx": 10,
+      "pdf": 10
+    },
+    {
+      "id": "3",
+      "meta": true,
+      "gdocs": true,
+      "design": true,
+      "previews": 10,
+      "docx": 10,
+      "pdf": 10
+    },
+    {
+      "id": "4",
+      "meta": true,
+      "gdocs": true,
+      "design": true,
+      "previews": 10,
+      "docx": 10,
+      "pdf": 10
+    },
+    {
+      "id": "11",
+      "meta": true,
+      "gdocs": true,
+      "design": true,
+      "previews": 8,
+      "docx": 8,
+      "pdf": 8
+    },
+    {
+      "id": "12",
+      "meta": true,
+      "gdocs": true,
+      "design": true,
+      "previews": 8,
+      "docx": 8,
+      "pdf": 8
+    },
+    {
+      "id": "14",
+      "meta": true,
+      "gdocs": true,
+      "design": true,
+      "previews": 8,
+      "docx": 8,
+      "pdf": 8
+    },
+    {
+      "id": "22",
+      "meta": true,
+      "gdocs": true,
+      "design": true,
+      "previews": 10,
+      "docx": 10,
+      "pdf": 10
+    },
+    {
+      "id": "24",
+      "meta": true,
+      "gdocs": true,
+      "design": true,
+      "previews": 10,
+      "docx": 10,
+      "pdf": 10
+    }
+  ],
+  "missingFonts": [
+    "Merriweather 24pt",
+    "Inter 18pt",
+    "Times New Roman",
+    "Calibri"
+  ],
+  "designs": {
+    "2": {
+      "accent": "#1F3C88",
+      "accentSource": "docx-text",
+      "heading": "Rubik",
+      "body": "Rubik",
+      "confidence": {
+        "colors": "high",
+        "fonts": "high",
+        "typeScale": "heuristic"
+      },
+      "needsReview": [
+        "layout ambiguous: docxCols=1 but 22 text boxes (meta.columns=1) — verify visually"
+      ]
+    },
+    "3": {
+      "accent": "#2F5496",
+      "accentSource": "docx-text",
+      "heading": "Open Sans",
+      "body": "Open Sans",
+      "confidence": {
+        "colors": "high",
+        "fonts": "high",
+        "typeScale": "heuristic"
+      },
+      "needsReview": [
+        "layout ambiguous: docxCols=1 but 24 text boxes (meta.columns=1) — verify visually"
+      ]
+    },
+    "4": {
+      "accent": "#2F5496",
+      "accentSource": "docx-text",
+      "heading": "Source Sans 3",
+      "body": "Merriweather",
+      "confidence": {
+        "colors": "high",
+        "fonts": "high",
+        "typeScale": "heuristic"
+      },
+      "needsReview": [
+        "layout ambiguous: docxCols=1 but 26 text boxes (meta.columns=2) — verify visually"
+      ]
+    },
+    "11": {
+      "accent": "#2F5496",
+      "accentSource": "docx-text",
+      "heading": "Merriweather",
+      "body": "Merriweather",
+      "confidence": {
+        "colors": "high",
+        "fonts": "high",
+        "typeScale": "heuristic"
+      },
+      "needsReview": [
+        "meta heading font 'Merriweather' not present in docx rFonts (Merriweather 24pt, Open Sans, Source Sans 3, Lato, Playfair Display)"
+      ]
+    },
+    "12": {
+      "accent": "#2F5496",
+      "accentSource": "docx-text",
+      "heading": "Work Sans",
+      "body": "Work Sans",
+      "confidence": {
+        "colors": "high",
+        "fonts": "high",
+        "typeScale": "heuristic"
+      },
+      "needsReview": [
+        "muted color defaulted to #555555"
+      ]
+    },
+    "14": {
+      "accent": "#2F5496",
+      "accentSource": "docx-text",
+      "heading": "Inter",
+      "body": "Inter",
+      "confidence": {
+        "colors": "high",
+        "fonts": "high",
+        "typeScale": "heuristic"
+      },
+      "needsReview": [
+        "muted color defaulted to #555555",
+        "meta heading font 'Inter' not present in docx rFonts (Inter 18pt, Poppins, Source Sans 3, Times New Roman, Open Sans)"
+      ]
+    },
+    "22": {
+      "accent": "#2F5496",
+      "accentSource": "docx-text",
+      "heading": "Source Sans 3",
+      "body": "Source Sans 3",
+      "confidence": {
+        "colors": "high",
+        "fonts": "high",
+        "typeScale": "heuristic"
+      },
+      "needsReview": [
+        "layout ambiguous: docxCols=1 but 24 text boxes (meta.columns=1) — verify visually"
+      ]
+    },
+    "24": {
+      "accent": "#2F5496",
+      "accentSource": "docx-text",
+      "heading": "Roboto",
+      "body": "Inter",
+      "confidence": {
+        "colors": "high",
+        "fonts": "high",
+        "typeScale": "heuristic"
+      },
+      "needsReview": [
+        "muted color defaulted to #555555",
+        "layout ambiguous: docxCols=1 but 22 text boxes (meta.columns=2) — verify visually"
+      ]
+    }
+  }
+}
