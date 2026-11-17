@@ -1,0 +1,61 @@
+{
+  "id": "14",
+  "tier": "free",
+  "columns": 1,
+  "ats": true,
+  "atsScore": 100,
+  "atsSignals": [],
+  "photo": false,
+  "pages": [
+    1,
+    2
+  ],
+  "sizes": [
+    "a4",
+    "letter"
+  ],
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter",
+    "all": [
+      "Inter",
+      "Poppins",
+      "Source Sans 3",
+      "Open Sans"
+    ]
+  },
+  "accents": [
+    "#4472C4",
+    "#ED7D31",
+    "#FFC000",
+    "#5B9BD5",
+    "#70AD47"
+  ],
+  "margins": {
+    "top": 0.5,
+    "bottom": 0.5,
+    "left": 0.5,
+    "right": 0.5
+  },
+  "columnEvidence": {
+    "gap": null,
+    "leftRatio": null,
+    "docxCols": 1
+  },
+  "hasCover": true,
+  "hasReferences": true,
+  "gdocsCount": 10,
+  "previews": {
+    "cover-a4": "/templates/14/preview-cover-a4.png",
+    "cover-letter": "/templates/14/preview-cover-letter.png",
+    "references-a4": "/templates/14/preview-references-a4.png",
+    "references-letter": "/templates/14/preview-references-letter.png",
+    "resume-1p-a4": "/templates/14/preview-resume-1p-a4.png",
+    "resume-1p-letter": "/templates/14/preview-resume-1p-letter.png",
+    "resume-2p-a4": "/templates/14/preview-resume-2p-a4.png",
+    "resume-2p-letter": "/templates/14/preview-resume-2p-letter.png"
+  },
+  "fileCount": 16,
+  "todo": [],
+  "metaVersion": 4
+}

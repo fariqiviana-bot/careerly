@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
 import { ResponsiveModal, DangerConfirm, Field } from "@/components/shared";
+import { previewOf } from "@/lib/template-catalog";
 import { MoreHorizontal, Pin, Pencil, Copy, Sparkles, Download, Trash2, Tag, History, Share2, Layers, FileText, Globe } from "lucide-react";
 
 const TYPE_LABEL: Record<string, string> = { resume: "Resume", cover: "Cover letter", resignation: "Resignation", website: "Website", tailored: "Auto-tailored" };
@@ -77,15 +78,19 @@ export function DocCard({ doc }: { doc: Doc }) {
               {doc.published && <span className="absolute right-2 top-2 rounded-full bg-[#e6f0e8] px-1.5 py-0.5 text-[9px] font-semibold text-[#33613d]">Live</span>}
             </div>
           ) : (
-            <div className="relative aspect-[210/260] overflow-hidden rounded-xl border border-border bg-white p-3 text-left">
-              <div className="h-2 w-1/2 rounded" style={{ background: doc.accent }} />
-              <div className="mt-2 h-1.5 w-3/4 rounded bg-foreground/15" />
-              <div className="mt-1 h-1.5 w-1/2 rounded bg-foreground/10" />
-              <div className="mt-3 space-y-1.5">{[...Array(7)].map((_, i) => <div key={i} className="h-1 rounded bg-foreground/10" style={{ width: `${90 - (i % 3) * 18}%` }} />)}</div>
-              <div className="mt-3 h-1.5 w-1/3 rounded" style={{ background: doc.accent, opacity: .5 }} />
-              <div className="mt-2 space-y-1.5">{[...Array(4)].map((_, i) => <div key={i} className="h-1 rounded bg-foreground/10" style={{ width: `${85 - (i % 2) * 25}%` }} />)}</div>
-              {doc.pinned && <span className="absolute right-2 top-2 rounded-full bg-accent p-1"><Pin className="h-3 w-3 text-accent-foreground" /></span>}
-            </div>
+            <div className="relative aspect-[210/297] overflow-hidden rounded-xl border border-border bg-white">
+            {previewOf(doc.template) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previewOf(doc.template)} alt={doc.title} className="size-full object-cover object-top" />
+            ) : (
+              <div className="p-3">
+                <div className="h-2 w-1/2 rounded bg-muted" />
+                <div className="mt-2 h-1.5 w-3/4 rounded bg-muted" />
+                <div className="mt-3 space-y-1.5">{[...Array(8)].map((_, i) => <div key={i} className="h-1 rounded bg-muted" style={{ width: `${90 - (i % 3) * 18}%` }} />)}</div>
+              </div>
+            )}
+            {doc.pinned && <span className="absolute right-2 top-2 rounded-full bg-accent p-1"><Pin className="h-3 w-3 text-accent-foreground" /></span>}
+          </div>
           )}
         </button>
         <div className="mt-3 flex items-start justify-between gap-2 px-1">

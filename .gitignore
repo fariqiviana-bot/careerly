@@ -43,3 +43,5 @@ diagnose-report.json
 *.py
 project-code.txt
 diagnose-report.txt
+_revert_backup/
+template-inventory.json

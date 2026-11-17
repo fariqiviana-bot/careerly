@@ -304,6 +304,20 @@ def check_react(files):
 
 
 # ---------- 9. environment ----------
+def check_template_colors(files):
+    for p in files:
+        if "components/ui" in rel(p):
+            continue
+        t = read(p)
+        for pat, why in ((r'label="Accent color"', "accent picker"),
+                         (r'Template & Colors', "colors tab"),
+                         (r'updateDoc\([^)]*\{[^}]*accent:', "writes accent"),
+                         (r'accentOverride', "accent override prop")):
+            for m in re.finditer(pat, t):
+                ln = t[:m.start()].count("\n") + 1
+                add("ERROR", "template-colors", rel(p) + ":" + str(ln) + " " + why + " — template colors are locked")
+
+
 def check_env():
     for cmd, label in (("node -v", "node"), ("npm -v", "npm")):
         o = run(cmd, 30).strip()
@@ -341,6 +355,7 @@ def main():
     check_tokens()
     check_imports(files)
     check_react(files)
+    check_template_colors(files)
     check_env()
     if DEEP:
         check_tsc()

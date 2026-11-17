@@ -1,0 +1,71 @@
+{
+  "id": "22",
+  "tier": "premium",
+  "columns": 1,
+  "ats": false,
+  "atsScore": 60,
+  "atsSignals": [
+    "text boxes: 24",
+    "non-web fonts: Calibri"
+  ],
+  "photo": true,
+  "pages": [
+    1,
+    2,
+    3
+  ],
+  "sizes": [
+    "a4",
+    "letter"
+  ],
+  "fonts": {
+    "heading": "Source Sans 3",
+    "body": "Source Sans 3",
+    "all": [
+      "Source Sans 3",
+      "Open Sans",
+      "Poppins",
+      "Merriweather",
+      "Calibri",
+      "Inter",
+      "Work Sans",
+      "Montserrat"
+    ]
+  },
+  "accents": [
+    "#4472C4",
+    "#ED7D31",
+    "#FFC000",
+    "#5B9BD5",
+    "#70AD47"
+  ],
+  "margins": {
+    "top": 0.5,
+    "bottom": 0.5,
+    "left": 0.5,
+    "right": 0.5
+  },
+  "columnEvidence": {
+    "gap": null,
+    "leftRatio": null,
+    "docxCols": 1
+  },
+  "hasCover": true,
+  "hasReferences": true,
+  "gdocsCount": 13,
+  "previews": {
+    "cover-a4": "/templates/22/preview-cover-a4.png",
+    "cover-letter": "/templates/22/preview-cover-letter.png",
+    "references-a4": "/templates/22/preview-references-a4.png",
+    "references-letter": "/templates/22/preview-references-letter.png",
+    "resume-1p-a4": "/templates/22/preview-resume-1p-a4.png",
+    "resume-1p-letter": "/templates/22/preview-resume-1p-letter.png",
+    "resume-2p-a4": "/templates/22/preview-resume-2p-a4.png",
+    "resume-2p-letter": "/templates/22/preview-resume-2p-letter.png",
+    "resume-3p-a4": "/templates/22/preview-resume-3p-a4.png",
+    "resume-3p-letter": "/templates/22/preview-resume-3p-letter.png"
+  },
+  "fileCount": 20,
+  "todo": [],
+  "metaVersion": 4
+}

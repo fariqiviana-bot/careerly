@@ -1,6 +1,11 @@
 === CAREERLY DIAGNOSTIC ===
 root: D:\careerly
-scanned: 59 source files | mode: fast
-RESULT: 0 errors, 0 warnings
+scanned: 61 source files | mode: fast
+RESULT: 4 errors, 0 warnings
 
-No problems found.
+-- template-colors -----------------------------------
+[ERROR] app/(app)/editor/[id]/page.tsx:491 colors tab — template colors are locked
+[ERROR] app/(app)/editor/[id]/page.tsx:368 writes accent — template colors are locked
+[ERROR] app/(app)/editor/[id]/page.tsx:495 writes accent — template colors are locked
+-- truncated -----------------------------------------
+[ERROR] lib/template-series.ts ends mid-code: seriesById(id)?.gdocs.find((g) => g.doc === doc && g.size === size && 

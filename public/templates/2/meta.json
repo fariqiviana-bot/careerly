@@ -1,0 +1,64 @@
+{
+  "id": "2",
+  "tier": "premium",
+  "columns": 1,
+  "ats": false,
+  "atsScore": 65,
+  "atsSignals": [
+    "text boxes: 22"
+  ],
+  "photo": true,
+  "pages": [
+    1,
+    2,
+    3
+  ],
+  "sizes": [
+    "a4",
+    "letter"
+  ],
+  "fonts": {
+    "heading": "Rubik",
+    "body": "Rubik",
+    "all": [
+      "Rubik",
+      "Lato",
+      "Libre Baskerville",
+      "Manrope"
+    ]
+  },
+  "accents": [
+    "#1F3C88",
+    "#DDE0F7",
+    "#002060"
+  ],
+  "margins": {
+    "top": 0.5,
+    "bottom": 0.5,
+    "left": 0.5,
+    "right": 0.5
+  },
+  "columnEvidence": {
+    "gap": null,
+    "leftRatio": null,
+    "docxCols": 1
+  },
+  "hasCover": true,
+  "hasReferences": true,
+  "gdocsCount": 14,
+  "previews": {
+    "cover-a4": "/templates/2/preview-cover-a4.png",
+    "cover-letter": "/templates/2/preview-cover-letter.png",
+    "references-a4": "/templates/2/preview-references-a4.png",
+    "references-letter": "/templates/2/preview-references-letter.png",
+    "resume-1p-a4": "/templates/2/preview-resume-1p-a4.png",
+    "resume-1p-letter": "/templates/2/preview-resume-1p-letter.png",
+    "resume-2p-a4": "/templates/2/preview-resume-2p-a4.png",
+    "resume-2p-letter": "/templates/2/preview-resume-2p-letter.png",
+    "resume-3p-a4": "/templates/2/preview-resume-3p-a4.png",
+    "resume-3p-letter": "/templates/2/preview-resume-3p-letter.png"
+  },
+  "fileCount": 20,
+  "todo": [],
+  "metaVersion": 4
+}

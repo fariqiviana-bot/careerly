@@ -1,0 +1,149 @@
+=== TEMPLATE METADATA REPORT ===
+
+series 2   | files=20  cols=1 ats=False(45) photo=True pages=[1, 2, 3] sizes=['a4', 'letter']
+   fonts: heading=Rubik body=Rubik
+   accents: ['#1F3C88', '#44546A'] | margins: {'top': 0.5, 'bottom': 0.5, 'left': 0.5, 'right': 0.5} | pageSize: a4
+   atsSignals: ['text boxes: 22', 'images: 32', 'non-standard fonts: Rubik, Libre Baskerville, Manrope']
+   gdocs: 30 | previews: 10 | cover=True refs=True
+     https://docs.google.com/document/d/1VfWb0dVC8xNPCz0gmPtzotazPfQf7_OB_TbQ9YUe8yQ/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1VfWb0dVC8xNPCz0gmPtzotazPfQf7_OB_TbQ9YUe8yQ/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1l107lbt5tXY4AVUoa3UiYUwGi6PSITdDsX8e1WrzPvU/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1l107lbt5tXY4AVUoa3UiYUwGi6PSITdDsX8e1WrzPvU/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1MowhDqlNmJZMbiO0CGEcamKzO8j8OQOAFdZNadM81Fo/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1MowhDqlNmJZMbiO0CGEcamKzO8j8OQOAFdZNadM81Fo/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1gIHSDvQX61sRfjC9Ge-F-6vLQb7hcTuFLEeMHMSJP1c/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1gIHSDvQX61sRfjC9Ge-F-6vLQb7hcTuFLEeMHMSJP1c/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/169VA0yUMlph1GsyZnndx7DBns8IbAEPq-h3v3vPHDOA/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/169VA0yUMlph1GsyZnndx7DBns8IbAEPq-h3v3vPHDOA/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/12uMHKlaJYLYsI7XLYNueJdf6e7ANA1yrA7-9Xo3hpa8/edit?usp=drive_link  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/12uMHKlaJYLYsI7XLYNueJdf6e7ANA1yrA7-9Xo3hpa8/edit?usp=drive_link  <- Cover-Letter-A4:
+
+series 3   | files=20  cols=1 ats=False(45) photo=True pages=[1, 2, 3] sizes=['a4', 'letter']
+   fonts: heading=Open Sans body=Open Sans
+   accents: ['#D0CECE', '#44546A'] | margins: {'top': 0.5, 'bottom': 0.5, 'left': 0.5, 'right': 0.5} | pageSize: a4
+   atsSignals: ['text boxes: 24', 'images: 38', 'non-standard fonts: Montserrat Medium, Playfair Display']
+   gdocs: 30 | previews: 10 | cover=True refs=True
+     https://docs.google.com/document/d/19a1SNi3XV9cOYDmKo_x2Pz7-g_HsDaQIbfaeTrvsk9g/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/19a1SNi3XV9cOYDmKo_x2Pz7-g_HsDaQIbfaeTrvsk9g/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/13HJ5jxppYw6MC6j5C5-4nIAfcjWWlIteYb5RM-3Hq2I/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/13HJ5jxppYw6MC6j5C5-4nIAfcjWWlIteYb5RM-3Hq2I/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1aDD_8K2uvUGchA3kp2GpvqROb7esQJR7cCDSHUKdJx8/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1aDD_8K2uvUGchA3kp2GpvqROb7esQJR7cCDSHUKdJx8/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1uawKG4QAD7S9VnD7iohfceMQM4xqcuJv1haDdg7eA4A/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1uawKG4QAD7S9VnD7iohfceMQM4xqcuJv1haDdg7eA4A/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1lNxvdwJmGEd5QSGUtR0DlwPn_PpqNiD5px3DSQlyppo/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1lNxvdwJmGEd5QSGUtR0DlwPn_PpqNiD5px3DSQlyppo/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1Ao6N_5P6YLtZGuJmnkMifUiw52y_WMDY7mnrnFNl1IE/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1Ao6N_5P6YLtZGuJmnkMifUiw52y_WMDY7mnrnFNl1IE/edit?usp=sharing  <- Cover-Letter-A4:
+
+series 4   | files=20  cols=1 ats=False(45) photo=True pages=[1, 2, 3] sizes=['a4', 'letter']
+   fonts: heading=Source Sans 3 body=Merriweather 24pt
+   accents: ['#D0CECE', '#44546A', '#767171', '#8496B0'] | margins: {'top': 0.5, 'bottom': 0.5, 'left': 0.5, 'right': 0.5} | pageSize: a4
+   atsSignals: ['text boxes: 26', 'images: 40', 'non-standard fonts: Merriweather 24pt, Source Sans 3, Rubik']
+   gdocs: 29 | previews: 10 | cover=True refs=True
+     https://docs.google.com/document/d/1V0wWduNTBVg6GtAd5JuYz-CXIEJ2JWoRc4sAULFT6xI/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1V0wWduNTBVg6GtAd5JuYz-CXIEJ2JWoRc4sAULFT6xI/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/12mBLXvAFiFdTQWH3fYvQYPp2BJUCBSp4EhYqn_ca0OE/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/12mBLXvAFiFdTQWH3fYvQYPp2BJUCBSp4EhYqn_ca0OE/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1pVUOPexuBRmBhTssUzjlw6Z9kiytPgXKrvW7U29csLQ/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1pVUOPexuBRmBhTssUzjlw6Z9kiytPgXKrvW7U29csLQ/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1JqO3Qhnvj6Q6hpadoOLSOmRDSHBR8GRTPfkkIiG3VmA/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1JqO3Qhnvj6Q6hpadoOLSOmRDSHBR8GRTPfkkIiG3VmA/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/13Rru7_4o3APh9auPUjGPbksIytJXR1_YbsWDC_lJNAs/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/13Rru7_4o3APh9auPUjGPbksIytJXR1_YbsWDC_lJNAs/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1gddfFW914p-qsCokx8Q95Ed2g5cYCIJnG_WxuTLrw3c/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1gddfFW914p-qsCokx8Q95Ed2g5cYCIJnG_WxuTLrw3c/edit?usp=sharing  <- Cover-Letter-A4:
+
+series 11  | files=16  cols=1 ats=True(80) photo=True pages=[1, 2] sizes=['a4', 'letter']
+   fonts: heading=Merriweather 24pt Light body=Merriweather 24pt Light
+   accents: ['#D0CECE', '#7F7F7F'] | margins: {'top': 0.5, 'bottom': 0.5, 'left': 0.5, 'right': 0.5} | pageSize: a4
+   atsSignals: ['images: 20', 'non-standard fonts: Merriweather 24pt Light, Source Sans 3, Playfair Display']
+   gdocs: 18 | previews: 8 | cover=True refs=True
+     https://docs.google.com/document/d/1xgjBpvDPJubCAltY6-PH-ac5ZxAR616pe22bidriXqY/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1wi83SJSFsGzIcjjAoDsntAq8dVjRI8ve95OyUjs0PeE/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1Lzji_UivrPtyDNjnpG_qA7z0A8F4vTrDjFYi0DJpe08/edit?usp=sharin  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1JNRttb_mAtMHBlgeqnaXuR7WBIsl14GsZhmr7rDF2b8/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1JNRttb_mAtMHBlgeqnaXuR7WBIsl14GsZhmr7rDF2b8/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1LcHHMSeh6CmSQ0N24ToOtbzFKtlffx7hacyPRJ9SmhQ/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1LcHHMSeh6CmSQ0N24ToOtbzFKtlffx7hacyPRJ9SmhQ/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1bFniuPgJqJCw7MFa6ZdWErkXTg0-2ONGm8JG-sK_Cbo/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1bFniuPgJqJCw7MFa6ZdWErkXTg0-2ONGm8JG-sK_Cbo/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1H-V9VimQgiTBnmh44r2Z8wrxAdjmVfEuavQgVmDvLUQ/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1H-V9VimQgiTBnmh44r2Z8wrxAdjmVfEuavQgVmDvLUQ/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1jU4aOQTxZfcAWQi-HvW7Nff_A8EqdA5-7mpXerm2vFo/edit?usp=sharing  <- Cover-Letter-A4:
+
+series 12  | files=16  cols=1 ats=True(80) photo=True pages=[1, 2] sizes=['a4', 'letter']
+   fonts: heading=Work Sans body=Work Sans
+   accents: ['#F2F8EE', '#44546A'] | margins: {'top': 0.5, 'bottom': 0.5, 'left': 0.5, 'right': 0.5} | pageSize: a4
+   atsSignals: ['images: 4', 'non-standard fonts: Work Sans, Libre Baskerville, Manrope']
+   gdocs: 22 | previews: 8 | cover=True refs=True
+     https://docs.google.com/document/d/1xgjBpvDPJubCAltY6-PH-ac5ZxAR616pe22bidriXqY/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1jHBVfoi2zu1rAhI9F2rX7pdc_l-m4Xu-Vz9UePtakqU/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1jHBVfoi2zu1rAhI9F2rX7pdc_l-m4Xu-Vz9UePtakqU/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1BWjC5YUp1-XWickeqTjqrvrXtOA-y9FIyPoTVptmIuY/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1BWjC5YUp1-XWickeqTjqrvrXtOA-y9FIyPoTVptmIuY/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/12y3DRJhNs9U7QC65vFUCSMj46JY479WwHiw5SUG3Rr4/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/12y3DRJhNs9U7QC65vFUCSMj46JY479WwHiw5SUG3Rr4/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1-xBAxKAlysCb7XCPIgQ2KgRHMw1hC7r36VB8GGD7Q5o/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1-xBAxKAlysCb7XCPIgQ2KgRHMw1hC7r36VB8GGD7Q5o/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1pwAWmp8iJmnfZwAwvVWc42BolJL4J1OwYvdz3EGRoG4/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1pwAWmp8iJmnfZwAwvVWc42BolJL4J1OwYvdz3EGRoG4/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/15B_HbEuWDrDOIi-_yO5hnP6bKeEP2RKpzTXuf7DnmgM/edit?usp=sharing  <- Cover-Letter-A4:
+
+series 14  | files=16  cols=1 ats=True(80) photo=True pages=[1, 2] sizes=['a4', 'letter']
+   fonts: heading=Inter 18pt body=Inter 18pt
+   accents: ['#44546A', '#8496B0'] | margins: {'top': 0.5, 'bottom': 0.5, 'left': 0.5, 'right': 0.5} | pageSize: a4
+   atsSignals: ['images: 16', 'non-standard fonts: Inter 18pt, Poppins, Source Sans 3']
+   gdocs: 24 | previews: 8 | cover=True refs=True
+     https://docs.google.com/document/d/1gT3_8evgQuttF6Xcx2vOn_oQUVftq3cY1xH4UGWYTPM/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1gT3_8evgQuttF6Xcx2vOn_oQUVftq3cY1xH4UGWYTPM/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1Cz0OJh0hKWYs2nftDJtyiGzpuodpH6Z7_OADVbZBgLA/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1Cz0OJh0hKWYs2nftDJtyiGzpuodpH6Z7_OADVbZBgLA/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1jayoUQKhpHfq5fpOoyZiRndhpjZ2YrSdNexIMTeiM7o/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1jayoUQKhpHfq5fpOoyZiRndhpjZ2YrSdNexIMTeiM7o/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1EJv1oZCY4fbrYYnThErzX7Z5HIA6E_3YheZU_xJLE74/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1EJv1oZCY4fbrYYnThErzX7Z5HIA6E_3YheZU_xJLE74/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1vNQc2GEscSrmAioM4ZLsi6saRF1-Vh6e4KilTtrSKR0/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1vNQc2GEscSrmAioM4ZLsi6saRF1-Vh6e4KilTtrSKR0/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1Z58_TK54uccv1qXNx41-8jp-OTdwaFUOVfxeKKiiFdQ/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1Z58_TK54uccv1qXNx41-8jp-OTdwaFUOVfxeKKiiFdQ/edit?usp=sharing  <- Cover-Letter-A4:
+
+series 22  | files=20  cols=1 ats=False(45) photo=True pages=[1, 2, 3] sizes=['a4', 'letter']
+   fonts: heading=Source Sans 3 body=Source Sans 3
+   accents: ['#44546A'] | margins: {'top': 0.5, 'bottom': 0.5, 'left': 0.5, 'right': 0.5} | pageSize: a4
+   atsSignals: ['text boxes: 24', 'images: 53', 'non-standard fonts: Source Sans 3, Poppins, Merriweather 24pt']
+   gdocs: 30 | previews: 10 | cover=True refs=True
+     https://docs.google.com/document/d/1w-dHG2KyP9zVhZ0AUt8ROQgsbHxP83B9WyOAhoW8VsI/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1w-dHG2KyP9zVhZ0AUt8ROQgsbHxP83B9WyOAhoW8VsI/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1EsjHbc3ZuXZ5A2CqrPcl0fq0BxmFZkgX9HyhgMjm0Fg/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1EsjHbc3ZuXZ5A2CqrPcl0fq0BxmFZkgX9HyhgMjm0Fg/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1-n3MJmANIbY3ESJLhRZmjlCBMvBWhjinUOFBW4GHrfw/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1-n3MJmANIbY3ESJLhRZmjlCBMvBWhjinUOFBW4GHrfw/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1UiaDsKxsdBniQPuj3zWZ8J8Iu0hHVN8l-e6LoWLXH-w/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1UiaDsKxsdBniQPuj3zWZ8J8Iu0hHVN8l-e6LoWLXH-w/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1GhpbJ2_3ydSQCHe07sbkwU7oYwxZ70x-V3JOWwhDFvU/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1GhpbJ2_3ydSQCHe07sbkwU7oYwxZ70x-V3JOWwhDFvU/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1VhODa-jIq4F85Y7gCIXLHkwwp_e5TyW661uzP8Rj85o/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1VhODa-jIq4F85Y7gCIXLHkwwp_e5TyW661uzP8Rj85o/edit?usp=sharing  <- Cover-Letter-A4:
+
+series 24  | files=20  cols=1 ats=False(45) photo=True pages=[1, 2, 3] sizes=['a4', 'letter']
+   fonts: heading=Roboto body=Inter 18pt
+   accents: ['#44546A', '#D0CECE'] | margins: {'top': 0.5, 'bottom': 0.5, 'left': 0.5, 'right': 0.5} | pageSize: a4
+   atsSignals: ['text boxes: 22', 'images: 41', 'non-standard fonts: Inter 18pt, Montserrat, Rubik']
+   gdocs: 30 | previews: 10 | cover=True refs=True
+     https://docs.google.com/document/d/1_9lR09bBXkODwuMnDrNEF1xm5dN-n-loaBWYRj070jE/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1_9lR09bBXkODwuMnDrNEF1xm5dN-n-loaBWYRj070jE/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/14ng4-JNMlb6bXNRppPuNEabgY_kPXvA7FL76NLm-5Uw/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/14ng4-JNMlb6bXNRppPuNEabgY_kPXvA7FL76NLm-5Uw/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1uXR93fjrWxMf31BnLbvfTeQTE5-rB21zngwWuXWxG7g/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1uXR93fjrWxMf31BnLbvfTeQTE5-rB21zngwWuXWxG7g/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1_WUnhrVfe7nkv0-ivpBGKYHw2ttZXuqFgh5g2_W217Q/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1_WUnhrVfe7nkv0-ivpBGKYHw2ttZXuqFgh5g2_W217Q/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1amnorBFrGREMO2t5nO2TjJ1HWBIM2cKQ38avjbES5HE/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1amnorBFrGREMO2t5nO2TjJ1HWBIM2cKQ38avjbES5HE/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1lbf0PmV6aMCfgH7rLqZNBc7TVKtWfieWxSWcdZcQJPs/edit?usp=sharing  <- Cover-Letter-A4:
+     https://docs.google.com/document/d/1lbf0PmV6aMCfgH7rLqZNBc7TVKtWfieWxSWcdZcQJPs/edit?usp=sharing  <- Cover-Letter-A4:
+
+TOTAL: 148 assets, 8 series
+
+WARNINGS (0):

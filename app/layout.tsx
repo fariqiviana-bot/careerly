@@ -3,6 +3,7 @@ import "@fontsource/instrument-sans";
 import "@fontsource/instrument-serif";
 import { Toaster } from "@/components/ui/sonner";
 import { StoreProvider } from "@/lib/store";
+import "./template-fonts.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

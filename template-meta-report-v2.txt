@@ -1,0 +1,209 @@
+=== TEMPLATE METADATA v2 ===
+
+series 2   tier=premium  cols=1 ats=False(65) photo=True pages=[1, 2, 3]
+   fonts: heading=Rubik | body=Rubik
+   fonts cleaned: ['Rubik', 'Lato', 'Libre Baskerville', 'Manrope']
+   accents: ['#1F3C88', '#DDE0F7', '#002060']  (source=text-color)
+   top fills: ['#DDE0F7', '#002060']
+   theme: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47']
+   column evidence: gap=None leftRatio=None L/R=0/91 docxCols=1 votes=[1, 1, 1]
+   ats signals: ['text boxes: 22']
+   gdocs (15):
+     cover       1   a4     Cover-Letter-A4:
+     references  1   a4     References-A4:
+     resume      1   a4     Resume-1Page-A4:
+     resume      2   a4     Resume-2Page-A4:
+     resume      3   a4     Resume-3Page-A4:
+     cover       1   letter Cover-Letter-Letter:
+     references  1   letter References-Letter:
+     resume      1   letter Resume-1Page-Letter:
+     resume      2   letter Resume-2Page-Letter:
+     resume      3   letter Resume-3Page-Letter:
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+
+series 3   tier=premium  cols=1 ats=False(65) photo=True pages=[1, 2, 3]
+   fonts: heading=Open Sans | body=Open Sans
+   fonts cleaned: ['Open Sans', 'Montserrat', 'Playfair Display', 'Lato']
+   accents: ['#4472C4', '#ED7D31', '#FFC000', '#5B9BD5', '#70AD47']  (source=theme)
+   top fills: ['#D0CECE']
+   theme: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47']
+   column evidence: gap=None leftRatio=None L/R=0/90 docxCols=1 votes=[1, 1, 1]
+   ats signals: ['text boxes: 24']
+   gdocs (14):
+     cover       1   a4     Cover-Letter-A4:
+     references  1   a4     References-A4:
+     resume      1   a4     Resume-1Page-A4:
+     resume      2   a4     Resume-2Page-A4:
+     resume      3   a4     Resume-3Page-A4:
+     cover       1   letter Cover-Letter-Letter:
+     references  1   letter References-Letter:
+     resume      1   letter Resume-1Page-Letter:
+     resume      2   letter Resume-2Page-Letter:
+     resume      3   letter Resume-3Page-Letter:
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+
+series 4   tier=premium  cols=2 ats=False(55) photo=True pages=[1, 2, 3]
+   fonts: heading=Source Sans 3 | body=Merriweather
+   fonts cleaned: ['Merriweather', 'Open Sans', 'Source Sans 3', 'Rubik', 'Nunito']
+   accents: ['#4472C4', '#ED7D31', '#FFC000', '#5B9BD5', '#70AD47']  (source=theme)
+   top fills: []
+   theme: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47']
+   column evidence: gap=0.325 leftRatio=0.3 L/R=23/59 docxCols=1 votes=[2, 2, 2]
+   ats signals: ['text boxes: 26', 'visual 2-column']
+   gdocs (13):
+     cover       1   a4     Cover-Letter-A4:
+     references  1   a4     References-A4:
+     resume      1   a4     Resume-1Page-A4:
+     resume      2   a4     Resume-2Page-A4:
+     resume      3   a4     Resume-3Page-A4:
+     cover       1   letter Cover-Letter-Letter:
+     references  1   letter References-Letter:
+     resume      2   letter Resume-2Page-Letter:
+     resume      3   letter Resume-3Page-Letter:
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+
+series 11  tier=free     cols=1 ats=True(100) photo=False pages=[1, 2]
+   fonts: heading=Merriweather | body=Merriweather
+   fonts cleaned: ['Merriweather', 'Open Sans', 'Source Sans 3', 'Lato', 'Playfair Display', 'Poppins']
+   accents: ['#4472C4', '#ED7D31', '#FFC000', '#5B9BD5', '#70AD47']  (source=theme)
+   top fills: []
+   theme: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47']
+   column evidence: gap=None leftRatio=None L/R=0/89 docxCols=1 votes=[1, 1]
+   ats signals: ['clean']
+   gdocs (11):
+     cover       1   a4     Cover-Letter-A4:
+     references  1   a4     References-A4:
+     resume      1   a4     Resume-1Page-A4:
+     resume      2   a4     Resume-2Page-A4:
+     cover       1   letter Cover-Letter-Letter:
+     references  1   letter References-Letter:
+     resume      1   letter Resume-1Page-Letter:
+     resume      2   letter Resume-2Page-Letter:
+     other       None None   
+     other       None None   
+     other       None None   
+
+series 12  tier=free     cols=1 ats=True(100) photo=False pages=[1, 2]
+   fonts: heading=Work Sans | body=Work Sans
+   fonts cleaned: ['Work Sans', 'Libre Baskerville', 'Manrope', 'Lato']
+   accents: ['#4472C4', '#ED7D31', '#FFC000', '#5B9BD5', '#70AD47']  (source=theme)
+   top fills: []
+   theme: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47']
+   column evidence: gap=None leftRatio=None L/R=0/89 docxCols=1 votes=[1, 1]
+   ats signals: ['clean']
+   gdocs (13):
+     cover       1   a4     Cover-Letter-A4:
+     references  1   a4     References-A4:
+     resume      1   a4     Resume-1Page-A4:
+     resume      2   a4     Resume-2Page-A4:
+     cover       1   letter Cover-Letter-Letter:
+     references  1   letter References-Letter:
+     resume      1   letter Resume-1Page-Letter:
+     resume      2   letter Resume-2Page-Letter:
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+
+series 14  tier=free     cols=1 ats=True(100) photo=False pages=[1, 2]
+   fonts: heading=Inter | body=Inter
+   fonts cleaned: ['Inter', 'Poppins', 'Source Sans 3', 'Open Sans']
+   accents: ['#4472C4', '#ED7D31', '#FFC000', '#5B9BD5', '#70AD47']  (source=theme)
+   top fills: ['#E7E6E6']
+   theme: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47']
+   column evidence: gap=None leftRatio=None L/R=0/89 docxCols=1 votes=[1, 1]
+   ats signals: ['clean']
+   gdocs (11):
+     cover       1   a4     Cover-Letter-A4:
+     references  1   a4     References-A4:
+     resume      1   a4     Resume-1Page-A4:
+     resume      2   a4     Resume-2Page-A4:
+     cover       1   letter Cover-Letter-Letter:
+     references  1   letter References-Letter:
+     resume      1   letter Resume-1Page-Letter:
+     resume      2   letter Resume-2Page-Letter:
+     other       None None   
+     other       None None   
+     other       None None   
+
+series 22  tier=premium  cols=1 ats=False(60) photo=True pages=[1, 2, 3]
+   fonts: heading=Source Sans 3 | body=Source Sans 3
+   fonts cleaned: ['Source Sans 3', 'Open Sans', 'Poppins', 'Merriweather', 'Calibri', 'Inter', 'Work Sans', 'Montserrat']
+   accents: ['#4472C4', '#ED7D31', '#FFC000', '#5B9BD5', '#70AD47']  (source=theme)
+   top fills: ['#CFCDCD']
+   theme: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47']
+   column evidence: gap=None leftRatio=None L/R=0/90 docxCols=1 votes=[1, 1, 1]
+   ats signals: ['text boxes: 24', 'non-web fonts: Calibri']
+   gdocs (17):
+     cover       1   a4     Cover-Letter-A4:
+     references  1   a4     References-A4:
+     resume      1   a4     Resume-1Page-A4:
+     resume      2   a4     Resume-2Page-A4:
+     resume      3   a4     Resume-3Page-A4:
+     cover       1   letter Cover-Letter-Letter:
+     references  1   letter References-Letter:
+     resume      1   letter Resume-1Page-Letter:
+     resume      2   letter Resume-2Page-Letter:
+     resume      3   letter Resume-3Page-Letter:
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+
+series 24  tier=premium  cols=2 ats=False(55) photo=True pages=[1, 2, 3]
+   fonts: heading=Roboto | body=Inter
+   fonts cleaned: ['Inter', 'Open Sans', 'Montserrat', 'Roboto', 'Rubik', 'Work Sans', 'Libre Baskerville', 'Poppins']
+   accents: ['#4472C4', '#ED7D31', '#FFC000', '#5B9BD5', '#70AD47']  (source=theme)
+   top fills: ['#D0CECE']
+   theme: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47']
+   column evidence: gap=0.325 leftRatio=0.3 L/R=25/60 docxCols=1 votes=[2, 2, 2]
+   ats signals: ['text boxes: 22', 'visual 2-column']
+   gdocs (17):
+     cover       1   a4     Cover-Letter-A4:
+     references  1   a4     References-A4:
+     resume      1   a4     Resume-1Page-A4:
+     resume      2   a4     Resume-2Page-A4:
+     resume      3   a4     Resume-3Page-A4:
+     cover       1   letter Cover-Letter-Letter:
+     references  1   letter References-Letter:
+     resume      1   letter Resume-1Page-Letter:
+     resume      2   letter Resume-2Page-Letter:
+     resume      3   letter Resume-3Page-Letter:
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+     other       None None   
+
+REQUIRED GOOGLE FONTS: Inter, Lato, Libre Baskerville, Manrope, Merriweather, Montserrat, Nunito, Open Sans, Playfair Display, Poppins, Roboto, Rubik, Source Sans 3, Work Sans
+
+WARNINGS (13):
+series 2: 15 gdocs links (expected 10)
+series 2: 22 text boxes but layout reads 1-column — verify visually
+series 3: 14 gdocs links (expected 10)
+series 3: 24 text boxes but layout reads 1-column — verify visually
+series 4: 13 gdocs links (expected 10)
+series 11: 11 gdocs links (expected 8)
+series 12: 13 gdocs links (expected 8)
+series 14: 11 gdocs links (expected 8)
+series 22: 17 gdocs links (expected 10)
+series 22: 24 text boxes but layout reads 1-column — verify visually
+series 24: 17 gdocs links (expected 10)
+gdocs 1xgjBpvDPJub shared by series 11 and 12
+gdocs 1- shared by series 12 and 22

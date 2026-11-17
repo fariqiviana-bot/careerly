@@ -1,0 +1,252 @@
+series 2: 21 files | doc=cover,references,resume | layout=None | pages=1,2,3,None | size=None,a4,letter | fmt=docx,pdf
+series 3: 21 files | doc=cover,references,resume | layout=None | pages=1,2,3,None | size=None,a4,letter | fmt=docx,pdf
+series 4: 21 files | doc=cover,references,resume | layout=None | pages=1,2,3,None | size=None,a4,letter | fmt=docx,pdf
+series 11: 17 files | doc=cover,references,resume | layout=None | pages=1,2,None | size=None,a4,letter | fmt=docx,pdf
+series 12: 17 files | doc=cover,references,resume | layout=None | pages=1,2,None | size=None,a4,letter | fmt=docx,pdf
+series 14: 17 files | doc=cover,references,resume | layout=None | pages=1,2,None | size=None,a4,letter | fmt=docx,pdf
+series 22: 21 files | doc=cover,references,resume | layout=None | pages=1,2,3,None | size=None,a4,letter | fmt=docx,pdf
+series 24: 21 files | doc=cover,references,resume | layout=None | pages=1,2,3,None | size=None,a4,letter | fmt=docx,pdf
+
+TOTAL: 156 assets, 104.0 MB
+
+UNMATCHED (156) — need manual mapping:
+11/11.restem/00-Google-Docs-Links.pdf  -> {"doc": "resume", "layout": null, "pages": null, "size": null}
+11/11.restem/PDF/Cover-Letter-A4.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+11/11.restem/PDF/Cover-Letter-Letter.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+11/11.restem/PDF/References-A4.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+11/11.restem/PDF/References-Letter.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+11/11.restem/PDF/Resume-1Page-A4.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+11/11.restem/PDF/Resume-1Page-Letter.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+11/11.restem/PDF/Resume-2Page-A4.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+11/11.restem/PDF/Resume-2Page-Letter.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "letter"}
+11/11.restem/WORD/Cover-Letter-A4.docx  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+11/11.restem/WORD/Cover-Letter-Letter.docx  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+11/11.restem/WORD/References-A4.docx  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+11/11.restem/WORD/References-Letter.docx  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+11/11.restem/WORD/Resume-1Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+11/11.restem/WORD/Resume-1Page-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+11/11.restem/WORD/Resume-2Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+11/11.restem/WORD/Resume-2Page-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 2, "size": "letter"}
+12/12.restem/00-Google-Docs-Links.pdf  -> {"doc": "resume", "layout": null, "pages": null, "size": null}
+12/12.restem/PDF/Cover-Letter-A4.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+12/12.restem/PDF/Cover-Letter-Letter.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+12/12.restem/PDF/References-A4.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+12/12.restem/PDF/References-Letter.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+12/12.restem/PDF/Resume-1Page-A4.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+12/12.restem/PDF/Resume-1Page-Letter.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+12/12.restem/PDF/Resume-2Page-A4.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+12/12.restem/PDF/Resume-2Page-Letter.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "letter"}
+12/12.restem/WORD/Cover-Letter-A4.docx  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+12/12.restem/WORD/Cover-Letter-Letter.docx  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+12/12.restem/WORD/References-A4.docx  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+12/12.restem/WORD/References-Letter.docx  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+12/12.restem/WORD/Resume-1Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+12/12.restem/WORD/Resume-1Page-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+12/12.restem/WORD/Resume-2Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+12/12.restem/WORD/Resume-2Page-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 2, "size": "letter"}
+14/14.restem/00-Google-Docs-Links.pdf  -> {"doc": "resume", "layout": null, "pages": null, "size": null}
+14/14.restem/PDF/Cover-Letter-A4.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+14/14.restem/PDF/Cover-Letter-Letter.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+14/14.restem/PDF/References-A4.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+14/14.restem/PDF/References-Letter.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+14/14.restem/PDF/Resume-1Page-A4.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+14/14.restem/PDF/Resume-1Page-Letter.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+14/14.restem/PDF/Resume-2Page-A4.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+14/14.restem/PDF/Resume-2Page-Letter.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "letter"}
+14/14.restem/WORD/Cover-Letter-A4.docx  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+14/14.restem/WORD/Cover-Letter-Letter.docx  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+14/14.restem/WORD/References-A4.docx  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+14/14.restem/WORD/References-Letter.docx  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+14/14.restem/WORD/Resume-1Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+14/14.restem/WORD/Resume-1Page-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+14/14.restem/WORD/Resume-2Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+14/14.restem/WORD/Resume-2Page-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 2, "size": "letter"}
+2/2.restem/00-Google-Docs-Links.pdf  -> {"doc": "resume", "layout": null, "pages": null, "size": null}
+2/2.restem/02-Microsoft-Word-Files/A4-Size/01-Resume-1Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+2/2.restem/02-Microsoft-Word-Files/A4-Size/02-Resume-2Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+2/2.restem/02-Microsoft-Word-Files/A4-Size/03-Resume-3Page-A4.docx  -> {"doc": "resume", "layout": null, "pages": 3, "size": "a4"}
+2/2.restem/02-Microsoft-Word-Files/A4-Size/04-Cover-Letter-A4.docx  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+2/2.restem/02-Microsoft-Word-Files/A4-Size/05-References-A4.docx  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/01-Resume-1Page-US-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/02-Resume-2Page-US-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 2, "size": "letter"}
+2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/03-Resume-3Page-US-Letter.docx  -> {"doc": "resume", "layout": null, "pages": 3, "size": "letter"}
+2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/04-Cover-Letter-US-Letter.docx  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/05-References-US-Letter.docx  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+2/2.restem/03-PDF-Preview-Files/A4-Size/01-Resume-1Page-A4-Preview.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+2/2.restem/03-PDF-Preview-Files/A4-Size/02-Resume-2Page-A4-Preview.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+2/2.restem/03-PDF-Preview-Files/A4-Size/03-Resume-3Page-A4-Preview.pdf  -> {"doc": "resume", "layout": null, "pages": 3, "size": "a4"}
+2/2.restem/03-PDF-Preview-Files/A4-Size/04-Cover-Letter-A4-Preview.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+2/2.restem/03-PDF-Preview-Files/A4-Size/05-References-A4-Preview.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+2/2.restem/03-PDF-Preview-Files/US-Letter-Size/01-Resume-1Page-US-Letter-Preview.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+2/2.restem/03-PDF-Preview-Files/US-Letter-Size/02-Resume-2Page-US-Letter-Preview.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "letter"}
+2/2.restem/03-PDF-Preview-Files/US-Letter-Size/03-Resume-3Page-US-Letter-Preview.pdf  -> {"doc": "resume", "layout": null, "pages": 3, "size": "letter"}
+2/2.restem/03-PDF-Preview-Files/US-Letter-Size/04-Cover-Letter-US-Letter-Preview.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+2/2.restem/03-PDF-Preview-Files/US-Letter-Size/05-References-US-Letter-Preview.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+22/22.restem/22.restem/00-Google-Docs-Links.pdf  -> {"doc": "resume", "layout": null, "pages": null, "size": null}
+22/22.restem/22.restem/PDF/Cover-Letter-A4.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "a4"}
+22/22.restem/22.restem/PDF/Cover-Letter-Letter.pdf  -> {"doc": "cover", "layout": null, "pages": null, "size": "letter"}
+22/22.restem/22.restem/PDF/References-A4.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "a4"}
+22/22.restem/22.restem/PDF/References-Letter.pdf  -> {"doc": "references", "layout": null, "pages": null, "size": "letter"}
+22/22.restem/22.restem/PDF/Resume-1Page-A4.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "a4"}
+22/22.restem/22.restem/PDF/Resume-1Page-Letter.pdf  -> {"doc": "resume", "layout": null, "pages": 1, "size": "letter"}
+22/22.restem/22.restem/PDF/Resume-2Page-A4.pdf  -> {"doc": "resume", "layout": null, "pages": 2, "size": "a4"}
+
+GOOGLE DOCS LINKS (0):
+
+ALL FILENAMES:
+  11/11.restem/00-Google-Docs-Links.pdf
+  11/11.restem/PDF/Cover-Letter-A4.pdf
+  11/11.restem/PDF/Cover-Letter-Letter.pdf
+  11/11.restem/PDF/References-A4.pdf
+  11/11.restem/PDF/References-Letter.pdf
+  11/11.restem/PDF/Resume-1Page-A4.pdf
+  11/11.restem/PDF/Resume-1Page-Letter.pdf
+  11/11.restem/PDF/Resume-2Page-A4.pdf
+  11/11.restem/PDF/Resume-2Page-Letter.pdf
+  11/11.restem/WORD/Cover-Letter-A4.docx
+  11/11.restem/WORD/Cover-Letter-Letter.docx
+  11/11.restem/WORD/References-A4.docx
+  11/11.restem/WORD/References-Letter.docx
+  11/11.restem/WORD/Resume-1Page-A4.docx
+  11/11.restem/WORD/Resume-1Page-Letter.docx
+  11/11.restem/WORD/Resume-2Page-A4.docx
+  11/11.restem/WORD/Resume-2Page-Letter.docx
+  12/12.restem/00-Google-Docs-Links.pdf
+  12/12.restem/PDF/Cover-Letter-A4.pdf
+  12/12.restem/PDF/Cover-Letter-Letter.pdf
+  12/12.restem/PDF/References-A4.pdf
+  12/12.restem/PDF/References-Letter.pdf
+  12/12.restem/PDF/Resume-1Page-A4.pdf
+  12/12.restem/PDF/Resume-1Page-Letter.pdf
+  12/12.restem/PDF/Resume-2Page-A4.pdf
+  12/12.restem/PDF/Resume-2Page-Letter.pdf
+  12/12.restem/WORD/Cover-Letter-A4.docx
+  12/12.restem/WORD/Cover-Letter-Letter.docx
+  12/12.restem/WORD/References-A4.docx
+  12/12.restem/WORD/References-Letter.docx
+  12/12.restem/WORD/Resume-1Page-A4.docx
+  12/12.restem/WORD/Resume-1Page-Letter.docx
+  12/12.restem/WORD/Resume-2Page-A4.docx
+  12/12.restem/WORD/Resume-2Page-Letter.docx
+  14/14.restem/00-Google-Docs-Links.pdf
+  14/14.restem/PDF/Cover-Letter-A4.pdf
+  14/14.restem/PDF/Cover-Letter-Letter.pdf
+  14/14.restem/PDF/References-A4.pdf
+  14/14.restem/PDF/References-Letter.pdf
+  14/14.restem/PDF/Resume-1Page-A4.pdf
+  14/14.restem/PDF/Resume-1Page-Letter.pdf
+  14/14.restem/PDF/Resume-2Page-A4.pdf
+  14/14.restem/PDF/Resume-2Page-Letter.pdf
+  14/14.restem/WORD/Cover-Letter-A4.docx
+  14/14.restem/WORD/Cover-Letter-Letter.docx
+  14/14.restem/WORD/References-A4.docx
+  14/14.restem/WORD/References-Letter.docx
+  14/14.restem/WORD/Resume-1Page-A4.docx
+  14/14.restem/WORD/Resume-1Page-Letter.docx
+  14/14.restem/WORD/Resume-2Page-A4.docx
+  14/14.restem/WORD/Resume-2Page-Letter.docx
+  2/2.restem/00-Google-Docs-Links.pdf
+  2/2.restem/02-Microsoft-Word-Files/A4-Size/01-Resume-1Page-A4.docx
+  2/2.restem/02-Microsoft-Word-Files/A4-Size/02-Resume-2Page-A4.docx
+  2/2.restem/02-Microsoft-Word-Files/A4-Size/03-Resume-3Page-A4.docx
+  2/2.restem/02-Microsoft-Word-Files/A4-Size/04-Cover-Letter-A4.docx
+  2/2.restem/02-Microsoft-Word-Files/A4-Size/05-References-A4.docx
+  2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/01-Resume-1Page-US-Letter.docx
+  2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/02-Resume-2Page-US-Letter.docx
+  2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/03-Resume-3Page-US-Letter.docx
+  2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/04-Cover-Letter-US-Letter.docx
+  2/2.restem/02-Microsoft-Word-Files/US-Letter-Size/05-References-US-Letter.docx
+  2/2.restem/03-PDF-Preview-Files/A4-Size/01-Resume-1Page-A4-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/A4-Size/02-Resume-2Page-A4-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/A4-Size/03-Resume-3Page-A4-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/A4-Size/04-Cover-Letter-A4-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/A4-Size/05-References-A4-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/US-Letter-Size/01-Resume-1Page-US-Letter-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/US-Letter-Size/02-Resume-2Page-US-Letter-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/US-Letter-Size/03-Resume-3Page-US-Letter-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/US-Letter-Size/04-Cover-Letter-US-Letter-Preview.pdf
+  2/2.restem/03-PDF-Preview-Files/US-Letter-Size/05-References-US-Letter-Preview.pdf
+  22/22.restem/22.restem/00-Google-Docs-Links.pdf
+  22/22.restem/22.restem/PDF/Cover-Letter-A4.pdf
+  22/22.restem/22.restem/PDF/Cover-Letter-Letter.pdf
+  22/22.restem/22.restem/PDF/References-A4.pdf
+  22/22.restem/22.restem/PDF/References-Letter.pdf
+  22/22.restem/22.restem/PDF/Resume-1Page-A4.pdf
+  22/22.restem/22.restem/PDF/Resume-1Page-Letter.pdf
+  22/22.restem/22.restem/PDF/Resume-2Page-A4.pdf
+  22/22.restem/22.restem/PDF/Resume-2Page-Letter.pdf
+  22/22.restem/22.restem/PDF/Resume-3Page-A4.pdf
+  22/22.restem/22.restem/PDF/Resume-3Page-Letter.pdf
+  22/22.restem/22.restem/WORD/Cover-Letter-A4.docx
+  22/22.restem/22.restem/WORD/Cover-Letter-Letter.docx
+  22/22.restem/22.restem/WORD/References-A4.docx
+  22/22.restem/22.restem/WORD/References-Letter.docx
+  22/22.restem/22.restem/WORD/Resume-1Page-A4.docx
+  22/22.restem/22.restem/WORD/Resume-1Page-Letter.docx
+  22/22.restem/22.restem/WORD/Resume-2Page-A4.docx
+  22/22.restem/22.restem/WORD/Resume-2Page-Letter.docx
+  22/22.restem/22.restem/WORD/Resume-3Page-A4.docx
+  22/22.restem/22.restem/WORD/Resume-3Page-Letter.docx
+  24/24.restem/00-Google-Docs-Links.pdf
+  24/24.restem/PDF/Cover-Letter-A4.pdf
+  24/24.restem/PDF/Cover-Letter-Letter.pdf
+  24/24.restem/PDF/References-A4.pdf
+  24/24.restem/PDF/References-Letter.pdf
+  24/24.restem/PDF/Resume-1Page-A4.pdf
+  24/24.restem/PDF/Resume-1Page-Letter.pdf
+  24/24.restem/PDF/Resume-2Page-A4.pdf
+  24/24.restem/PDF/Resume-2Page-Letter.pdf
+  24/24.restem/PDF/Resume-3Page-A4.pdf
+  24/24.restem/PDF/Resume-3Page-Letter.pdf
+  24/24.restem/WORD/Cover-Letter-A4.docx
+  24/24.restem/WORD/Cover-Letter-Letter.docx
+  24/24.restem/WORD/References-A4.docx
+  24/24.restem/WORD/References-Letter.docx
+  24/24.restem/WORD/Resume-1Page-A4.docx
+  24/24.restem/WORD/Resume-1Page-Letter.docx
+  24/24.restem/WORD/Resume-2Page-A4.docx
+  24/24.restem/WORD/Resume-2Page-Letter.docx
+  24/24.restem/WORD/Resume-3Page-A4.docx
+  24/24.restem/WORD/Resume-3Page-Letter.docx
+  3/3.restem/00-Google-Docs-Links.pdf
+  3/3.restem/02-Microsoft-Word-Files/A4-Size/01-Resume-1Page-A4.docx
+  3/3.restem/02-Microsoft-Word-Files/A4-Size/02-Resume-2Page-A4.docx
+  3/3.restem/02-Microsoft-Word-Files/A4-Size/03-Resume-3Page-A4.docx
+  3/3.restem/02-Microsoft-Word-Files/A4-Size/04-Cover-Letter-A4.docx
+  3/3.restem/02-Microsoft-Word-Files/A4-Size/05-References-A4.docx
+  3/3.restem/02-Microsoft-Word-Files/US-Letter-Size/01-Resume-1Page-US-Letter.docx
+  3/3.restem/02-Microsoft-Word-Files/US-Letter-Size/02-Resume-2Page-US-Letter.docx
+  3/3.restem/02-Microsoft-Word-Files/US-Letter-Size/03-Resume-3Page-US-Letter.docx
+  3/3.restem/02-Microsoft-Word-Files/US-Letter-Size/04-Cover-Letter-US-Letter.docx
+  3/3.restem/02-Microsoft-Word-Files/US-Letter-Size/05-References-US-Letter.docx
+  3/3.restem/03-PDF-Preview-Files/A4-Size/01-Resume-1Page-A4-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/A4-Size/02-Resume-2Page-A4-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/A4-Size/03-Resume-3Page-A4-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/A4-Size/04-Cover-Letter-A4-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/A4-Size/05-References-A4-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/US-Letter-Size/01-Resume-1Page-US-Letter-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/US-Letter-Size/02-Resume-2Page-US-Letter-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/US-Letter-Size/03-Resume-3Page-US-Letter-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/US-Letter-Size/04-Cover-Letter-US-Letter-Preview.pdf
+  3/3.restem/03-PDF-Preview-Files/US-Letter-Size/05-References-US-Letter-Preview.pdf
+  4/4.restem/00-Google-Docs-Links.pdf
+  4/4.restem/02-Microsoft-Word-Files/A4-Size/01-Resume-1Page-A4.docx
+  4/4.restem/02-Microsoft-Word-Files/A4-Size/02-Resume-2Page-A4.docx
+  4/4.restem/02-Microsoft-Word-Files/A4-Size/03-Resume-3Page-A4.docx
+  4/4.restem/02-Microsoft-Word-Files/A4-Size/Cover-Letter-A4.docx
+  4/4.restem/02-Microsoft-Word-Files/A4-Size/References-A4.docx
+  4/4.restem/02-Microsoft-Word-Files/US-Letter-Size/Cover-Letter-Letter.docx
+  4/4.restem/02-Microsoft-Word-Files/US-Letter-Size/References-Letter.docx
+  4/4.restem/02-Microsoft-Word-Files/US-Letter-Size/Resume-1Page-Letter.docx
+  4/4.restem/02-Microsoft-Word-Files/US-Letter-Size/Resume-2Page-Letter.docx
+  4/4.restem/02-Microsoft-Word-Files/US-Letter-Size/Resume-3Page-Letter.docx
+  4/4.restem/03-PDF-Preview-Files/Cover-Letter-A4.pdf
+  4/4.restem/03-PDF-Preview-Files/Cover-Letter-Letter.pdf
+  4/4.restem/03-PDF-Preview-Files/References-A4.pdf
+  4/4.restem/03-PDF-Preview-Files/References-Letter.pdf
+  4/4.restem/03-PDF-Preview-Files/Resume-1Page-A4.pdf
+  4/4.restem/03-PDF-Preview-Files/Resume-1Page-Letter.pdf
+  4/4.restem/03-PDF-Preview-Files/Resume-2Page-A4.pdf
+  4/4.restem/03-PDF-Preview-Files/Resume-2Page-Letter.pdf
+  4/4.restem/03-PDF-Preview-Files/Resume-3Page-A4.pdf
+  4/4.restem/03-PDF-Preview-Files/Resume-3Page-Letter.pdf

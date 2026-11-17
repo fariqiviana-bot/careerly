@@ -180,6 +180,19 @@ export const baseContent = (): Content => ({
 
 const now = () => new Date().toISOString();
 
+// ---- LOCKED TEMPLATE DESIGN ----------------------------------------------
+// Template colors come ONLY from the series' own extracted metadata.
+// They are never the Farnavi UI palette and never user-editable.
+let SERIES_META: Record<string, { accent?: string; heading?: string; body?: string }> = {};
+try {
+  // populated by ingest_all.py -> public/templates/{id}/meta.json
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  SERIES_META = require("./template-design.json");
+} catch {}
+export const seriesColor = (id?: string) => (id && SERIES_META[id]?.accent) || undefined;
+export const seriesFont = (id?: string) => (id && SERIES_META[id]?.heading) || undefined;
+// --------------------------------------------------------------------------
+
 const seedDocs: Doc[] = [
   {
     id: "d1",

@@ -1,3 +1,48 @@
+# AGENTS.md — Farnavi
+
+## Stack
+Next.js 15 (App Router) · TypeScript · Tailwind v4 · shadcn/ui (Radix) · Lucide
+Brand: **Farnavi** · Market: global · Language: English + translatable
+Model: subscription (Free / $19 mo / $39 per 3mo / $69 yr · launch $49 first 1000)
+
+## 🔒 HARD RULE 0 — TEMPLATE COLORS ARE IMMUTABLE
+The 25 template series are finished brand assets. Their colors must NEVER change.
+- NO color picker, NO accent swatches, NO "Template & Colors" tab, NO recolor API.
+- Two separate color namespaces that must NEVER mix:
+  1. UI chrome  -> app/globals.css :root  (#f1efe9 #5d6f61 #e6b5a1 #eaf0ea ...)
+  2. Template design -> public/templates/{id}/meta.json  (real extracted colors)
+- The resume renderer reads ONLY namespace 2. If a color is missing it must FAIL,
+  never fall back to the UI palette.
+- `updateDoc` strips accent/font writes. Do not remove that guard.
+- Same applies to template fonts unless the owner says otherwise.
+
+## Other hard rules
+1. NEVER run `npx shadcn init` — it overwrites globals.css and destroys the palette.
+2. NEVER regenerate these with `shadcn add` (manually converted to Radix for asChild):
+   button, dialog, sheet, dropdown-menu, tooltip, drawer, select, tabs, accordion,
+   checkbox, radio-group, switch, slider, progress, avatar, scroll-area, command, sonner.
+3. NEVER use `next/font/google` — blocked, causes 30s+ compile hangs.
+4. Do NOT create app/page.tsx — dashboard lives at app/(app)/page.tsx.
+5. UI palette/fonts stay as-is in globals.css.
+6. No human services (no coaching, no proofreading marketplace).
+
+## Assets
+public/templates/{series}/ — 25 series, DOCX+PDF, A4+Letter, resume 1/2/3p,
+cover letter, references. References is a differentiator none of the 3 competitors have.
+ATS-safe today: series 11, 12, 14 (no text boxes). Others use 22-26 text boxes.
+
+## AI
+DeepSeek `deepseek-flash` (V4.1-Flash) via https://api.deepseek.com, OpenAI-compatible.
+Off-peak = half price. JSON output for structured data. Keep system prompt stable for cache hits.
+
+## UX rules
+One name per status everywhere · confirm destructive/status changes ·
+empty state ≠ loading · no hidden paywalls (limit written on the button) ·
+every number needs a denominator + time range · disabled buttons state the reason ·
+placeholder is never a label.
+
+---
+
 # AGENTS.md — Careerly
 
 ## Stack

@@ -2,8 +2,9 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { ResumeRender } from "@/components/render";
 import { useStore, uid, type Content, type Doc } from "@/lib/store";
-import { ACCENTS, FONTS, TEMPLATES, LANGS, EXTRA_SECTIONS, FREE_CHECKS, LOCKED_CHECKS } from "@/lib/catalog";
+import { FONTS, TEMPLATES, LANGS, EXTRA_SECTIONS, FREE_CHECKS, LOCKED_CHECKS } from "@/lib/catalog";
 import { WebsiteView } from "@/components/website-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -497,9 +498,7 @@ function EditorInner() {
             </button>
           ))}
         </div>
-        <Field label="Accent color">
-          <div className="flex gap-2">{ACCENTS.map((c) => <button key={c} onClick={() => updateDoc(doc.id, { accent: c })} className={cn("h-7 w-7 rounded-full border-2", doc.accent === c ? "border-foreground" : "border-transparent")} style={{ background: c }} aria-label={c} />)}</div>
-        </Field>
+        {/* Template colors are locked brand assets — no picker. */}
       </TabsContent>
       <TabsContent value="text" className="mt-4 space-y-4">
         <Field label="Font"><Select value={doc.font} onValueChange={(v) => updateDoc(doc.id, { font: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{FONTS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent></Select></Field>
@@ -590,7 +589,7 @@ function EditorInner() {
               <div className="mt-4 font-semibold">{content.letter.subject}</div>
               <p className="mt-4 whitespace-pre-wrap text-neutral-700">{content.letter.body}</p>
             </div>
-          ) : <Preview doc={doc} content={content} twoCol={twoCol} margin={margin} fontSize={fontSize} />}
+          ) : <ResumeRender doc={doc} onPatch={(p:any)=>{ if(p.__visibility){ updateDoc(doc.id,{visibility:p.__visibility} as any); } else { updateDoc(doc.id,{content:p}); } }} />}
         </div>
       </div>
 

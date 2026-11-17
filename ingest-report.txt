@@ -1,0 +1,20 @@
+=== INGEST 17 REPORT ===
+
+2   Executive        premium  cols=1 ats=False(65) pages=[1, 2, 3] files=20 gdocs=14
+    fonts: Rubik / Rubik
+3   Elegant          premium  cols=1 ats=False(65) pages=[1, 2, 3] files=20 gdocs=14
+    fonts: Open Sans / Open Sans
+4   Double Column    premium  cols=2 ats=False(55) pages=[1, 2, 3] files=20 gdocs=11
+    fonts: Source Sans 3 / Merriweather
+11  Ivy League       free     cols=1 ats=True(100) pages=[1, 2] files=16 gdocs=10
+    fonts: Merriweather / Merriweather
+12  Single Column    free     cols=1 ats=True(100) pages=[1, 2] files=16 gdocs=11
+    fonts: Work Sans / Work Sans
+14  Minimal          free     cols=1 ats=True(100) pages=[1, 2] files=16 gdocs=10
+    fonts: Inter / Inter
+22  Photo Column     premium  cols=1 ats=False(60) pages=[1, 2, 3] files=20 gdocs=13
+    fonts: Source Sans 3 / Source Sans 3
+24  Modern           premium  cols=2 ats=False(55) pages=[1, 2, 3] files=20 gdocs=15
+    fonts: Roboto / Inter
+
+free: 11,12,14
