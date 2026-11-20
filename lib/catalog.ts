@@ -3,10 +3,17 @@ export const FONTS = [
   "Merriweather",
   "Lato",
   "Manrope",
-  "Great Vibes",
-  "Instrument Sans",
-  "Georgia",
-  "Garamond",
+  "Libre Baskerville",
+  "Playfair Display",
+  "Montserrat",
+  "Open Sans",
+  "Nunito",
+  "Source Sans 3",
+  "Work Sans",
+  "Poppins",
+  "Inter",
+  "Roboto",
+  "Rubik",
 ];
 export const LANGS = [
   "English (US)", "English (UK)", "Français", "Deutsch", "Español", "Svenska",
@@ -14,388 +21,138 @@ export const LANGS = [
   "Polski", "Norsk", "فارسی", "العربية", "Türkçe"
 ];
 
-export type SeriesCode = "11" | "12" | "14" | "22";
+export type SeriesCode = "2" | "3" | "4" | "11" | "12" | "14" | "22" | "24";
 
-export type Tpl = {
-  id: string;
-  series: SeriesCode;
-  name: string;
-  subtitle: string;
-  category: "ATS" | "Editorial" | "Executive" | "Signature";
-  ats: boolean;
-  twoCol: boolean;
-  photo: boolean;
-  pro: boolean;
-  accent: string;
-  headingFont: string;
-  bodyFont: string;
-  scriptFont?: string;
-  pagesSupported: number[];
-  sizesSupported: ("A4" | "Letter")[];
-  hasCoverLetter: boolean;
-  hasReferences: boolean;
-  badge?: string;
-  files: {
-    googleDocsPdf: string;
-    docx: {
-      a4: { resume1p: string; resume2p: string; resume3p?: string; ats1p: string; ats2p: string; cover: string; references: string };
-      letter: { resume1p: string; resume2p: string; resume3p?: string; ats1p: string; ats2p: string; cover: string; references: string };
-    };
-    pdf: {
-      a4: { resume1p: string; resume2p: string; resume3p?: string; ats1p: string; ats2p: string; cover: string; references: string };
-      letter: { resume1p: string; resume2p: string; resume3p?: string; ats1p: string; ats2p: string; cover: string; references: string };
-    };
-  };
+export const SECTION_SCORE_WEIGHTS: Record<string, { label: string; boost: string; points: number; section: string }> = {
+  target:     { label: "Add job target",         boost: "+10%", points: 10, section: "personal" },
+  summary:    { label: "Add profile summary",    boost: "+15%", points: 15, section: "summary" },
+  experience: { label: "Add employment history", boost: "+25%", points: 25, section: "experience" },
+  education:  { label: "Add education",          boost: "+15%", points: 15, section: "education" },
+  skills:     { label: "Add core skills",        boost: "+10%", points: 10, section: "skills" },
+  certs:      { label: "Add certifications",     boost: "+10%", points: 10, section: "certifications" },
 };
 
-function buildSeriesFiles(s: SeriesCode) {
-  const base = `/templates/series-${s}`;
-  return {
-    googleDocsPdf: `${base}/google-docs-links.pdf`,
-    docx: {
-      a4: {
-        resume1p: `${base}/docx/a4/resume-1p.docx`,
-        resume2p: `${base}/docx/a4/resume-2p.docx`,
-        resume3p: `${base}/docx/a4/resume-3p.docx`,
-        ats1p: `${base}/docx/a4/ats-1p.docx`,
-        ats2p: `${base}/docx/a4/ats-2p.docx`,
-        cover: `${base}/docx/a4/cover-letter.docx`,
-        references: `${base}/docx/a4/references.docx`,
-      },
-      letter: {
-        resume1p: `${base}/docx/letter/resume-1p.docx`,
-        resume2p: `${base}/docx/letter/resume-2p.docx`,
-        resume3p: `${base}/docx/letter/resume-3p.docx`,
-        ats1p: `${base}/docx/letter/ats-1p.docx`,
-        ats2p: `${base}/docx/letter/ats-2p.docx`,
-        cover: `${base}/docx/letter/cover-letter.docx`,
-        references: `${base}/docx/letter/references.docx`,
-      },
-    },
-    pdf: {
-      a4: {
-        resume1p: `${base}/pdf/a4/resume-1p.pdf`,
-        resume2p: `${base}/pdf/a4/resume-2p.pdf`,
-        resume3p: `${base}/pdf/a4/resume-3p.pdf`,
-        ats1p: `${base}/pdf/a4/ats-1p.pdf`,
-        ats2p: `${base}/pdf/a4/ats-2p.pdf`,
-        cover: `${base}/pdf/a4/cover-letter.pdf`,
-        references: `${base}/pdf/a4/references.pdf`,
-      },
-      letter: {
-        resume1p: `${base}/pdf/letter/resume-1p.pdf`,
-        resume2p: `${base}/pdf/letter/resume-2p.pdf`,
-        resume3p: `${base}/pdf/letter/resume-3p.pdf`,
-        ats1p: `${base}/pdf/letter/ats-1p.pdf`,
-        ats2p: `${base}/pdf/letter/ats-2p.pdf`,
-        cover: `${base}/pdf/letter/cover-letter.pdf`,
-        references: `${base}/pdf/letter/references.pdf`,
-      },
-    },
-  };
-}
-
-export const TEMPLATES: Tpl[] = [
-  // Series 11 (Lato & Merriweather)
-  {
-    id: "editorial-11",
-    series: "11",
-    name: "Editorial",
-    subtitle: "Two-Column Editorial · Merriweather & Lato",
-    category: "Editorial",
-    ats: true,
-    twoCol: true,
-    photo: false,
-    pro: false,
-    accent: "#202124",
-    headingFont: "Merriweather",
-    bodyFont: "Lato",
-    pagesSupported: [1, 2, 3],
-    sizesSupported: ["A4", "Letter"],
-    hasCoverLetter: true,
-    hasReferences: true,
-    badge: "Popular",
-    files: buildSeriesFiles("11"),
-  },
-  {
-    id: "prime-ats-11",
-    series: "11",
-    name: "Prime ATS",
-    subtitle: "Single-Column Linear ATS · Merriweather & Lato",
-    category: "ATS",
-    ats: true,
-    twoCol: false,
-    photo: false,
-    pro: false,
-    accent: "#3d4a3f",
-    headingFont: "Merriweather",
-    bodyFont: "Lato",
-    pagesSupported: [1, 2],
-    sizesSupported: ["A4", "Letter"],
-    hasCoverLetter: true,
-    hasReferences: true,
-    badge: "ATS Friendly",
-    files: buildSeriesFiles("11"),
-  },
-
-  // Series 12 (Manrope, Lato & Merriweather)
-  {
-    id: "harmonized-12",
-    series: "12",
-    name: "Harmonized",
-    subtitle: "Two-Column Modern Grid · Manrope & Merriweather",
-    category: "Editorial",
-    ats: true,
-    twoCol: true,
-    photo: false,
-    pro: false,
-    accent: "#5d6f61",
-    headingFont: "Manrope",
-    bodyFont: "Lato",
-    pagesSupported: [1, 2, 3],
-    sizesSupported: ["A4", "Letter"],
-    hasCoverLetter: true,
-    hasReferences: true,
-    badge: "Updated",
-    files: buildSeriesFiles("12"),
-  },
-  {
-    id: "precision-ats-12",
-    series: "12",
-    name: "Precision ATS",
-    subtitle: "Single-Column Tech & Corporate ATS · Manrope & Lato",
-    category: "ATS",
-    ats: true,
-    twoCol: false,
-    photo: false,
-    pro: false,
-    accent: "#5b7a8c",
-    headingFont: "Manrope",
-    bodyFont: "Lato",
-    pagesSupported: [1, 2],
-    sizesSupported: ["A4", "Letter"],
-    hasCoverLetter: true,
-    hasReferences: true,
-    badge: "ATS Friendly",
-    files: buildSeriesFiles("12"),
-  },
-
-  // Series 14 (Great Vibes & Merriweather)
-  {
-    id: "calligraphic-14",
-    series: "14",
-    name: "Calligraphic",
-    subtitle: "Two-Column Signature Header · Merriweather & Great Vibes",
-    category: "Signature",
-    ats: true,
-    twoCol: true,
-    photo: false,
-    pro: false,
-    accent: "#706A62",
-    headingFont: "Merriweather",
-    bodyFont: "Merriweather",
-    scriptFont: "Great Vibes",
-    pagesSupported: [1, 2, 3],
-    sizesSupported: ["A4", "Letter"],
-    hasCoverLetter: true,
-    hasReferences: true,
-    badge: "Signature",
-    files: buildSeriesFiles("14"),
-  },
-  {
-    id: "pure-ats-14",
-    series: "14",
-    name: "Pure ATS",
-    subtitle: "Single-Column Classic Serif ATS · Merriweather",
-    category: "ATS",
-    ats: true,
-    twoCol: false,
-    photo: false,
-    pro: false,
-    accent: "#202124",
-    headingFont: "Merriweather",
-    bodyFont: "Merriweather",
-    scriptFont: "Great Vibes",
-    pagesSupported: [1, 2],
-    sizesSupported: ["A4", "Letter"],
-    hasCoverLetter: true,
-    hasReferences: true,
-    badge: "ATS Friendly",
-    files: buildSeriesFiles("14"),
-  },
-
-  // Series 22 (Executive Crest - Merriweather & Great Vibes)
-  {
-    id: "crest-22",
-    series: "22",
-    name: "Executive Crest",
-    subtitle: "Two-Column Executive Architecture · Merriweather",
-    category: "Executive",
-    ats: true,
-    twoCol: true,
-    photo: false,
-    pro: false,
-    accent: "#3d4a3f",
-    headingFont: "Merriweather",
-    bodyFont: "Merriweather",
-    scriptFont: "Great Vibes",
-    pagesSupported: [1, 2, 3],
-    sizesSupported: ["A4", "Letter"],
-    hasCoverLetter: true,
-    hasReferences: true,
-    badge: "Executive",
-    files: buildSeriesFiles("22"),
-  },
-  {
-    id: "momentum-ats-22",
-    series: "22",
-    name: "Momentum ATS",
-    subtitle: "Single-Column Executive ATS · Merriweather",
-    category: "ATS",
-    ats: true,
-    twoCol: false,
-    photo: false,
-    pro: false,
-    accent: "#706A62",
-    headingFont: "Merriweather",
-    bodyFont: "Merriweather",
-    pagesSupported: [1, 2],
-    sizesSupported: ["A4", "Letter"],
-    hasCoverLetter: true,
-    hasReferences: true,
-    badge: "ATS Friendly",
-    files: buildSeriesFiles("22"),
-  },
-];
-
-export type CoverTpl = {
-  id: string;
-  series: SeriesCode;
-  name: string;
-  subtitle: string;
-  pairedResumeId: string;
-  accent: string;
-  headingFont: string;
-  bodyFont: string;
-  scriptFont?: string;
-  files: Tpl["files"];
-};
-
-export const COVER_TEMPLATES: CoverTpl[] = [
-  {
-    id: "cover-editorial-11",
-    series: "11",
-    name: "Editorial Cover Letter",
-    subtitle: "Matched with Editorial & Prime ATS · Merriweather & Lato",
-    pairedResumeId: "editorial-11",
-    accent: "#202124",
-    headingFont: "Merriweather",
-    bodyFont: "Lato",
-    files: buildSeriesFiles("11"),
-  },
-  {
-    id: "cover-harmonized-12",
-    series: "12",
-    name: "Harmonized Cover Letter",
-    subtitle: "Matched with Harmonized & Precision ATS · Manrope & Lato",
-    pairedResumeId: "harmonized-12",
-    accent: "#5d6f61",
-    headingFont: "Manrope",
-    bodyFont: "Lato",
-    files: buildSeriesFiles("12"),
-  },
-  {
-    id: "cover-calligraphic-14",
-    series: "14",
-    name: "Calligraphic Cover Letter",
-    subtitle: "Matched with Calligraphic & Pure ATS · Signature Script",
-    pairedResumeId: "calligraphic-14",
-    accent: "#706A62",
-    headingFont: "Merriweather",
-    bodyFont: "Merriweather",
-    scriptFont: "Great Vibes",
-    files: buildSeriesFiles("14"),
-  },
-  {
-    id: "cover-crest-22",
-    series: "22",
-    name: "Executive Crest Cover Letter",
-    subtitle: "Matched with Executive Crest & Momentum ATS · Merriweather",
-    pairedResumeId: "crest-22",
-    accent: "#3d4a3f",
-    headingFont: "Merriweather",
-    bodyFont: "Merriweather",
-    scriptFont: "Great Vibes",
-    files: buildSeriesFiles("22"),
-  },
-];
-
-export const SECTION_SCORE_WEIGHTS: Record<string, { label: string; boost: string; points: number }> = {
-  target: { label: "Add job target", boost: "+10%", points: 10 },
-  summary: { label: "Write professional summary (400-600 chars)", boost: "+15%", points: 15 },
-  experience: { label: "Add employment history", boost: "+25%", points: 25 },
-  education: { label: "Add education details", boost: "+15%", points: 15 },
-  skills: { label: "Add 5+ core skills", boost: "+15%", points: 15 },
-  extras: { label: "Add projects, languages or certifications", boost: "+10%", points: 10 },
-};
-
-export const PREWRITTEN_PHRASES: Record<string, { role: string; text: string }[]> = {
+export const PREWRITTEN_PHRASES: Record<string, { role: string; category: string; text: string }[]> = {
   summary: [
-    { role: "Product Designer", text: "Product designer with 4+ years shaping B2B SaaS workflows. Built token-driven design systems adopted by 30+ engineers and lifted user activation by 18%." },
-    { role: "Software Engineer", text: "Full-stack engineer specializing in TypeScript, React, and Next.js. Reduced page load latency by 42% and architected scalable microservices serving 250k+ monthly users." },
-    { role: "Marketing Manager", text: "Growth-focused Marketing Manager with 6+ years scaling B2B SaaS demand generation, lifecycle automation, and multi-channel attribution." },
-    { role: "Data / Bioinformatician", text: "Computational biologist & data analyst experienced in Python, genomic pipelines, and statistical modeling. Published reproducible workflows cutting analysis time by 35%." },
+    { role: "Product Designer", category: "Design & UX", text: "Product Designer with 5+ years of experience shaping B2B SaaS workflows and token-driven design systems adopted by 30+ engineers, lifting user activation by 18% and reducing design-to-dev handoff time by 35%." },
+    { role: "Software Engineer", category: "Engineering", text: "Full-Stack Software Engineer specializing in TypeScript, React, Next.js, and cloud-native architectures. Proven track record of cutting page latency by 42% and scaling high-availability services to 250K+ monthly users." },
+    { role: "Registered Nurse", category: "Healthcare & Nursing", text: "Dedicated and compassionate Registered Nurse with 6+ years of clinical experience delivering high-quality, patient-centered care within high-acuity emergency and acute care settings. Proficient in Epic and Cerner EHR systems." },
+    { role: "Bioinformatician / Data Scientist", category: "Science & Biotech", text: "Computational Biologist and Bioinformatics Scientist experienced in NGS pipelines, Python/R statistical modeling, and multi-omics data visualization, reducing genomic workflow turnaround time by 40%." },
+    { role: "Marketing Manager", category: "Marketing & Growth", text: "Growth-focused B2B Marketing Manager with 6+ years scaling demand generation, lifecycle automation, and multi-channel attribution, generating $2.4M in qualified pipeline." },
+    { role: "Project / Operations Manager", category: "Operations & Management", text: "Results-oriented Operations & Project Manager skilled in cross-functional team leadership, process streamlining, and resource optimization across global enterprise initiatives." },
   ],
   experience: [
-    { role: "Product Designer", text: "Redesigned core onboarding flow across web and mobile, increasing day-7 activation by 18% and reducing support tickets by 24%." },
-    { role: "Product Designer", text: "Architected and documented a 120-component Figma & React design system, accelerating feature delivery speed by 30%." },
-    { role: "Software Engineer", text: "Implemented automated CI/CD pipelines and end-to-end testing, reducing production regressions by 60%." },
-    { role: "Marketing Manager", text: "Spearheaded lifecycle email and webinar campaigns generating $1.4M in qualified pipeline within two quarters." },
+    { role: "Product Designer", category: "Design & UX", text: "Redesigned end-to-end onboarding and activation flows across web and mobile, increasing day-7 retention by 18% and reducing support tickets by 24%." },
+    { role: "Product Designer", category: "Design & UX", text: "Architected and documented a 120-component Figma and React design system, accelerating cross-team feature delivery by 30%." },
+    { role: "Software Engineer", category: "Engineering", text: "Engineered automated CI/CD pipelines and end-to-end Playwright test suites, reducing production regressions by 60% across 14 microservices." },
+    { role: "Software Engineer", category: "Engineering", text: "Optimized PostgreSQL queries and Redis caching layers, lowering P95 API response times from 480ms to 110ms." },
+    { role: "Registered Nurse", category: "Healthcare & Nursing", text: "Delivered direct bedside care to 5–6 acute patients per shift, prioritizing patient safety, rapid triage, and HIPAA-compliant EHR charting." },
+    { role: "Registered Nurse", category: "Healthcare & Nursing", text: "Mentored 8 new graduate nurses, ensuring seamless unit onboarding, strict infection-control compliance, and 94% patient satisfaction." },
+    { role: "Bioinformatician / Data Scientist", category: "Science & Biotech", text: "Developed reproducible RNA-seq and variant-calling pipelines in Python and Nextflow, cutting analysis runtime by 35% across 1,200+ clinical samples." },
+    { role: "Marketing Manager", category: "Marketing & Growth", text: "Spearheaded integrated lifecycle email and webinar campaigns that generated $1.4M in qualified pipeline within two quarters." },
+    { role: "Project / Operations Manager", category: "Operations & Management", text: "Orchestrated cross-departmental workflows for a 25-person delivery team, completing 14 consecutive product releases on schedule and 12% under budget." },
   ],
 };
 
-export const RESUME_EXAMPLES = [
+export type ExtraSectionMeta = {
+  id: string;
+  title: string;
+  pro: boolean;
+  atsSafe: boolean;
+  description: string;
+  previewLines: string[];
+};
+
+export const EXTRA_SECTION_CATALOG: ExtraSectionMeta[] = [
   {
-    id: "ex-product-designer",
-    role: "Senior Product Designer",
-    category: "Design & UX",
-    template: "editorial-11",
-    summary: "Senior Product Designer with 5+ years crafting B2B SaaS products and scalable design systems. Proven track record of increasing conversion by 22% through iterative user research.",
-    skills: ["Figma", "Design Systems", "Prototyping", "User Research", "Interaction Design", "WCAG Accessibility"],
+    id: "Certifications",
+    title: "Certifications & Licenses",
+    pro: false,
+    atsSafe: true,
+    description: "Highlight accredited certifications, clinical licenses, or professional credentials.",
+    previewLines: ["PMP — Project Management Institute (2025)", "AWS Certified Solutions Architect · License #88412"],
   },
   {
-    id: "ex-marketing-manager",
-    role: "Marketing Manager",
-    category: "Marketing & Growth",
-    template: "harmonized-12",
-    summary: "Data-driven B2B Marketing Manager with expertise in demand generation, product positioning, and marketing automation across enterprise SaaS markets.",
-    skills: ["Demand Generation", "HubSpot", "SEO/SEM", "Lifecycle Marketing", "Copywriting", "Revenue Attribution"],
+    id: "Projects",
+    title: "Key Projects",
+    pro: false,
+    atsSafe: true,
+    description: "Showcase flagship product launches, research studies, or open-source systems.",
+    previewLines: ["Farnavi Career OS — Built 1:1 vector resume studio in Next.js", "Genomic Data Atlas — Automated multi-omics pipeline"],
   },
   {
-    id: "ex-software-engineer",
-    role: "Full-Stack Developer",
-    category: "Engineering & Tech",
-    template: "precision-ats-12",
-    summary: "Full-Stack Engineer experienced in React, Next.js, TypeScript, and Python FastAPI. Passionate about clean architecture, web performance, and AI-assisted workflows.",
-    skills: ["TypeScript", "React & Next.js", "Python", "FastAPI", "PostgreSQL", "Tailwind CSS"],
+    id: "Languages",
+    title: "Languages",
+    pro: false,
+    atsSafe: true,
+    description: "List spoken and written languages with standardized proficiency levels.",
+    previewLines: ["English — Native / Bilingual", "Persian — Native · German — Professional Working"],
   },
   {
-    id: "ex-molecular-biologist",
-    role: "Molecular Genetics Researcher",
-    category: "Science & Biotech",
-    template: "pure-ats-14",
-    summary: "Molecular Biology & Bioinformatics researcher skilled in genomic sequence analysis, primer design, microbial physiology, and computational data visualization.",
-    skills: ["Molecular Genetics", "Primer Design", "PCR & Gel Electrophoresis", "Python Bioinformatics", "Microscopy", "Scientific Writing"],
+    id: "Awards",
+    title: "Awards & Scholarships",
+    pro: false,
+    atsSafe: true,
+    description: "Recognize academic honors, industry awards, or competitive fellowships.",
+    previewLines: ["Outstanding Innovation Award — National Design Council (2025)", "Dean's Merit Fellowship — Top 2% of Cohort"],
+  },
+  {
+    id: "Volunteering",
+    title: "Volunteering & Leadership",
+    pro: false,
+    atsSafe: true,
+    description: "Demonstrate community leadership, mentoring, and non-profit contributions.",
+    previewLines: ["Lead Design Mentor — ADPList Global Community (2023–Present)", "Organized 12 career workshops for 400+ graduates"],
+  },
+  {
+    id: "Publications",
+    title: "Publications & Papers",
+    pro: true,
+    atsSafe: true,
+    description: "Cite peer-reviewed journal articles, conference papers, or industry whitepapers.",
+    previewLines: ["Machine Learning in Genomic Triage — Nature Biotech (2025)", "Scalable Design Tokens for Enterprise Apps — Smashing Mag"],
+  },
+  {
+    id: "Conferences",
+    title: "Conferences & Speaking",
+    pro: true,
+    atsSafe: true,
+    description: "Feature keynote talks, workshops, and panel appearances.",
+    previewLines: ["Speaker — Figma Config Europe: Token Architecture (2025)", "Panelist — ISMB Bioinformatics Symposium"],
+  },
+  {
+    id: "References",
+    title: "References",
+    pro: true,
+    atsSafe: true,
+    description: "Include professional or academic supervisors (syncs with your References sheet).",
+    previewLines: ["Dr. Sarah Jenkins — VP of Product @ Rangin (s.jenkins@company.com)", "Available upon request"],
+  },
+  {
+    id: "Hobbies",
+    title: "Interests & Passions",
+    pro: true,
+    atsSafe: true,
+    description: "Add human context with curated personal interests and creative pursuits.",
+    previewLines: ["Analog Photography · Trail Running · Speculative Typography"],
+  },
+  {
+    id: "Custom section",
+    title: "Custom Section",
+    pro: true,
+    atsSafe: true,
+    description: "Create a bespoke section with your own heading and structured entries.",
+    previewLines: ["Clinical Rotations / Patents / Editorial Boards / Affiliations"],
   },
 ];
 
-export const EXTRA_SECTIONS = [
-  "Projects", "Languages", "Certifications", "Awards", "Publications",
-  "Volunteering", "References", "Conferences", "Training / Courses",
-  "Hobbies & Interests", "Signature", "Custom section"
-];
+export const EXTRA_SECTIONS = EXTRA_SECTION_CATALOG.map((s) => s.id);
 export const FREE_CHECKS = ["Spellcheck & Grammar", "Quantified Impact", "Wording & Readability", "Recommendations"];
-export const LOCKED_CHECKS = ["Credibility", "Interview Risks", "Age Bias", "Employment Gaps"];
+export const LOCKED_CHECKS = ["Credibility", "Interview Risks", "Age Bias", "Employment Gaps", "Scope & Ownership"];
+
+export const WEAK_VERBS = ["responsible for", "helped", "worked on", "assisted with", "duties included", "handled", "tried to"];
+export const PERSONAL_PRONOUNS = [" i ", " my ", " me ", " we ", " our "];
+export const BUZZWORDS = ["synergy", "go-getter", "hardworker", "think outside the box", "rockstar", "ninja", "guru"];
 
 export const LINKEDIN_STEPS = [
   "LinkedIn URL", "Custom URL", "Target & Position", "Competencies", "Headline",
@@ -426,7 +183,6 @@ export const FAQ = [
   { cat: "Jobs & Tracker", count: 14, items: ["What is Ghost-Job Risk?", "How does Auto Apply work?", "How do job alerts work?"] },
 ];
 
-// نگه‌داری آرایه خالی برای جلوگیری از خطای کامپایل در فایل‌های قدیمی قبل از چانک ۲
 export const CHAPTERS: { title: string; lessons: string[] }[] = [];
 
 export type TrackStatus = "recommended" | "shortlist" | "auto" | "applied" | "interviewing" | "offer" | "rejected";

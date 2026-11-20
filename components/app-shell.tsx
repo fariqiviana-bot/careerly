@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { GradientPanel } from "@/components/shared";
+import { FarnaviLogo } from "@/components/farnavi-logo";
 import { LayoutDashboard, Files, LayoutTemplate, ScanSearch, Search, SquareKanban, Zap, MessagesSquare, Sparkles, Map, Linkedin, Briefcase, LifeBuoy, Settings, Bell, Menu, Crown, LogOut, ChevronLeft, Command, Home, Plus } from "lucide-react";
 
 const NAV = [
@@ -91,6 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const { user, docs } = useStore();
+  const isEditorRoute = path.startsWith("/editor");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [cmd, setCmd] = useState(false);
@@ -100,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.addEventListener("keydown", fn); return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  const title = TITLES[path] ?? (path.startsWith("/editor") ? "Editor" : "Careerly");
+  const title = TITLES[path] ?? (isEditorRoute ? "Resume Studio" : "Farnavi");
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -108,7 +110,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Desktop sidebar */}
         <aside className={cn("sticky top-0 hidden h-screen shrink-0 flex-col border-r border-border bg-sidebar transition-all md:flex", collapsed ? "w-[76px]" : "w-[264px]")}>
           <div className="flex items-center justify-between px-4 pt-4">
-            {!collapsed && <Link href="/" className="font-serif text-2xl">Careerly</Link>}
+            <Link href="/" className="focus:outline-none">
+              <FarnaviLogo collapsed={collapsed} size="md" />
+            </Link>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCollapsed(!collapsed)} aria-label="Toggle sidebar">
               <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
             </Button>
@@ -131,7 +135,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Sheet open={mobileNav} onOpenChange={setMobileNav}>
               <SheetTrigger asChild><Button variant="ghost" size="icon" className="md:hidden"><Menu className="h-5 w-5" /></Button></SheetTrigger>
               <SheetContent side="left" className="w-[290px] bg-sidebar p-0">
-                <SheetTitle className="px-4 pt-4 font-serif text-2xl">Careerly</SheetTitle>
+                <SheetTitle className="px-4 pt-4">
+                  <FarnaviLogo size="md" />
+                </SheetTitle>
                 <UserBlock />
                 <div className="flex h-[calc(100%-140px)] flex-col"><NavLinks onNavigate={() => setMobileNav(false)} /><UpgradeCard /></div>
               </SheetContent>
@@ -166,7 +172,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-24 pt-6 md:px-8 md:pb-10">{children}</main>
+          <main className={cn(
+            "mx-auto w-full flex-1",
+            isEditorRoute ? "max-w-[1600px] px-3 pb-16 pt-4 md:px-6 md:pb-8" : "max-w-[1200px] px-4 pb-24 pt-6 md:px-8 md:pb-10"
+          )}>{children}</main>
         </div>
 
         {/* Mobile bottom nav */}

@@ -254,3 +254,27 @@
     margin: 0 !important;
   }
 }
+
+/* === FARNAVI 1:1 VECTOR PRINT / PDF EXPORT === */
+@media print {
+  @page {
+    margin: 0 !important;
+    size: auto;
+  }
+  body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  aside, header, nav, .no-print {
+    display: none !important;
+  }
+  .print-paper {
+    transform: none !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+}

@@ -25,7 +25,7 @@ export default function SharedDocumentPage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
         <h1 className="font-serif text-3xl">Document not found</h1>
         <p className="text-sm text-muted-foreground">This shared link may have been removed or unpublished.</p>
-        <Button asChild className="mt-2 rounded-full"><Link href="/documents">Back to Careerly</Link></Button>
+        <Button asChild className="mt-2 rounded-full"><Link href="/documents">Back to Farnavi</Link></Button>
       </div>
     );
   }
@@ -145,7 +145,7 @@ export default function SharedDocumentPage() {
         )}
 
         <footer className="no-print mt-12 flex items-center justify-center gap-1.5 border-t border-neutral-100 pt-6 text-xs text-neutral-400">
-          <Sparkles className="h-3.5 w-3.5" />Built with Careerly OS
+          <Sparkles className="h-3.5 w-3.5" />Built with Farnavi OS
         </footer>
       </div>
     </div>

@@ -31,7 +31,7 @@ export type TemplateSeries = {
 export const TEMPLATE_SERIES: TemplateSeries[] = [
   {
     "id": "2",
-    "name": "Series 2",
+    "name": "Template",
     "columns": 1,
     "ats": false,
     "atsScore": 65,
@@ -304,7 +304,7 @@ export const TEMPLATE_SERIES: TemplateSeries[] = [
   },
   {
     "id": "3",
-    "name": "Series 3",
+    "name": "Template",
     "columns": 1,
     "ats": false,
     "atsScore": 65,
@@ -566,7 +566,7 @@ export const TEMPLATE_SERIES: TemplateSeries[] = [
   },
   {
     "id": "4",
-    "name": "Series 4",
+    "name": "Template",
     "columns": 2,
     "ats": false,
     "atsScore": 55,
@@ -829,7 +829,7 @@ export const TEMPLATE_SERIES: TemplateSeries[] = [
   },
   {
     "id": "11",
-    "name": "Series 11",
+    "name": "Template",
     "columns": 1,
     "ats": true,
     "atsScore": 100,
@@ -1061,7 +1061,7 @@ export const TEMPLATE_SERIES: TemplateSeries[] = [
   },
   {
     "id": "12",
-    "name": "Series 12",
+    "name": "Template",
     "columns": 1,
     "ats": true,
     "atsScore": 100,
@@ -1304,7 +1304,7 @@ export const TEMPLATE_SERIES: TemplateSeries[] = [
   },
   {
     "id": "14",
-    "name": "Series 14",
+    "name": "Template",
     "columns": 1,
     "ats": true,
     "atsScore": 100,
@@ -1533,7 +1533,7 @@ export const TEMPLATE_SERIES: TemplateSeries[] = [
   },
   {
     "id": "22",
-    "name": "Series 22",
+    "name": "Template",
     "columns": 1,
     "ats": false,
     "atsScore": 60,
@@ -1836,7 +1836,7 @@ export const TEMPLATE_SERIES: TemplateSeries[] = [
   },
   {
     "id": "24",
-    "name": "Series 24",
+    "name": "Template",
     "columns": 2,
     "ats": false,
     "atsScore": 55,

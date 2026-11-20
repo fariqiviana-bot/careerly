@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -36,7 +36,7 @@ export default function Jobs() {
 
   const list = useMemo(() => jobs.filter((j) =>
     (j.title + " " + j.company + " " + j.tags.join(" ")).toLowerCase().includes(q.toLowerCase()) &&
-    j.location.toLowerCase().includes(loc.toLowerCase()) &&
+    (j.location || "").toLowerCase().includes(loc.toLowerCase()) &&
     (mode === "any" || j.mode === mode) &&
     parseMaxSalaryK(j.salary) >= salary[0]
   ), [jobs, q, loc, mode, salary]);

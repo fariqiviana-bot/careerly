@@ -1,683 +1,648 @@
 "use client";
-import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useStore, calculateDocScore, type Content } from "@/lib/store";
+import { TEMPLATE_CATALOG } from "@/lib/template-catalog";
+import { LANGS } from "@/lib/catalog";
 import { ResumeRender } from "@/components/render";
-import { useStore, uid, type Content, type Doc } from "@/lib/store";
-import { FONTS, TEMPLATES, LANGS, EXTRA_SECTIONS, FREE_CHECKS, LOCKED_CHECKS } from "@/lib/catalog";
 import { WebsiteView } from "@/components/website-view";
+import { ContentEditorPanel } from "@/components/studio/content-editor-panel";
+import { DesignerPanel } from "@/components/studio/designer-panel";
+import { AnalyzerTailorPanel } from "@/components/studio/analyzer-tailor-panel";
+import { ResponsiveModal, Field } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ResponsiveModal, Field, ScoreRing } from "@/components/shared";
-import { ArrowLeft, Undo2, Redo2, Sparkles, Wand2, Languages, History, Download, CheckCircle2, Lock, Plus, Trash2, Bold, Italic, Underline, List as ListIcon, Link2, Eye, Send, Check, Upload, ExternalLink } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  FileText,
+  Palette,
+  ScanSearch,
+  Sparkles,
+  Download,
+  History,
+  Languages,
+  Undo2,
+  Redo2,
+  Crown,
+  Check,
+  ExternalLink,
+  FileDown,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STEPS = [
-  { id: "personal", label: "Personal details", pct: 10 }, { id: "experience", label: "Professional experience", pct: 25 },
-  { id: "education", label: "Education", pct: 15 }, { id: "skills", label: "Areas of expertise", pct: 4 },
-  { id: "summary", label: "Professional summary", pct: 10 }, { id: "additional", label: "Additional sections", pct: 6 },
-  { id: "review", label: "Review", pct: 0 },
-];
+type StudioTab = "content" | "designer" | "analyzer" | "tailor";
 
-function Preview({ doc, content, twoCol, margin, fontSize }: { doc: Doc; content: Content; twoCol: boolean; margin: number; fontSize: number }) {
-  const details = content.extraDetails ?? {};
-  return (
-    <div id="resume-print-area" className="mx-auto w-full max-w-[640px] rounded-lg border border-border bg-white text-neutral-900 shadow-sm" style={{ padding: `${margin}px`, fontFamily: doc.font }}>
-      <div className="border-b-2 pb-3" style={{ borderColor: doc.accent }}>
-        <div className="text-2xl font-bold" style={{ color: doc.accent }}>{content.name}</div>
-        <div className="text-sm font-medium">{content.role}</div>
-        <div className="mt-1 text-[11px] text-neutral-500">{content.email} · {content.phone} · {content.location}</div>
+export default function EditorStudioPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const sp = useSearchParams();
+  const {
+    docs,
+    updateDoc,
+    translateDoc,
+    saveDocVersion,
+    restoreDocVersion,
+    resetDocToTemplateSample,
+    user,
+    setUser,
+  } = useStore();
+
+  const doc = docs.find((d) => d.id === params.id) || docs[0];
+  const [studioTab, setStudioTab] = useState<StudioTab>("content");
+  const [activeSection, setActiveSection] = useState<string>("personal");
+  const [undoStack, setUndoStack] = useState<Content[]>([]);
+  const [redoStack, setRedoStack] = useState<Content[]>([]);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [translateOpen, setTranslateOpen] = useState(false);
+  const [targetLang, setTargetLang] = useState("English (US)");
+  const [upgradeReason, setUpgradeReason] = useState("");
+  const [proBannerExpanded, setProBannerExpanded] = useState(false);
+
+  useEffect(() => {
+    const t = sp.get("tab");
+    if (t === "tailor" || t === "analyzer" || t === "designer" || t === "content") {
+      setStudioTab(t);
+    }
+    const dl = sp.get("download");
+    if (dl) {
+      setExportOpen(true);
+    }
+  }, [sp]);
+
+  if (!doc) {
+    return (
+      <div className="py-20 text-center text-sm text-muted-foreground">
+        Document not found.{" "}
+        <button onClick={() => router.push("/documents")} className="text-primary underline">
+          Return to Documents
+        </button>
       </div>
-      <div className={cn("mt-4 gap-6", twoCol && "grid grid-cols-[1fr_180px]")} style={{ fontSize: `${fontSize}px` }}>
-        <div className="space-y-4 leading-relaxed">
-          {content.summary && <div><div className="mb-1 text-[11px] font-bold uppercase tracking-wide" style={{ color: doc.accent }}>Summary</div><p className="whitespace-pre-wrap">{content.summary}</p></div>}
-          {content.experience.length > 0 && <div><div className="mb-1 text-[11px] font-bold uppercase tracking-wide" style={{ color: doc.accent }}>Experience</div>
-            {content.experience.map((e) => <div key={e.id} className="mb-2.5"><div className="flex justify-between font-semibold"><span>{e.role} — {e.company}</span><span className="font-normal text-neutral-500">{e.period}</span></div><p className="whitespace-pre-wrap text-neutral-600">{e.description}</p></div>)}
-          </div>}
-          {content.education.length > 0 && <div><div className="mb-1 text-[11px] font-bold uppercase tracking-wide" style={{ color: doc.accent }}>Education</div>
-            {content.education.map((e) => <div key={e.id} className="flex justify-between"><span><b>{e.degree}</b>, {e.school}</span><span className="text-neutral-500">{e.period}</span></div>)}
-          </div>}
-          {content.extras?.map((sec) => {
-            const text = details[sec];
-            if (!text) return null;
+    );
+  }
+
+  const sId = String(doc.series || doc.template || "11");
+  const tplMeta = TEMPLATE_CATALOG.find((t) => t.id === sId) || TEMPLATE_CATALOG[0];
+  const calc = calculateDocScore(doc.content);
+  const isProTemplate = tplMeta.tier === "premium";
+
+  const handlePatchContent = (nextContentOrPatch: any) => {
+    if (nextContentOrPatch && nextContentOrPatch.__visibility) {
+      updateDoc(doc.id, { visibility: nextContentOrPatch.__visibility });
+      return;
+    }
+    setUndoStack((prev) => [JSON.parse(JSON.stringify(doc.content)), ...prev.slice(0, 19)]);
+    setRedoStack([]);
+    updateDoc(doc.id, { content: nextContentOrPatch });
+  };
+
+  const handleUndo = () => {
+    if (undoStack.length === 0) return;
+    const [prev, ...rest] = undoStack;
+    setRedoStack((r) => [JSON.parse(JSON.stringify(doc.content)), ...r]);
+    setUndoStack(rest);
+    updateDoc(doc.id, { content: prev });
+    toast.success("Undid last change");
+  };
+
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const [next, ...rest] = redoStack;
+    setUndoStack((u) => [JSON.parse(JSON.stringify(doc.content)), ...u]);
+    setRedoStack(rest);
+    updateDoc(doc.id, { content: next });
+    toast.success("Redid change");
+  };
+
+  const handlePrintVectorPdf = () => {
+    if (isProTemplate && user.plan !== "Pro") {
+      setExportOpen(false);
+      setUpgradeReason(`(${tplMeta.name}) is a Pro Studio template. Upgrade or toggle Pro preview mode to export.`);
+      return;
+    }
+    setExportOpen(false);
+    setTimeout(() => {
+      window.print();
+    }, 180);
+  };
+
+  const handleExportLiveDocx = () => {
+    if (user.plan !== "Pro") {
+      setExportOpen(false);
+      setUpgradeReason("Live DOCX export is included in the Pro plan (or download the static master DOCX on the right).");
+      return;
+    }
+    const c = doc.content;
+    const html = `<html><head><meta charset="utf-8"><title>${doc.title}</title></head><body style="font-family: '${tplMeta.fonts.body}', Calibri, sans-serif; line-height: 1.45; max-width: 720px; margin: 0 auto;"><h1 style="font-family: '${tplMeta.fonts.heading}', Georgia, serif; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 4px;">${c.name}</h1><div style="color: #44546A; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;">${c.role}</div><div style="border-top: 1px solid #CFCDCD; border-bottom: 1px solid #CFCDCD; padding: 6px 0; font-size: 10pt; margin-bottom: 16px;">${c.phone} | ${c.email} | ${c.linkedin || ""} | ${c.location}</div><h2 style="font-size: 12pt; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #D0CECE; padding-bottom: 4px;">Professional Summary</h2><p style="font-size: 10pt;">${c.summary}</p><h2 style="font-size: 12pt; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #D0CECE; padding-bottom: 4px;">Professional Experience</h2>${(c.experience || []).map((e) => `<div style="margin-bottom: 12px;"><div><strong>${e.role}</strong> — <span style="float:right;"><strong>${e.period}</strong></span></div><div>${e.company}</div>${e.showOverview && e.overview ? `<p>${e.overview}</p>` : ""}<p style="white-space: pre-wrap;">${e.description}</p></div>`).join("")}<h2 style="font-size: 12pt; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #D0CECE; padding-bottom: 4px;">Education & Certifications</h2>${(c.education || []).map((ed) => `<div><strong>${ed.degree}</strong> — ${ed.school} (${ed.period})</div>`).join("")}${(c.certifications || []).map((ct) => `<div><strong>${ct.name}</strong> — ${ct.issuer} (${ct.date})</div>`).join("")}<h2 style="font-size: 12pt; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #D0CECE; padding-bottom: 4px;">Skills</h2><p>${(c.skills || []).join(" · ")}</p></body></html>`;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([html], { type: "application/msword;charset=utf-8" }));
+    a.download = `${doc.title.replace(/\s+/g, "_")}.doc`;
+    a.click();
+    toast.success("Live edited Word document downloaded");
+  };
+
+  const handleExportTxt = () => {
+    const c = doc.content;
+    const txt = `${c.name}\n${c.role}\n${c.phone} | ${c.email} | ${c.linkedin || ""} | ${c.location}\n\nPROFESSIONAL SUMMARY\n${c.summary}\n\nPROFESSIONAL EXPERIENCE\n${(c.experience || []).map((e) => `${e.role} | ${e.company} (${e.period})\n${e.description}`).join("\n\n")}\n\nEDUCATION\n${(c.education || []).map((ed) => `${ed.degree} — ${ed.school} (${ed.period})`).join("\n")}\n\nSKILLS\n${(c.skills || []).join(", ")}`;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain;charset=utf-8" }));
+    a.download = `${doc.title.replace(/\s+/g, "_")}.txt`;
+    a.click();
+    toast.success("ATS Plain-Text (.txt) downloaded");
+  };
+
+  if (doc.type === "website") {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => router.push("/documents")}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Input
+              value={(doc.title || "").replace(/^Series\s+\d+\s*[\u2014\u2013\-\u00b7]+\s*/i, "")}
+              onChange={(e) => updateDoc(doc.id, { title: e.target.value })}
+              className="h-8 w-64 border-transparent bg-transparent font-medium hover:border-border focus:bg-background"
+            />
+          </div>
+          <Button className="rounded-full" onClick={() => router.push(`/cv/${doc.slug || "viana-fariqi"}`)}>
+            <ExternalLink className="mr-1.5 h-4 w-4" /> Open Live Portfolio Website
+          </Button>
+        </div>
+        <WebsiteView doc={doc} compact />
+      </div>
+    );
+  }
+
+  return (
+    <div className="no-print-shell space-y-4">
+      {/* =====================================================================
+       * UNIFIED STUDIO TOPBAR (Teal + Enhancv + Resume.io Hybrid Header)
+       * =================================================================== */}
+      <div className="sticky top-14 z-30 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card/95 px-3.5 py-2.5 shadow-xs backdrop-blur">
+        {/* Left: Back + Document Title + Autosave Status */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => router.push("/documents")}
+            title="Back to My Documents"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Input
+            value={doc.title}
+            onChange={(e) => updateDoc(doc.id, { title: e.target.value })}
+            className="h-8 w-44 border-transparent bg-transparent px-2 text-sm font-semibold hover:border-border focus:border-border focus:bg-background sm:w-56"
+          />
+          <span className="hidden items-center gap-1 rounded-full bg-[#e6f0e8] px-2 py-0.5 text-[10px] font-medium text-[#33613d] sm:inline-flex">
+            <Check className="h-3 w-3" /> Saved
+          </span>
+        </div>
+
+        {/* Center: 4 Primary Studio Mode Tabs (Content Editor | Designer | Analyzer | Job Matcher) */}
+        <div className="flex items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
+          {[
+            { id: "content", label: "Content Editor", icon: FileText },
+            { id: "designer", label: "Designer & Layout", icon: Palette },
+            {
+              id: "analyzer",
+              label: "Analyzer & Fix",
+              icon: ScanSearch,
+              badge: calc.issues.length > 0 ? String(calc.issues.length) : undefined,
+            },
+            { id: "tailor", label: "Job Matcher", icon: Sparkles },
+          ].map((tab) => {
+            const active = studioTab === tab.id;
             return (
-              <div key={sec}>
-                <div className="mb-1 text-[11px] font-bold uppercase tracking-wide" style={{ color: doc.accent }}>{sec}</div>
-                <p className="whitespace-pre-wrap text-neutral-700">{text}</p>
-              </div>
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setStudioTab(tab.id as StudioTab)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all",
+                  active ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <tab.icon className="h-3.5 w-3.5" />
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span className="rounded-full bg-[#c05b49] px-1.5 py-0.2 text-[10px] font-bold text-white">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>
-        <div className="space-y-4">
-          {content.skills.length > 0 && <div><div className="mb-1 text-[11px] font-bold uppercase tracking-wide" style={{ color: doc.accent }}>Skills</div>
-            <div className={cn("flex flex-wrap gap-1", twoCol && "flex-col")}>{content.skills.map((s) => <span key={s} className="rounded bg-neutral-100 px-1.5 py-0.5 text-[11px]">{s}</span>)}</div>
-          </div>}
-          {content.extras?.filter((sec) => !details[sec]).length > 0 && (
-            <div>
-              <div className="mb-1 text-[11px] font-bold uppercase tracking-wide" style={{ color: doc.accent }}>Highlights</div>
-              <div className="flex flex-wrap gap-1">{content.extras.filter((sec) => !details[sec]).map((sec) => <span key={sec} className="rounded bg-neutral-100 px-1.5 py-0.5 text-[11px]">{sec}</span>)}</div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function EditorInner() {
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
-  const sp = useSearchParams();
-  const { docs, updateDoc, addDoc } = useStore();
-  const doc = docs.find((d) => d.id === id);
-  const [content, setContent] = useState<Content>(doc?.content ?? ({} as Content));
-  const [step, setStep] = useState(0);
-  const [tab, setTab] = useState<"edit" | "customize">("edit");
-  const [webTab, setWebTab] = useState<"fill" | "design" | "publish">("publish");
-  const [slugInput, setSlugInput] = useState(doc?.slug ?? "viana-fariqi");
-  const [mobileView, setMobileView] = useState<"form" | "preview">("form");
-  const [saving, setSaving] = useState(false);
-  const [modal, setModal] = useState<string>(sp.get("tailor") ? "tailor" : "");
-  const [twoCol, setTwoCol] = useState(false);
-  const [margin, setMargin] = useState(32);
-  const [fontSize, setFontSize] = useState(12);
-  const [checks, setChecks] = useState(FREE_CHECKS.map(() => true));
-  const [jd, setJd] = useState("");
-  const [level, setLevel] = useState("balanced");
-  const [lang, setLang] = useState("Español");
-  const [aiMsgs, setAiMsgs] = useState<{ me: boolean; text: string; suggestion?: string }[]>([{ me: false, text: "I'm Sage. Ask me to improve your summary, quantify impact, or tailor this resume." }]);
-  const [aiInput, setAiInput] = useState("");
-  const past = useRef<Content[]>([]); const future = useRef<Content[]>([]);
-  const first = useRef(true);
-  const loadedId = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    if (doc && loadedId.current !== doc.id) {
-      loadedId.current = doc.id;
-      first.current = true;
-      setContent(doc.content);
-      setSlugInput(doc.slug ?? "viana-fariqi");
-      past.current = [];
-      future.current = [];
-    }
-  }, [doc]);
-
-  const score = useMemo(() => {
-    if (!doc) return 0;
-    let s = 15;
-    if (content.role) s += 10; if (content.experience?.length) s += 25; if (content.education?.length) s += 15;
-    if ((content.skills?.length ?? 0) >= 3) s += 4; if (content.summary) s += 10; s += (content.extras?.length ?? 0) * 3;
-    return Math.min(100, s);
-  }, [content, doc]);
-
-  useEffect(() => {
-    if (!doc) return;
-    if (first.current) { first.current = false; return; }
-    setSaving(true);
-    const t = setTimeout(() => { updateDoc(doc.id, { content, score: doc.type === "resume" || doc.type === "tailored" ? score : doc.score }); setSaving(false); }, 700);
-    return () => clearTimeout(t);
-  }, [content]); // eslint-disable-line
-
-  if (!doc || !content.experience) return <div className="py-20 text-center text-muted-foreground">Document not found. <Button variant="link" onClick={() => router.push("/documents")}>Back to documents</Button></div>;
-
-  const set = (patch: Partial<Content>) => { past.current.push(content); future.current = []; setContent({ ...content, ...patch }); };
-  const undo = () => { const p = past.current.pop(); if (p) { future.current.push(content); setContent(p); } };
-  const redo = () => { const f = future.current.pop(); if (f) { past.current.push(content); setContent(f); } };
-  const isLetter = doc.type === "cover" || doc.type === "resignation";
-  const isWebsite = doc.type === "website";
-
-  const exportFile = (format: "PDF" | "DOCX" | "TXT") => {
-    setModal("");
-    if (format === "PDF") {
-      toast.success("Preparing vector PDF — select 'Save as PDF' in the print dialog");
-      setTimeout(() => window.print(), 250);
-      return;
-    }
-    const c = content;
-    if (format === "TXT") {
-      const extraTxt = (c.extras ?? []).map((sec) => `\n${sec.toUpperCase()}\n${c.extraDetails?.[sec] ?? ""}`).join("\n");
-      const txt = `${c.name} — ${c.role}\n${c.email} · ${c.phone} · ${c.location}\n\nSUMMARY\n${c.summary}\n\nEXPERIENCE\n${c.experience.map((e) => `${e.role} @ ${e.company} (${e.period})\n${e.description}`).join("\n\n")}\n\nEDUCATION\n${c.education.map((e) => `${e.degree}, ${e.school} (${e.period})`).join("\n")}\n\nSKILLS\n${c.skills.join(", ")}${extraTxt}`;
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain;charset=utf-8" }));
-      a.download = `${doc.title.replace(/\s+/g, "_")}.txt`;
-      a.click();
-      toast.success("TXT file downloaded");
-      return;
-    }
-    if (format === "DOCX") {
-      const html = `<html><head><meta charset="utf-8"><title>${doc.title}</title></head><body style="font-family: Calibri, Arial, sans-serif; line-height: 1.5;"><h1>${c.name}</h1><h3>${c.role}</h3><p>${c.email} | ${c.phone} | ${c.location}</p><hr/><h2>Summary</h2><p>${c.summary}</p><h2>Experience</h2>${c.experience.map((e) => `<p><b>${e.role} — ${e.company}</b> (${e.period})<br/>${e.description}</p>`).join("")}<h2>Education</h2>${c.education.map((e) => `<p><b>${e.degree}</b>, ${e.school} (${e.period})</p>`).join("")}<h2>Skills</h2><p>${c.skills.join(", ")}</p></body></html>`;
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([html], { type: "application/msword;charset=utf-8" }));
-      a.download = `${doc.title.replace(/\s+/g, "_")}.doc`;
-      a.click();
-      toast.success("Word document downloaded");
-    }
-  };
-
-  const sendAi = (text?: string) => {
-    const q = text ?? aiInput; if (!q.trim()) return;
-    setAiMsgs((m) => [...m, { me: true, text: q }]); setAiInput("");
-    const improved = `${content.role || "Product Designer"} with proven experience delivering high-impact digital products. Led cross-functional initiatives that lifted user activation by 18% and scaled a 120-component design system across 30+ engineers.`;
-    setTimeout(() => setAiMsgs((m) => [...m, {
-      me: false,
-      text: `Here is a sharper, quantified version tailored for ${content.role || "your role"}:\n\n“${improved}”`,
-      suggestion: improved,
-    }]), 450);
-  };
-
-  const handleTailor = () => {
-    const stopWords = new Set(["with", "from", "that", "this", "your", "have", "will", "work", "team", "role", "experience", "years", "looking", "strong", "skills", "about"]);
-    const extracted = Array.from(new Set(
-      (jd.match(/\b[A-Za-z][A-Za-z0-9+#.-]{3,15}\b/g) ?? [])
-        .filter((w) => !stopWords.has(w.toLowerCase()) && !content.skills.some((s) => s.toLowerCase() === w.toLowerCase()))
-    )).slice(0, level === "conservative" ? 2 : level === "balanced" ? 4 : 6);
-
-    const newSkills = [...content.skills, ...extracted];
-    const tailoredSummary = extracted.length
-      ? `${content.summary} Specialized focus on ${extracted.slice(0, 3).join(", ")}.`
-      : content.summary;
-
-    const d = addDoc("tailored", `${doc.title} — Tailored`, {
-      content: { ...content, skills: newSkills, summary: tailoredSummary },
-      score: Math.min(100, score + 14),
-      template: doc.template,
-      accent: doc.accent,
-    });
-    toast.success(`Tailored resume created (+${extracted.length} keywords matched)`);
-    setModal("");
-    router.push(`/editor/${d.id}`);
-  };
-
-  const stepForm = (
-    <div className="space-y-5">
-      {STEPS[step].id === "personal" && <>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Full name"><Input value={content.name} onChange={(e) => set({ name: e.target.value })} /></Field>
-          <Field label="Job target" required><Input value={content.role} onChange={(e) => set({ role: e.target.value })} /></Field>
-          <Field label="Email"><Input value={content.email} onChange={(e) => set({ email: e.target.value })} /></Field>
-          <Field label="Phone"><Input value={content.phone} onChange={(e) => set({ phone: e.target.value })} /></Field>
-          <Field label="Location"><Input value={content.location} onChange={(e) => set({ location: e.target.value })} /></Field>
-        </div>
-      </>}
-      {STEPS[step].id === "experience" && <>
-        {content.experience.map((e, i) => (
-          <div key={e.id} className="space-y-3 rounded-xl border border-border p-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Role"><Input value={e.role} onChange={(ev) => set({ experience: content.experience.map((x, j) => j === i ? { ...x, role: ev.target.value } : x) })} /></Field>
-              <Field label="Company"><Input value={e.company} onChange={(ev) => set({ experience: content.experience.map((x, j) => j === i ? { ...x, company: ev.target.value } : x) })} /></Field>
-            </div>
-            <Field label="Period"><Input value={e.period} onChange={(ev) => set({ experience: content.experience.map((x, j) => j === i ? { ...x, period: ev.target.value } : x) })} /></Field>
-            <Field label="Description" hint="Tip: quantify results — “+18% activation” beats “improved onboarding”."><Textarea rows={3} value={e.description} onChange={(ev) => set({ experience: content.experience.map((x, j) => j === i ? { ...x, description: ev.target.value } : x) })} /></Field>
-            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => set({ experience: content.experience.filter((_, j) => j !== i) })}><Trash2 className="mr-1 h-3.5 w-3.5" />Remove</Button>
-          </div>
-        ))}
-        <Button variant="outline" className="rounded-full" onClick={() => set({ experience: [...content.experience, { id: uid(), role: "", company: "", period: "", description: "" }] })}><Plus className="mr-1 h-4 w-4" />Add employment</Button>
-      </>}
-      {STEPS[step].id === "education" && <>
-        {content.education.map((e, i) => (
-          <div key={e.id} className="space-y-3 rounded-xl border border-border p-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Field label="Degree"><Input value={e.degree} onChange={(ev) => set({ education: content.education.map((x, j) => j === i ? { ...x, degree: ev.target.value } : x) })} /></Field>
-              <Field label="School"><Input value={e.school} onChange={(ev) => set({ education: content.education.map((x, j) => j === i ? { ...x, school: ev.target.value } : x) })} /></Field>
-              <Field label="Period"><Input value={e.period} onChange={(ev) => set({ education: content.education.map((x, j) => j === i ? { ...x, period: ev.target.value } : x) })} /></Field>
-            </div>
-            {content.education.length > 1 && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => set({ education: content.education.filter((_, j) => j !== i) })}><Trash2 className="mr-1 h-3.5 w-3.5" />Remove</Button>}
-          </div>
-        ))}
-        <Button variant="outline" className="rounded-full" onClick={() => set({ education: [...content.education, { id: uid(), degree: "", school: "", period: "" }] })}><Plus className="mr-1 h-4 w-4" />Add education</Button>
-      </>}
-      {STEPS[step].id === "skills" && <>
-        <Field label="Skills" hint="Comma-separated. 6–10 relevant skills works best.">
-          <Textarea rows={3} value={content.skills.join(", ")} onChange={(e) => set({ skills: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
-        </Field>
-        <div className="flex flex-wrap gap-1.5">{content.skills.map((s) => <Badge key={s} variant="secondary" className="rounded-full">{s}</Badge>)}</div>
-      </>}
-      {STEPS[step].id === "summary" && <>
-        <div className="flex gap-1 rounded-t-xl border border-b-0 border-border bg-muted px-2 py-1.5">
-          {[Bold, Italic, Underline, ListIcon, Link2].map((I, i) => <Button key={i} variant="ghost" size="icon" className="h-7 w-7" onClick={() => toast.info("Formatting applied")}><I className="h-3.5 w-3.5" /></Button>)}
-          <Button variant="ghost" size="sm" className="ml-auto h-7 gap-1 text-primary" onClick={() => setModal("ai")}><Sparkles className="h-3.5 w-3.5" />AI Writer</Button>
-        </div>
-        <Textarea rows={6} className="rounded-t-none" value={content.summary} onChange={(e) => set({ summary: e.target.value })} />
-        <p className="text-xs text-muted-foreground">{content.summary.length}/600 · Recruiter tip: 400–600 characters increases interview chances.</p>
-      </>}
-      {STEPS[step].id === "additional" && (
-        <div className="space-y-5">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {EXTRA_SECTIONS.map((s) => (
-              <label key={s} className="flex cursor-pointer items-center justify-between rounded-xl border border-border p-3 text-sm">
-                {s}<Switch checked={content.extras.includes(s)} onCheckedChange={(b) => set({ extras: b ? [...content.extras, s] : content.extras.filter((x) => x !== s) })} />
-              </label>
-            ))}
-          </div>
-          {content.extras.length > 0 && (
-            <div className="space-y-4 border-t border-border pt-4">
-              {content.extras.map((sec) => (
-                <Field key={sec} label={sec} hint={`Add items for ${sec} (appears in your preview)`}>
-                  <Textarea
-                    rows={3}
-                    value={content.extraDetails?.[sec] ?? ""}
-                    onChange={(e) => set({ extraDetails: { ...(content.extraDetails ?? {}), [sec]: e.target.value } })}
-                    placeholder={`Enter your ${sec.toLowerCase()} details…`}
-                  />
-                </Field>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      {STEPS[step].id === "review" && (
-        <div className="flex flex-col items-center gap-4 py-4 text-center">
-          <ScoreRing value={score} size={120} label="resume score" />
-          <p className="max-w-sm text-sm text-muted-foreground">Looking good! Run an AI review against a specific job target for deeper feedback.</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button className="rounded-full" onClick={() => { if (!content.role) { toast.error("Job target is required to get an AI review"); return; } setModal("tailor"); }}><Sparkles className="mr-1 h-4 w-4" />Tailor to a job ad</Button>
-            <Button variant="outline" className="rounded-full" onClick={() => exportFile("PDF")}><Download className="mr-1 h-4 w-4" />Export PDF</Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const letterForm = (
-    <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="To"><Input value={content.letter.to} onChange={(e) => set({ letter: { ...content.letter, to: e.target.value } })} /></Field>
-        <Field label="Company"><Input value={content.letter.company} onChange={(e) => set({ letter: { ...content.letter, company: e.target.value } })} /></Field>
-      </div>
-      <Field label="Subject"><Input value={content.letter.subject} onChange={(e) => set({ letter: { ...content.letter, subject: e.target.value } })} /></Field>
-      <Field label="Body">
-        <Textarea rows={12} value={content.letter.body} onChange={(e) => set({ letter: { ...content.letter, body: e.target.value } })} />
-      </Field>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" className="rounded-full" onClick={() => setModal("ai")}><Sparkles className="mr-1 h-4 w-4" />Ask AI writer</Button>
-        <Button variant="outline" className="rounded-full" onClick={() => {
-          set({ letter: { ...content.letter, body: `Dear ${content.letter.to || "Hiring Manager"},\n\nI am writing to express my strong interest in the ${content.role} position at ${content.letter.company || "your company"}. Over the past 4+ years, I have shipped scalable design systems and improved product activation by 18%.\n\nI would welcome the opportunity to discuss how my background aligns with your team's goals.\n\nWarm regards,\n${content.name}` } });
-          toast.success("Cover letter drafted");
-        }}><Wand2 className="mr-1 h-4 w-4" />Generate new letter</Button>
-        <Badge variant="secondary" className="ml-auto self-center rounded-full"><CheckCircle2 className="mr-1 h-3 w-3" />No spelling errors</Badge>
-      </div>
-    </div>
-  );
-
-  /* Kickresume-style Website Builder: Fill In | Design | Publish */
-  const websiteBuilder = (
-    <div className="space-y-5">
-      <div className="flex gap-1.5 rounded-2xl border border-border bg-card p-1.5">
-        {([
-          ["fill", "Fill In"],
-          ["design", "Design"],
-          ["publish", "Publish"],
-        ] as const).map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setWebTab(k)}
-            className={cn(
-              "flex-1 rounded-xl px-4 py-2 text-sm font-medium transition-colors",
-              webTab === k ? "bg-[#2d2d2d] text-white shadow-xs" : "text-foreground/75 hover:bg-muted"
-            )}
+        {/* Right: Undo/Redo + History + Translate + Download CTA */}
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            disabled={undoStack.length === 0}
+            onClick={handleUndo}
+            title="Undo"
           >
-            {label}
-          </button>
-        ))}
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            disabled={redoStack.length === 0}
+            onClick={handleRedo}
+            title="Redo"
+          >
+            <Redo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="hidden h-8 rounded-full px-2.5 text-xs lg:inline-flex"
+            onClick={() => {
+              saveDocVersion(doc.id);
+              setHistoryOpen(true);
+            }}
+          >
+            <History className="mr-1 h-3.5 w-3.5" /> History
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="hidden h-8 rounded-full px-2.5 text-xs xl:inline-flex"
+            onClick={() => setTranslateOpen(true)}
+          >
+            <Languages className="mr-1 h-3.5 w-3.5" /> Translate
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="h-8 rounded-full px-3.5 text-xs font-semibold"
+            onClick={() => setExportOpen(true)}
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Download / Export
+          </Button>
+        </div>
       </div>
 
-      {webTab === "fill" && (
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="mb-5 flex flex-wrap gap-1.5">
-            {STEPS.slice(0, 6).map((s, i) => (
-              <button key={s.id} onClick={() => setStep(i)} className={cn("rounded-full border px-3 py-1.5 text-xs transition-colors", i === step ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted")}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-          {stepForm}
-        </div>
-      )}
-
-      {webTab === "design" && (
-        <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
-          <h2 className="text-xl">Website Design</h2>
-          <Field label="Website layout template">
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { id: "sidebar", name: "Sidebar Template", desc: "Dark navigation sidebar + warm cream canvas" },
-                { id: "editorial", name: "Editorial Center", desc: "Centered hero header + pill navigation" },
-              ].map((tpl) => (
+      {/* =====================================================================
+       * MAIN SPLIT-SCREEN STUDIO WORKSPACE (Left Form / Right Live 1:1 Paper)
+       * =================================================================== */}
+      <div className="grid items-start gap-6 lg:grid-cols-12">
+        {/* LEFT PANE: Active Mode Panel */}
+        <div className="space-y-3.5 lg:col-span-6 xl:col-span-5">
+          {/* Kickresume Pages 1-2 Transparent Premium Features Banner (Only shown when Free user picks a Pro template) */}
+          {isProTemplate && user.plan !== "Pro" && (
+            <div className="rounded-2xl border border-accent bg-accent/25 p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                  <Crown className="h-4 w-4 text-accent-foreground" />
+                  <span>This resume uses 1 Pro Studio feature (Series {sId} · {tplMeta.name}).</span>
+                </div>
                 <button
-                  key={tpl.id}
-                  onClick={() => updateDoc(doc.id, { webTemplate: tpl.id as "sidebar" | "editorial" })}
-                  className={cn("rounded-xl border p-3.5 text-left transition-colors", (doc.webTemplate ?? "sidebar") === tpl.id ? "border-primary bg-sage-mist/60" : "border-border hover:bg-muted")}
+                  type="button"
+                  onClick={() => setProBannerExpanded((v) => !v)}
+                  className="text-muted-foreground hover:text-foreground"
                 >
-                  <div className="text-sm font-semibold">{tpl.name}</div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">{tpl.desc}</div>
+                  {proBannerExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </button>
-              ))}
-            </div>
-          </Field>
-          <Field label="Avatar badge color">
-            <div className="flex gap-2.5">
-              {["#b83a14", "#5d6f61", "#3d4a3f", "#5b7a8c", "#8a6f9e", "#c98d72"].map((c) => (
-                <button key={c} onClick={() => updateDoc(doc.id, { accent: c })} className={cn("h-8 w-8 rounded-full border-2", doc.accent === c ? "border-foreground" : "border-transparent")} style={{ background: c }} />
-              ))}
-            </div>
-          </Field>
-          <Field label="Typography">
-            <Select value={doc.font} onValueChange={(v) => updateDoc(doc.id, { font: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{FONTS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
-        </div>
-      )}
-
-      {webTab === "publish" && (
-        <div className="space-y-5">
-          <div className="flex items-center gap-2.5">
-            <Upload className="h-5 w-5 text-foreground" />
-            <h2 className="font-sans text-2xl font-bold">Publish Website</h2>
-          </div>
-
-          <div className="space-y-2 text-xs text-muted-foreground">
-            <div className="font-semibold text-foreground">Your website is currently using these features:</div>
-            <div className="flex items-center gap-2 text-primary"><Lock className="h-3.5 w-3.5" /><span className="underline">{(doc.webTemplate ?? "sidebar") === "sidebar" ? "Sidebar" : "Editorial"}</span> template</div>
-            <div className="flex items-center gap-2 text-primary"><Lock className="h-3.5 w-3.5" /><span className="underline">{doc.font}</span> font</div>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-xs space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-sans text-xl font-bold">Publish your website</h3>
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                {doc.published ? "Link active" : "Link disabled"}
-                <Switch
-                  checked={!!doc.published}
-                  onCheckedChange={(b) => {
-                    updateDoc(doc.id, { published: b, slug: slugInput });
-                    toast.success(b ? "Website published!" : "Website link disabled");
-                  }}
-                />
-              </label>
-            </div>
-            <p className="text-xs text-muted-foreground">Create a public web address to share your new website online.</p>
-
-            <div className="flex overflow-hidden rounded-lg border border-border bg-background">
-              <span className="flex items-center border-r border-border bg-muted/60 px-3 text-xs text-muted-foreground select-none">
-                www.farnavi.com/cv/
-              </span>
-              <input
-                value={slugInput}
-                onChange={(e) => setSlugInput(e.target.value.replace(/[^a-zA-Z-]/g, "").toLowerCase())}
-                placeholder="viana-fariqi"
-                className="h-10 flex-1 bg-transparent px-3 text-sm outline-none"
-              />
-            </div>
-            <p className="text-[11px] text-muted-foreground">Only the letters a-z, A-Z and &quot;-&quot; are allowed. (e.g. &quot;viana-fariqi&quot;)</p>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                className="rounded-lg border-[#e0533c] px-6 text-[#e0533c] hover:bg-[#e0533c]/10"
-                onClick={() => {
-                  const cleanSlug = slugInput.trim() || "viana-fariqi";
-                  updateDoc(doc.id, { slug: cleanSlug, published: true });
-                  toast.success(`Website live at /cv/${cleanSlug}`);
-                  router.push(`/cv/${cleanSlug}`);
-                }}
-              >
-                {doc.published ? "Open Website" : "Create"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const cleanSlug = slugInput.trim() || "viana-fariqi";
-                  navigator.clipboard.writeText(`${window.location.origin}/cv/${cleanSlug}`);
-                  toast.success("Public website URL copied");
-                }}
-              >
-                <Link2 className="mr-1.5 h-3.5 w-3.5" />Copy URL
-              </Button>
-            </div>
-
-            {/* Miniature Thumbnail Card */}
-            <div className="pt-3">
-              <div
-                onClick={() => router.push(`/cv/${slugInput || "viana-fariqi"}`)}
-                className="group cursor-pointer overflow-hidden rounded-xl border border-border transition-all hover:shadow-md"
-              >
-                <div className="flex h-44 bg-[#f7efe2]">
-                  <div className="flex w-1/4 flex-col items-center bg-[#2d2d2d] pt-5 text-white">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium" style={{ background: doc.accent || "#b83a14" }}>
-                      {(content.name || "V")[0]}
-                    </div>
-                    <div className="mt-4 w-full space-y-1.5 px-2 text-[8px] text-white/70">
-                      <div className="rounded bg-white/15 px-1.5 py-0.5 text-white">Personal Information</div>
-                      <div className="px-1.5">Work experience</div>
-                      <div className="px-1.5">Education</div>
-                      <div className="px-1.5">Skills</div>
-                    </div>
+              </div>
+              {proBannerExpanded && (
+                <div className="mt-2.5 space-y-2 border-t border-border/60 pt-2.5 text-xs">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Lock className="h-3.5 w-3.5" /> Series {sId} Two-Column / Emblem Master Template
                   </div>
-                  <div className="flex flex-1 flex-col">
-                    <div className="bg-[#ede2d0] py-6 text-center text-base font-bold text-[#3b3b3b]">{content.name}</div>
-                    <div className="p-4 text-[10px] text-[#5a5751]">
-                      <div className="font-bold text-[#3b3b3b]">Email address</div>
-                      <div>{content.email}</div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <span className="text-[11px] text-muted-foreground">
+                      Free ATS templates: Template, Template, Template
+                    </span>
+                    <div className="flex gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 rounded-full text-xs"
+                        onClick={() => updateDoc(doc.id, { template: "11", series: "11" })}
+                      >
+                        Switch to Free Template
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-7 rounded-full text-xs"
+                        onClick={() => {
+                          setUser({ plan: "Pro" });
+                          toast.success("Pro Plan enabled for testing!");
+                        }}
+                      >
+                        Enable Pro Plan ($9/mo)
+                      </Button>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                <span>{content.name} — {doc.title}</span>
-                <button onClick={() => router.push(`/cv/${slugInput || "viana-fariqi"}`)} className="inline-flex items-center gap-1 text-primary hover:underline">
-                  Full screen <ExternalLink className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const customize = (
-    <Tabs defaultValue="template">
-      <TabsList className="w-full rounded-full"><TabsTrigger value="template" className="flex-1 rounded-full">Template</TabsTrigger><TabsTrigger value="text" className="flex-1 rounded-full">Text</TabsTrigger><TabsTrigger value="layout" className="flex-1 rounded-full">Layout</TabsTrigger></TabsList>
-      <TabsContent value="template" className="mt-4 space-y-4">
-        <div className="grid grid-cols-3 gap-2">
-          {TEMPLATES.slice(0, 9).map((t) => (
-            <button key={t.id} onClick={() => { updateDoc(doc.id, { template: t.id }); setTwoCol(t.twoCol); }} className={cn("rounded-xl border p-2 text-left text-xs transition-colors", doc.template === t.id ? "border-primary bg-sage-mist" : "border-border hover:bg-muted")}>
-              <div className="mb-1 h-12 rounded bg-white" style={{ borderTop: `3px solid ${t.accent}` }} />{t.name}{t.pro && <Lock className="ml-1 inline h-3 w-3 text-muted-foreground" />}
-            </button>
-          ))}
-        </div>
-        {/* Template colors are locked brand assets — no picker. */}
-      </TabsContent>
-      <TabsContent value="text" className="mt-4 space-y-4">
-        <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs"><div className="mb-1 flex items-center gap-1.5 font-medium"><Lock className="h-3 w-3" />Template typography — locked</div><div className="text-muted-foreground">{doc.font}{doc.secondaryFont && doc.secondaryFont !== doc.font ? " + " + doc.secondaryFont : ""} · font &amp; color controls arrive with the Design panel.</div></div>
-        <Field label={`Body size — ${fontSize}pt`}><Slider value={[fontSize]} min={9} max={14} step={0.5} onValueChange={([v]) => setFontSize(v)} /></Field>
-      </TabsContent>
-      <TabsContent value="layout" className="mt-4 space-y-4">
-        <Field label="Page format"><RadioGroup defaultValue="a4" className="flex gap-4"><label className="flex items-center gap-2 text-sm"><RadioGroupItem value="a4" />A4</label><label className="flex items-center gap-2 text-sm"><RadioGroupItem value="letter" />US Letter</label></RadioGroup></Field>
-        <Field label={`Margins — ${margin}px`}><Slider value={[margin]} min={16} max={56} onValueChange={([v]) => setMargin(v)} /></Field>
-        <Field label="Two-column layout"><Switch checked={twoCol} onCheckedChange={setTwoCol} /></Field>
-        <Field label="Date format"><Select defaultValue="long"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="long">January 2026</SelectItem><SelectItem value="short">Jan 2026</SelectItem><SelectItem value="num">01/2026</SelectItem><SelectItem value="year">2026</SelectItem></SelectContent></Select></Field>
-      </TabsContent>
-    </Tabs>
-  );
-
-  return (
-    <div className="-mt-2">
-      {/* Editor topbar */}
-      <div className="no-print mb-4 flex flex-wrap items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => router.push(isWebsite ? "/documents?tab=website" : "/documents")}><ArrowLeft className="h-4 w-4" /></Button>
-        <Input value={doc.title} onChange={(e) => updateDoc(doc.id, { title: e.target.value })} className="h-9 w-48 border-transparent bg-transparent font-medium hover:border-border focus:border-border md:w-64" />
-        <span className="text-xs text-muted-foreground">{saving ? "Saving…" : "Saved"}</span>
-        <div className="ml-auto flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={undo}><Undo2 className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={redo}><Redo2 className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setModal("history")}><History className="h-4 w-4" /></Button>
-          <Separator orientation="vertical" className="mx-1 h-6" />
-          {isWebsite ? (
-            <Button size="sm" className="rounded-full" onClick={() => router.push(`/cv/${slugInput || "viana-fariqi"}`)}>
-              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />Preview Live Website
-            </Button>
-          ) : (
-            <>
-              <Button variant="outline" size="sm" className="hidden rounded-full md:flex" onClick={() => setModal("fix")}><CheckCircle2 className="mr-1 h-3.5 w-3.5" />Fix mistakes</Button>
-              <Button variant="outline" size="sm" className="hidden rounded-full md:flex" onClick={() => setModal("tailor")}><Wand2 className="mr-1 h-3.5 w-3.5" />Check & Tailor</Button>
-              <Button variant="outline" size="sm" className="hidden rounded-full lg:flex" onClick={() => setModal("translate")}><Languages className="mr-1 h-3.5 w-3.5" />Translate</Button>
-              <Button size="sm" className="rounded-full" onClick={() => setModal("download")}><Download className="mr-1 h-3.5 w-3.5" />Download</Button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile form/preview toggle */}
-      <div className="no-print mb-4 grid grid-cols-2 rounded-full border border-border p-0.5 md:hidden">
-        {(["form", "preview"] as const).map((v) => <Button key={v} variant={mobileView === v ? "secondary" : "ghost"} size="sm" className="rounded-full capitalize" onClick={() => setMobileView(v)}>{v === "preview" ? <><Eye className="mr-1 h-3.5 w-3.5" />Preview</> : "Edit"}</Button>)}
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,50%)]">
-        <div className={cn("no-print", mobileView === "preview" && "hidden md:block")}>
-          {!isLetter && !isWebsite && (
-            <Tabs value={tab} onValueChange={(v) => setTab(v as "edit" | "customize")}>
-              <TabsList className="mb-4 rounded-full"><TabsTrigger value="edit" className="rounded-full px-6">Edit</TabsTrigger><TabsTrigger value="customize" className="rounded-full px-6">Customize</TabsTrigger></TabsList>
-            </Tabs>
-          )}
-          {isWebsite ? websiteBuilder : tab === "customize" && !isLetter ? customize : (
-            <div className="rounded-2xl border border-border bg-card p-5">
-              {isLetter ? letterForm : (
-                <>
-                  <div className="mb-5 flex flex-wrap gap-1.5">
-                    {STEPS.map((s, i) => (
-                      <button key={s.id} onClick={() => setStep(i)} className={cn("rounded-full border px-3 py-1.5 text-xs transition-colors", i === step ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted")}>
-                        {s.label}{s.pct > 0 && <span className={cn("ml-1", i === step ? "opacity-80" : "text-primary")}>+{s.pct}%</span>}
-                      </button>
-                    ))}
-                  </div>
-                  {stepForm}
-                  <div className="mt-6 flex justify-between">
-                    <Button variant="outline" className="rounded-full" disabled={step === 0} onClick={() => setStep(step - 1)}>Back</Button>
-                    <Button className="rounded-full" disabled={step === STEPS.length - 1} onClick={() => setStep(step + 1)}>Next</Button>
-                  </div>
-                </>
               )}
             </div>
           )}
+
+          {studioTab === "content" && (
+            <ContentEditorPanel
+              doc={doc}
+              activeSection={activeSection}
+              onSelectSection={setActiveSection}
+              onRequestUpgrade={(reason) => setUpgradeReason(reason)}
+            />
+          )}
+
+          {studioTab === "designer" && (
+            <DesignerPanel
+              doc={doc}
+              onRequestUpgrade={(reason) => setUpgradeReason(reason)}
+            />
+          )}
+
+          {(studioTab === "analyzer" || studioTab === "tailor") && (
+            <AnalyzerTailorPanel
+              doc={doc}
+              mode={studioTab}
+              onRequestUpgrade={(reason) => setUpgradeReason(reason)}
+              onJumpToSection={(sec) => {
+                setStudioTab("content");
+                setActiveSection(sec);
+              }}
+            />
+          )}
         </div>
 
-        <div className={cn("md:sticky md:top-20 md:self-start", mobileView === "form" && "hidden md:block print:block")}>
-          <div className="no-print mb-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span>{isWebsite ? "Interactive website preview (click menu items)" : "Live document preview"}</span>
-            {(doc.type === "resume" || doc.type === "tailored") && <span className="rounded-full bg-sage-mist px-2 py-0.5 font-medium text-primary">{score}%</span>}
-          </div>
-          {isWebsite ? (
-            <WebsiteView doc={{ ...doc, content }} compact />
-          ) : isLetter ? (
-            <div id="resume-print-area" className="mx-auto max-w-[640px] rounded-lg border border-border bg-white p-8 text-sm leading-relaxed text-neutral-900" style={{ fontFamily: doc.font, fontSize: `${fontSize}px` }}>
-              <div className="font-bold" style={{ color: doc.accent }}>{content.name}</div>
-              <div className="text-xs text-neutral-500">{content.email} · {content.phone}</div>
-              <div className="mt-6">{content.letter.to}<br />{content.letter.company}</div>
-              <div className="mt-4 font-semibold">{content.letter.subject}</div>
-              <p className="mt-4 whitespace-pre-wrap text-neutral-700">{content.letter.body}</p>
-            </div>
-          ) : <ResumeRender doc={doc} onPatch={(p:any)=>{ if(p.__visibility){ updateDoc(doc.id,{visibility:p.__visibility} as any); } else { updateDoc(doc.id,{content:p}); } }} />}
+        {/* RIGHT PANE: Sticky 1:1 Live Editable Paper Canvas */}
+        <div className="lg:sticky lg:top-28 lg:col-span-6 xl:col-span-7">
+          <ResumeRender
+            doc={doc}
+            onPatch={handlePatchContent}
+            onSelectSection={(sec) => {
+              if (studioTab !== "content") setStudioTab("content");
+              setActiveSection(sec);
+            }}
+          />
         </div>
       </div>
 
-      {/* Modals */}
-      <ResponsiveModal open={modal === "fix"} onOpenChange={(b) => !b && setModal("")} title="Fix mistakes" description="Recruiter checks run on your latest content." wide>
-        <div className="space-y-2">
-          {FREE_CHECKS.map((c, i) => (
-            <div key={c} className="flex items-center justify-between rounded-xl border border-border p-3 text-sm">
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#4e8a5a]" />{c}</span>
-              <Switch checked={checks[i]} onCheckedChange={(b) => setChecks(checks.map((x, j) => j === i ? b : x))} />
+      {/* =====================================================================
+       * TWO-COLUMN EXPORT & ORIGINAL TEMPLATE PACKAGE MODAL
+       * =================================================================== */}
+      <ResponsiveModal
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        title={`Export & Download — (${tplMeta.name})`}
+        description="Download your live edited document or access the original static Word, PDF, and Google Docs master files."
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Left Column: Live Edited Document Exports */}
+          <div className="space-y-2.5 rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold uppercase tracking-wider text-primary">
+                1. Live Edited Document
+              </div>
+              <Badge variant="secondary" className="rounded-full text-[10px]">
+                {doc.settings?.pageSize || "A4"} · {doc.settings?.pageCount || 1}P
+              </Badge>
             </div>
-          ))}
-          <Separator className="my-3" />
-          {LOCKED_CHECKS.map((c) => (
-            <div key={c} className="flex items-center justify-between rounded-xl bg-muted p-3 text-sm text-muted-foreground"><span className="flex items-center gap-2"><Lock className="h-4 w-4" />{c}</span><Badge variant="secondary">Pro</Badge></div>
-          ))}
-          <Button className="mt-2 w-full rounded-full" onClick={() => router.push("/pricing")}>Unlock full report</Button>
-        </div>
-      </ResponsiveModal>
+            <p className="text-xs text-muted-foreground">
+              Generated directly from the changes you made in the Studio editor.
+            </p>
 
-      <ResponsiveModal open={modal === "tailor"} onOpenChange={(b) => !b && setModal("")} title="Check & Tailor" description="Paste a job ad — we extract missing keywords and tailor your resume." wide
-        footer={<Button disabled={!jd.trim()} onClick={handleTailor}>✨ Tailor now</Button>}>
-        <div className="space-y-4">
-          <Field label="Job description or URL"><Textarea rows={6} value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste the full job description…" /></Field>
-          <Field label="Tailoring level">
-            <RadioGroup value={level} onValueChange={setLevel} className="flex gap-4">
-              {[["conservative", "Conservative (+2 skills)"], ["balanced", "Balanced ✨ (+4 skills)"], ["bold", "Bold (+6 skills)"]].map(([v, l]) => <label key={v} className="flex items-center gap-2 text-sm"><RadioGroupItem value={v} />{l}</label>)}
-            </RadioGroup>
-          </Field>
-        </div>
-      </ResponsiveModal>
-
-      <ResponsiveModal open={modal === "translate"} onOpenChange={(b) => !b && setModal("")} title="Translate resume" description="AI translation — always review the result."
-        footer={<Button onClick={() => { toast.success(`Translated to ${lang}`); setModal(""); }}>Translate</Button>}>
-        <Field label="Language"><Select value={lang} onValueChange={setLang}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{LANGS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select></Field>
-      </ResponsiveModal>
-
-      <ResponsiveModal open={modal === "history"} onOpenChange={(b) => !b && setModal("")} title="Version history">
-        <div className="space-y-2">{[0, 1, 2, 3].map((i) => (
-          <div key={i} className="flex items-center justify-between rounded-xl border border-border p-3 text-sm">
-            {new Date(Date.now() - i * 36e5 * 8).toLocaleString()}
-            <Button size="sm" variant="outline" onClick={() => { toast.success("Restored"); setModal(""); }}>Restore</Button>
-          </div>))}
-        </div>
-      </ResponsiveModal>
-
-      <ResponsiveModal open={modal === "download"} onOpenChange={(b) => !b && setModal("")} title="Download" description="Your document, your formats — ATS-ready vector PDF, Word or plain text."
-        footer={<Button onClick={() => exportFile("PDF")}><Download className="mr-1 h-4 w-4" />Download PDF</Button>}>
-        <div className="grid grid-cols-3 gap-2">
-          {(["PDF", "DOCX", "TXT"] as const).map((f) => <Button key={f} variant="outline" className="rounded-xl" onClick={() => exportFile(f)}>{f}</Button>)}
-        </div>
-        <div className="mt-4 space-y-2">
-          <Button variant="ghost" className="w-full justify-start" onClick={() => { toast.success("PDF sent to fariqiviana@gmail.com"); }}><Send className="mr-2 h-4 w-4" />Send PDF to my email</Button>
-          <Button variant="ghost" className="w-full justify-start" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/s/${doc.id}`); toast.success("Share link copied"); }}><Link2 className="mr-2 h-4 w-4" />Copy share link</Button>
-        </div>
-      </ResponsiveModal>
-
-      <ResponsiveModal open={modal === "ai"} onOpenChange={(b) => !b && setModal("")} title="Sage — AI Writer" wide>
-        <ScrollArea className="h-64 pr-3">
-          <div className="space-y-3">
-            {aiMsgs.map((m, i) => (
-              <div key={i} className={cn("max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm", m.me ? "ml-auto bg-primary text-primary-foreground" : "bg-sage-mist")}>
-                <p className="whitespace-pre-wrap">{m.text}</p>
-                {m.suggestion && (
-                  <Button size="sm" variant="secondary" className="mt-2 h-7 rounded-full text-xs" onClick={() => { set({ summary: m.suggestion! }); toast.success("Applied to summary"); setModal(""); }}>
-                    <Check className="mr-1 h-3 w-3" />Apply to summary
-                  </Button>
+            <div className="space-y-2 pt-2">
+              <Button className="w-full justify-between rounded-xl" onClick={handlePrintVectorPdf}>
+                <span className="flex items-center gap-2">
+                  <FileDown className="h-4 w-4" /> Download Live Vector PDF
+                </span>
+                {isProTemplate && user.plan !== "Pro" ? (
+                  <Badge className="bg-accent text-accent-foreground">PRO</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px]">100% Vector</Badge>
                 )}
+              </Button>
+
+              <Button variant="outline" className="w-full justify-between rounded-xl" onClick={handleExportLiveDocx}>
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Export Edited Word (.doc)
+                </span>
+                {user.plan !== "Pro" ? (
+                  <Badge className="bg-accent text-accent-foreground">PRO</Badge>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">Editable</span>
+                )}
+              </Button>
+
+              <Button variant="outline" className="w-full justify-between rounded-xl" onClick={handleExportTxt}>
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Download Plain Text (.txt)
+                </span>
+                <span className="text-[10px] text-[#33613d]">Free · ATS Raw</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Column: Original Uploaded Package Files (Word, PDF & Google Docs) */}
+          <div className="space-y-2.5 rounded-2xl border border-border bg-muted/30 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold uppercase tracking-wider text-foreground">
+                2. Original Series {sId} Master Package
+              </div>
+              <Badge variant="outline" className="rounded-full text-[10px]">
+                Original Files
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Direct downloads of your uploaded `.docx`, `.pdf`, and Google Docs template files.
+            </p>
+
+            <div className="max-h-[210px] space-y-1.5 overflow-y-auto pr-1 pt-1">
+              {tplMeta.files
+                .filter((f) => f.size === (doc.settings?.pageSize === "Letter" ? "letter" : "a4"))
+                .map((f, i) => (
+                  <a
+                    key={i}
+                    href={f.path}
+                    download
+                    className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium transition-colors hover:border-primary hover:bg-sage-mist/30"
+                  >
+                    <span className="capitalize">
+                      {f.doc} {f.pages ? `(${f.pages}P)` : ""} — {f.size.toUpperCase()}
+                    </span>
+                    <Badge variant="secondary" className="uppercase text-[10px]">
+                      .{f.format}
+                    </Badge>
+                  </a>
+                ))}
+
+              {tplMeta.gdocs.slice(0, 4).map((g) => (
+                <a
+                  key={g.id}
+                  href={g.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-between rounded-xl border border-sage-line bg-sage-mist/30 px-3 py-2 text-xs font-medium text-primary hover:bg-sage-mist"
+                >
+                  <span className="truncate">{g.label || `Google Docs — ${g.doc}`}</span>
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </ResponsiveModal>
+
+      {/* VERSION HISTORY MODAL (Enhancv Page 22) */}
+      <ResponsiveModal
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        title="Version History"
+        description="Restore any saved snapshot of your resume or reset to the original template sample."
+      >
+        <div className="space-y-2.5">
+          <div className="flex justify-between">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full text-xs"
+              onClick={() => {
+                saveDocVersion(doc.id, `Manual Snapshot (${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`);
+                toast.success("Snapshot saved");
+              }}
+            >
+              + Save Current Snapshot
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-xs text-primary"
+              onClick={() => {
+                resetDocToTemplateSample(doc.id);
+                setHistoryOpen(false);
+                toast.success("Reset to original template sample text");
+              }}
+            >
+              Reset to Original Series {sId} Sample
+            </Button>
+          </div>
+
+          <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
+            {(doc.versions || []).map((v) => (
+              <div
+                key={v.id}
+                className="flex items-center justify-between rounded-xl border border-border bg-card p-3"
+              >
+                <div>
+                  <div className="text-xs font-semibold">{v.label}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Series {v.template} · {new Date(v.savedAt).toLocaleString()}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full text-xs"
+                  onClick={() => {
+                    restoreDocVersion(doc.id, v.id);
+                    setHistoryOpen(false);
+                    toast.success("Version restored");
+                  }}
+                >
+                  Restore
+                </Button>
               </div>
             ))}
           </div>
-        </ScrollArea>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {["Improve my summary", "Quantify my impact", "Write a bullet for my last role"].map((s) => <Button key={s} variant="outline" size="sm" className="rounded-full text-xs" onClick={() => sendAi(s)}>{s}</Button>)}
         </div>
-        <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); sendAi(); }}>
-          <Input value={aiInput} onChange={(e) => setAiInput(e.target.value)} placeholder="Ask anything about this document…" />
-          <Button type="submit" size="icon"><Send className="h-4 w-4" /></Button>
-        </form>
+      </ResponsiveModal>
+
+      {/* TRANSLATE MODAL (Enhancv / Kickresume Pattern) */}
+      <ResponsiveModal
+        open={translateOpen}
+        onOpenChange={setTranslateOpen}
+        title="Translate Resume"
+        description="In which language would you like to translate your resume section headings and content?"
+        footer={
+          <Button
+            className="rounded-full"
+            onClick={() => {
+              translateDoc(doc.id, targetLang);
+              toast.success(`Translated resume & headings to ${targetLang}`);
+              setTranslateOpen(false);
+            }}
+          >
+            Translate to {targetLang}
+          </Button>
+        }
+      >
+        <Field label="Target Language">
+          <Select value={targetLang} onValueChange={setTargetLang}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LANGS.map((l) => (
+                <SelectItem key={l} value={l}>
+                  {l}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </ResponsiveModal>
+
+      {/* TRANSPARENT PRO UPGRADE MODAL */}
+      <ResponsiveModal
+        open={Boolean(upgradeReason)}
+        onOpenChange={(v) => !v && setUpgradeReason("")}
+        title="Upgrade to Farnavi Pro Studio"
+        description={upgradeReason || "Unlock all 8 signature templates, DOCX exports, and unlimited AI tailoring."}
+        footer={
+          <div className="flex w-full items-center justify-between">
+            <Button variant="ghost" className="rounded-full" onClick={() => setUpgradeReason("")}>
+              Continue on Free Plan
+            </Button>
+            <Button
+              className="rounded-full"
+              onClick={() => {
+                setUser({ plan: "Pro" });
+                setUpgradeReason("");
+                toast.success("Farnavi Pro activated!");
+              }}
+            >
+              <Crown className="mr-1.5 h-4 w-4" /> Activate Pro Now ($9/mo)
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-2 rounded-xl border border-sage-line bg-sage-mist/30 p-3.5 text-xs">
+          <div className="font-semibold text-foreground">Included in Farnavi Pro:</div>
+          <ul className="space-y-1.5 pl-4 text-muted-foreground list-disc">
+            <li>All 8 Master Templates (Template, 3, 4, 11, 12, 14, 22, 24) in A4 & US Letter</li>
+            <li>Live Vector PDF & Editable Word (.DOCX) Exports + Google Docs Access</li>
+            <li>All 5 Recruiter Screening Checks (Credibility, Interview Risks, Age Bias, Gaps)</li>
+            <li>Turbo AI Job Description Tailoring & Pre-Written Phrase Library</li>
+          </ul>
+        </div>
       </ResponsiveModal>
     </div>
-  );
-}
-
-export default function Editor() {
-  return (
-    <Suspense fallback={<div className="py-20 text-center text-sm text-muted-foreground">Loading editor…</div>}>
-      <EditorInner />
-    </Suspense>
   );
 }
