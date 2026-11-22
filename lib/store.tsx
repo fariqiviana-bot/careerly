@@ -2602,7 +2602,36 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed.documents) && parsed.documents.length > 0) {
-          setDocuments(parsed.documents);
+          const starterIds = new Map(INITIAL_DOCUMENTS.map((d) => [d.id, d]));
+          const repaired = parsed.documents.map((d: any) => {
+            const base = starterIds.get(d?.id);
+            const badDate = !d?.updatedAt || Number.isNaN(Date.parse(d.updatedAt));
+            if (base && (badDate || (d.id === "doc-executive" && String(d.seriesId || d.template) !== "2"))) {
+              return base;
+            }
+            return badDate ? { ...d, updatedAt: new Date().toISOString() } : d;
+          });
+          const presentIds = new Set(repaired.map((d: any) => d?.id));
+          const seenIds = new Set<string>();
+          const seenUntouched = new Set<string>();
+          const deduped = repaired.filter((d: any) => {
+            if (!d?.id || seenIds.has(d.id)) return false;
+            seenIds.add(d.id);
+            const starterMatch = INITIAL_DOCUMENTS.find(
+              (s) =>
+                s.title === d.title &&
+                String(s.seriesId) === String(d.seriesId || d.template) &&
+                (d.content?.fullName || d.content?.name || "") ===
+                  (s.content?.fullName || s.content?.name || "")
+            );
+            if (starterMatch) {
+              if (d.id !== starterMatch.id && presentIds.has(starterMatch.id)) return false;
+              if (seenUntouched.has(starterMatch.id)) return false;
+              seenUntouched.add(starterMatch.id);
+            }
+            return true;
+          });
+          setDocuments(deduped);
         }
         if (parsed.activeDocId) {
           setActiveDocId(parsed.activeDocId);
@@ -2982,6 +3011,9 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
               volunteering: Array.isArray(c.volunteering) ? c.volunteering : nextContent.volunteering,
               memberships: Array.isArray(c.memberships) ? c.memberships : nextContent.memberships,
               interests: Array.isArray(c.interests) ? c.interests : nextContent.interests,
+              areasOfExpertise: Array.isArray((c as any).areasOfExpertise) ? (c as any).areasOfExpertise : nextContent.areasOfExpertise,
+              photoUrl: (c as any).photoUrl ?? nextContent.photoUrl,
+              coverLetter: (c as any).coverLetter ? { ...nextContent.coverLetter, ...(c as any).coverLetter } : nextContent.coverLetter,
               references: Array.isArray(c.references) ? c.references : nextContent.references,
             };
           }

@@ -99,6 +99,10 @@ export default function EditorStudioPage() {
   const isProTemplate = tplMeta.tier === "premium";
 
   const handlePatchContent = (nextContentOrPatch: any) => {
+    if (nextContentOrPatch && nextContentOrPatch.__settings) {
+      updateDoc(doc.id, { settings: nextContentOrPatch.__settings });
+      return;
+    }
     if (nextContentOrPatch && nextContentOrPatch.__visibility) {
       updateDoc(doc.id, { visibility: nextContentOrPatch.__visibility });
       return;
