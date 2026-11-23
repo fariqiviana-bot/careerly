@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useStore, templateContentForSeries } from "@/lib/store";
+import { apiParseResumeFile, apiParseResumeText } from "@/lib/api/import-client";
 import { TEMPLATE_CATALOG } from "@/lib/template-catalog";
 import { ResponsiveModal, Field } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +46,8 @@ export function CreateResumeModal({
   const [company, setCompany] = useState("");
   const [jdText, setJdText] = useState("");
   const [liUrl, setLiUrl] = useState("");
+  const [liText, setLiText] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const resetAndClose = () => {
     setMode("hub");
@@ -328,22 +332,80 @@ export function CreateResumeModal({
 
       {mode === "upload" && (
         <div className="space-y-4">
-          <Button variant="ghost" size="sm" className="h-7 rounded-full px-2 text-xs" onClick={() => setMode("hub")}>
-            <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to options
-          </Button>
+          <div className="flex items-center justify-between gap-2">
+            <Button variant="ghost" size="sm" className="h-7 rounded-full px-2 text-xs" onClick={() => setMode("hub")}>
+              <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to options
+            </Button>
+            <select
+              value={selectedSeries}
+              onChange={(e) => setSelectedSeries(e.target.value)}
+              className="h-8 rounded-lg border border-border bg-card px-2 text-xs"
+            >
+              {TEMPLATE_CATALOG.map((t) => (
+                <option key={t.id} value={t.id}>
+                  Target Template: {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-sage-line bg-sage-mist/40 px-6 py-10 text-center transition-colors hover:bg-sage-mist">
-            <Upload className="h-7 w-7 text-primary" />
-            <span className="mt-2.5 text-sm font-semibold">Drag & drop your resume file, or click to browse</span>
-            <span className="mt-1 text-xs text-muted-foreground">Supports PDF, DOCX, or DOC · up to 10MB</span>
+            {uploading ? (
+              <>
+                <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                <span className="mt-2.5 text-sm font-semibold">Extracting sections & formatting into template...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-7 w-7 text-primary" />
+                <span className="mt-2.5 text-sm font-semibold">Drag & drop your resume file, or click to browse</span>
+                <span className="mt-1 text-xs text-muted-foreground">Supports PDF, DOCX, or TXT · up to 10MB</span>
+              </>
+            )}
             <input
               type="file"
               className="hidden"
-              accept=".pdf,.doc,.docx"
-              onChange={(e) => {
+              accept=".pdf,.docx,.txt"
+              disabled={uploading}
+              onChange={async (e) => {
                 const f = e.target.files?.[0];
-                const cleanName = f ? f.name.replace(/\.[^.]+$/, "") : "Imported Resume";
-                toast.success("Resume parsed into Template ATS layout");
-                launchWithSeries(selectedSeries, cleanName);
+                e.target.value = "";
+                if (!f) return;
+                setUploading(true);
+                try {
+                  const res = await apiParseResumeFile(f);
+                  const p = res.parsed;
+                  const cleanName = p.name
+                    ? `${p.name} (Imported)`
+                    : f.name.replace(/\.[^.]+$/, "");
+                  toast.success(
+                    `Imported ${res.stats.experienceCount} role(s) & ${res.stats.skillCount} skill(s) (${res.stats.confidence}% confidence)`
+                  );
+                  launchWithSeries(selectedSeries, cleanName, {
+                    content: {
+                      ...(p.name ? { name: p.name } : {}),
+                      ...(p.role ? { role: p.role } : {}),
+                      ...(p.email ? { email: p.email } : {}),
+                      ...(p.phone ? { phone: p.phone } : {}),
+                      location: p.location || "",
+                      ...(p.linkedin ? { linkedin: p.linkedin } : {}),
+                      ...(p.website ? { website: p.website } : {}),
+                      summary: p.summary || "",
+                      ...(p.experience.length > 0 ? { experience: p.experience } : {}),
+                      ...(p.education.length > 0 ? { education: p.education } : {}),
+                      ...(p.skills.length > 0 ? { skills: p.skills, areasOfExpertise: p.skills } : {}),
+                      technicalSkills: p.technicalSkills,
+                      ...(p.certifications.length > 0 ? { certifications: p.certifications } : {}),
+                      ...(p.courses.length > 0 ? { courses: p.courses } : {}),
+                      ...(p.awards.length > 0 ? { awards: p.awards } : {}),
+                      ...(p.volunteering.length > 0 ? { volunteering: p.volunteering } : {}),
+                      ...(p.references.length > 0 ? { references: p.references } : {}),
+                    },
+                  });
+                } catch (err: any) {
+                  toast.error(err?.message || "Could not parse uploaded resume");
+                } finally {
+                  setUploading(false);
+                }
               }}
             />
           </label>
@@ -351,31 +413,62 @@ export function CreateResumeModal({
       )}
 
       {mode === "linkedin" && (
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           <Button variant="ghost" size="sm" className="h-7 rounded-full px-2 text-xs" onClick={() => setMode("hub")}>
             <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Back to options
           </Button>
-          <Field label="Public LinkedIn Profile URL *" hint="Your profile must be set to public visibility.">
+          <Field label="LinkedIn Profile URL (optional)">
             <Input
               value={liUrl}
               onChange={(e) => setLiUrl(e.target.value)}
               placeholder="https://linkedin.com/in/your-name"
             />
           </Field>
-          <div className="flex items-center justify-between gap-2 pt-2">
-            <span className="text-xs text-muted-foreground">
-              {!liUrl.includes("linkedin.com") ? "Enter a valid linkedin.com/in/... URL to enable import" : "Profile URL verified"}
-            </span>
+          <Field label="Paste LinkedIn Profile Text *" hint="Or click Upload Existing Resume and attach LinkedIn's 'Save to PDF' export.">
+            <Textarea
+              rows={5}
+              value={liText}
+              onChange={(e) => setLiText(e.target.value)}
+              placeholder="Paste your LinkedIn About, Experience, Education, and Skills sections here..."
+              className="text-xs"
+            />
+          </Field>
+          <div className="flex items-center justify-end gap-2 pt-1">
             <Button
               className="rounded-full"
-              disabled={!liUrl.includes("linkedin.com")}
-              onClick={() => {
-                toast.success("LinkedIn profile imported into Studio");
-                launchWithSeries(selectedSeries, "LinkedIn Imported Resume", {
-                  content: { linkedin: liUrl.replace(/^https?:\/\//, "") },
-                });
+              disabled={uploading || liText.trim().length < 20}
+              onClick={async () => {
+                setUploading(true);
+                try {
+                  const res = await apiParseResumeText(liText, "linkedin", liUrl);
+                  const p = res.parsed;
+                  toast.success(`LinkedIn profile parsed (${res.stats.confidence}% confidence)`);
+                  launchWithSeries(
+                    selectedSeries,
+                    p.name ? `${p.name} (LinkedIn)` : "LinkedIn Imported Resume",
+                    {
+                      content: {
+                        ...(p.name ? { name: p.name } : {}),
+                        ...(p.role ? { role: p.role } : {}),
+                        ...(p.email ? { email: p.email } : {}),
+                        ...(p.phone ? { phone: p.phone } : {}),
+                        ...(p.location ? { location: p.location } : {}),
+                        ...(p.linkedin ? { linkedin: p.linkedin } : {}),
+                        ...(p.summary ? { summary: p.summary } : {}),
+                        ...(p.experience.length > 0 ? { experience: p.experience } : {}),
+                        ...(p.education.length > 0 ? { education: p.education } : {}),
+                        ...(p.skills.length > 0 ? { skills: p.skills, areasOfExpertise: p.skills } : {}),
+                      },
+                    }
+                  );
+                } catch (err: any) {
+                  toast.error(err?.message || "Failed to parse LinkedIn text");
+                } finally {
+                  setUploading(false);
+                }
               }}
             >
+              {uploading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               Convert to Resume
             </Button>
           </div>

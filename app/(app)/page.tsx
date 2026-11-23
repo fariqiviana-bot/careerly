@@ -22,7 +22,7 @@ export default function Dashboard() {
   const { user, docs, tracker, interviews, jobs } = useStore();
   const [goal, setGoal] = useState("resume");
   const resumes = docs.filter((d) => d.type === "resume");
-  const topScore = Math.max(0, ...resumes.map((d) => d.score));
+  const topScore = Math.max(0, ...resumes.map((d) => (Number.isFinite(Number(d.score)) ? Number(d.score) : 0)));
   const applied = tracker.filter((t) => ["applied", "interviewing", "offer"].includes(t.status)).length;
 
   const rows: Record<string, [string, string, number][]> = {

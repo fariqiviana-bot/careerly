@@ -5,29 +5,46 @@ import { toast } from "sonner";
 import { useStore, type Doc } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from "@/components/ui/dropdown-menu";
 import { ResponsiveModal, DangerConfirm, Field } from "@/components/shared";
-import { previewOf, TEMPLATE_CATALOG } from "@/lib/template-catalog";
-import { MoreHorizontal, Pin, Pencil, Copy, Sparkles, Download, Trash2, Tag, History, Share2, Layers, FileText, Globe } from "lucide-react";
+import { TEMPLATE_CATALOG } from "@/lib/template-catalog";
+import { LiveDocThumb } from "@/components/render/live-thumb";
+import {
+  MoreHorizontal,
+  Pin,
+  Pencil,
+  Copy,
+  Sparkles,
+  Download,
+  Trash2,
+  FileText,
+  Globe,
+} from "lucide-react";
+
+function formatEditedDate(raw?: string): string {
+  if (!raw) return "Just now";
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString();
+}
 
 export function DocCard({ doc }: { doc: Doc }) {
   const router = useRouter();
-  const { updateDoc, removeDoc, duplicateDoc, restoreDocVersion, docs } = useStore();
-  const [modal, setModal] = useState<"" | "rename" | "label" | "versions" | "combine" | "delete">("");
+  const { updateDoc, removeDoc, duplicateDoc } = useStore();
+  const [modal, setModal] = useState<"" | "rename" | "delete">("");
   const [title, setTitle] = useState(doc.title);
-  const [label, setLabel] = useState(doc.label ?? "");
-  const [combineId, setCombineId] = useState("");
-  const covers = docs.filter((d) => d.type === "cover");
 
   const sId = doc.series || doc.template || "11";
   const tplMeta = TEMPLATE_CATALOG.find((t) => t.id === sId) || TEMPLATE_CATALOG[3];
-  const imgSrc = previewOf(
-    sId,
-    doc.type === "cover" ? "cover" : "resume",
-    doc.settings?.pageCount || 1,
-    doc.settings?.pageSize === "Letter" ? "letter" : "a4"
-  );
   const publicUrl = doc.type === "website" ? `/cv/${doc.slug || "viana-fariqi"}` : `/s/${doc.id}`;
   const cleanTitle = doc.title.replace(/^Series\s+\d+\s*[—\-·]\s*/i, "");
 
@@ -62,21 +79,22 @@ export function DocCard({ doc }: { doc: Doc }) {
           {doc.type === "website" ? (
             <div className="relative flex h-full w-full overflow-hidden bg-[#f7efe2] text-left">
               <div className="flex w-[34%] flex-col items-center bg-[#2d2d2d] pt-5 text-white">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold" style={{ background: doc.accent || "#b83a14" }}>
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
+                  style={{ background: doc.accent || "#b83a14" }}
+                >
                   {(doc.content.name || "V")[0]}
                 </div>
               </div>
               <div className="flex flex-1 flex-col">
-                <div className="bg-[#ede2d0] py-5 text-center text-xs font-bold text-[#3b3b3b]">{doc.content.name}</div>
+                <div className="bg-[#ede2d0] py-5 text-center text-xs font-bold text-[#3b3b3b]">
+                  {doc.content.name}
+                </div>
                 <div className="p-3 text-[9px] text-[#5a5751]">{doc.content.email}</div>
               </div>
             </div>
           ) : (
-            <img
-              src={imgSrc}
-              alt={cleanTitle}
-              className="h-full w-full object-cover object-top"
-            />
+            <LiveDocThumb doc={doc} />
           )}
 
           {doc.pinned && (
@@ -96,7 +114,7 @@ export function DocCard({ doc }: { doc: Doc }) {
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-foreground">{cleanTitle}</div>
             <div className="mt-0.5 text-xs text-muted-foreground">
-              {tplMeta?.name} · Edited {new Date(doc.updatedAt).toLocaleDateString()}
+              {tplMeta?.name} · Edited {formatEditedDate(doc.updatedAt)}
             </div>
           </div>
           <DropdownMenu>
@@ -106,14 +124,40 @@ export function DocCard({ doc }: { doc: Doc }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={() => router.push(`/editor/${doc.id}`)}><Pencil className="mr-2 h-4 w-4" />Edit in Studio</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(publicUrl)}><Globe className="mr-2 h-4 w-4" />View shared link</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setTitle(cleanTitle); setModal("rename"); }}><FileText className="mr-2 h-4 w-4" />Rename</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => duplicateDoc(doc.id)}><Copy className="mr-2 h-4 w-4" />Duplicate</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => updateDoc(doc.id, { pinned: !doc.pinned })}><Pin className="mr-2 h-4 w-4" />{doc.pinned ? "Unpin" : "Pin"}</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push(`/editor/${doc.id}?tab=tailor`)}><Sparkles className="mr-2 h-4 w-4" />Tailor to job</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/editor/${doc.id}`)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit in Studio
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(publicUrl)}>
+                <Globe className="mr-2 h-4 w-4" />
+                View shared link
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setTitle(cleanTitle);
+                  setModal("rename");
+                }}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => duplicateDoc(doc.id)}>
+                <Copy className="mr-2 h-4 w-4" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => updateDoc(doc.id, { pinned: !doc.pinned })}>
+                <Pin className="mr-2 h-4 w-4" />
+                {doc.pinned ? "Unpin" : "Pin"}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/editor/${doc.id}?tab=tailor`)}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Tailor to job
+              </DropdownMenuItem>
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger><Download className="mr-2 h-4 w-4" />Download</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem onClick={() => download("PDF")}>PDF</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => download("DOCX")}>DOCX</DropdownMenuItem>
@@ -121,18 +165,47 @@ export function DocCard({ doc }: { doc: Doc }) {
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive" onClick={() => setModal("delete")}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive" onClick={() => setModal("delete")}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      <ResponsiveModal open={modal === "rename"} onOpenChange={(b) => !b && setModal("")} title="Rename document"
-        footer={<Button className="rounded-full" onClick={() => { updateDoc(doc.id, { title }); setModal(""); toast.success("Document renamed"); }}>Save</Button>}>
-        <Field label="Title"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+      <ResponsiveModal
+        open={modal === "rename"}
+        onOpenChange={(b) => !b && setModal("")}
+        title="Rename document"
+        footer={
+          <Button
+            className="rounded-full"
+            onClick={() => {
+              updateDoc(doc.id, { title });
+              setModal("");
+              toast.success("Document renamed");
+            }}
+          >
+            Save
+          </Button>
+        }
+      >
+        <Field label="Title">
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
       </ResponsiveModal>
 
-      <DangerConfirm open={modal === "delete"} onOpenChange={(b) => !b && setModal("")} title="Delete document?" desc={`"${cleanTitle}" will be permanently removed.`} onConfirm={() => { removeDoc(doc.id); toast.success("Document deleted"); }} />
+      <DangerConfirm
+        open={modal === "delete"}
+        onOpenChange={(b) => !b && setModal("")}
+        title="Delete document?"
+        desc={`"${cleanTitle}" will be permanently removed.`}
+        onConfirm={() => {
+          removeDoc(doc.id);
+          toast.success("Document deleted");
+        }}
+      />
     </>
   );
 }

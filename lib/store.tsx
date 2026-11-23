@@ -2500,7 +2500,7 @@ export interface UnifiedAppStore {
   updateActiveStyle: (updater: (style: DocumentStyleSettings) => DocumentStyleSettings) => void;
   switchSeries: (seriesId: string, loadSample?: boolean) => void;
   resetToSeriesSample: (seriesId?: string) => void;
-  createDocumentFromSeries: (seriesId: string, customTitle?: string) => string;
+  createDocumentFromSeries: (seriesId: string, customTitle?: string, initialContent?: ResumeContent) => string;
   duplicateDocument: (id: string) => string;
   deleteDocument: (id: string) => void;
   saveVersionSnapshot: (label: string) => void;
@@ -2549,8 +2549,10 @@ export interface UnifiedAppStore {
   saveDocVersion: (id: string, label?: string) => void;
   restoreDocVersion: (id: string, versionId: string) => void;
   resetDocToTemplateSample: (id: string, seriesId?: string) => void;
+  upsertDocFromRemote: (remote: any) => void;
 }
 
+export const JUST_CREATED_DOC_IDS = new Set<string>();
 const StoreContext = createContext<UnifiedAppStore | null>(null);
 const STORAGE_KEY = "farnavi_store_v35";
 
@@ -2646,9 +2648,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           setInterviews(parsed.interviews);
         }
       }
-    } catch {
-      // Ignore storage read errors
-    }
+    } catch (err) { console.warn("[store]", err); }
   }, []);
 
   useEffect(() => {
@@ -2657,9 +2657,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         STORAGE_KEY,
         JSON.stringify({ documents, activeDocId, user, tracker, interviews })
       );
-    } catch {
-      // Ignore storage write errors
-    }
+    } catch (err) { console.warn("[store]", err); }
   }, [documents, activeDocId, user, tracker, interviews]);
 
   const activeDocument = documents.find((d) => d.id === activeDocId) || documents[0];
@@ -2739,13 +2737,14 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       seriesId: series.id,
       targetRole: series.WritePersona,
       language: "English",
-      updatedAt: "Just now",
+      updatedAt: new Date().toISOString(),
       atsScore: series.ats ? 98 : 94,
       activeTab: "resume",
       style: cloneStyle(series.id),
       sectionOrder: cloneSections(),
       content: cloneContent(series.id),
     };
+    JUST_CREATED_DOC_IDS.add(newId);
     setDocuments((prev) => [newDoc, ...prev]);
     setActiveDocId(newId);
     return newId;
@@ -2758,7 +2757,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       ...JSON.parse(JSON.stringify(source)),
       id: newId,
       title: `${source.title} (Copy)`,
-      updatedAt: "Just now",
+      updatedAt: new Date().toISOString(),
     };
     setDocuments((prev) => [copy, ...prev]);
     setActiveDocId(newId);
@@ -2891,10 +2890,84 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   // Legacy Platform Bridge Methods
   const legacyDocs = documents.map(mapResumeDocToLegacyDoc);
 
+    const upsertDocFromRemote = React.useCallback((remote: any) => {
+    if (!remote?.id) return;
+    const rawSeries = String(remote.seriesId || remote.series || remote.template || '11');
+    const matchedSeries = SERIES_CATALOG.find((sc) => sc.id === rawSeries)?.id || '11';
+    const baseStyle = cloneStyle(matchedSeries);
+    const rSettings = remote.settings || {};
+    const nextStyle: DocumentStyleSettings = {
+      ...baseStyle,
+      pageSize: rSettings.pageSize === 'Letter' ? 'Letter' : 'A4',
+      pageCount: (rSettings.pageCount === 2 ? 2 : rSettings.pageCount === 3 ? 3 : 1) as 1 | 2 | 3,
+      accentColor: remote.accent || baseStyle.accentColor,
+      fontScale: rSettings.fontSize ? Math.round((Number(rSettings.fontSize) / 10) * 100) : baseStyle.fontScale,
+      lineSpacing: Number(rSettings.lineHeight) || baseStyle.lineSpacing,
+      sectionGapPx: Number(rSettings.sectionSpacing) || baseStyle.sectionGapPx,
+      pageMarginMm: rSettings.pageMargin ? +(Number(rSettings.pageMargin) * 25.4).toFixed(1) : baseStyle.pageMarginMm,
+    };
+    const c = remote.content || {};
+    const baseContent = cloneContent(matchedSeries);
+    const nextContent: ResumeContent = {
+      ...baseContent,
+      fullName: c.name ?? c.fullName ?? baseContent.fullName,
+      profession: c.role ?? c.profession ?? baseContent.profession,
+      email: c.email ?? baseContent.email,
+      phone: c.phone ?? baseContent.phone,
+      location: c.location ?? baseContent.location,
+      linkedin: c.linkedin ?? baseContent.linkedin,
+      summary: c.summary ?? baseContent.summary,
+      professionalSkills: Array.isArray(c.skills) ? c.skills : baseContent.professionalSkills,
+      technicalSkills: Array.isArray(c.technicalSkills) ? c.technicalSkills : baseContent.technicalSkills,
+      experience: Array.isArray(c.experience) ? c.experience.map((e: any) => ({
+        id: e.id || 'exp-' + Math.random().toString(36).slice(2, 7),
+        title: e.role || e.title || '',
+        company: e.company || '',
+        location: e.location || '',
+        period: e.period || '',
+        summaryParagraph: e.showOverview ? e.overview : undefined,
+        bullets: Array.isArray(e.bullets) ? e.bullets : String(e.description || '').split(/\r?\n/).map((x: string) => x.trim()).filter(Boolean),
+      })) : baseContent.experience,
+      education: Array.isArray(c.education) ? c.education.map((ed: any) => ({
+        id: ed.id || 'edu-' + Math.random().toString(36).slice(2, 7),
+        degree: ed.degree || '',
+        school: ed.school || '',
+        location: ed.location || '',
+        date: ed.period || ed.date || '',
+      })) : baseContent.education,
+      certifications: Array.isArray(c.certifications) ? c.certifications : baseContent.certifications,
+      courses: Array.isArray(c.courses) ? c.courses : baseContent.courses,
+      awards: Array.isArray(c.awards) ? c.awards : baseContent.awards,
+      volunteering: Array.isArray(c.volunteering) ? c.volunteering : baseContent.volunteering,
+      memberships: Array.isArray(c.memberships) ? c.memberships : baseContent.memberships,
+      interests: Array.isArray(c.interests) ? c.interests : baseContent.interests,
+      areasOfExpertise: Array.isArray(c.areasOfExpertise) ? c.areasOfExpertise : baseContent.areasOfExpertise,
+      photoUrl: c.photoUrl ?? c.photo ?? baseContent.photoUrl,
+      coverLetter: c.coverLetter ? { ...baseContent.coverLetter, ...c.coverLetter } : baseContent.coverLetter,
+      references: Array.isArray(c.references) ? c.references : baseContent.references,
+    };
+    const nextDoc: ResumeDocument = {
+      id: String(remote.id),
+      title: remote.title || 'Untitled Resume',
+      seriesId: matchedSeries,
+      targetRole: remote.targetJobTitle || nextContent.profession || 'Professional',
+      language: remote.language || 'English',
+      updatedAt: remote.updatedAt || new Date().toISOString(),
+      atsScore: Number(remote.score) || 95,
+      activeTab: (remote.activeTab === 'cover' || remote.activeTab === 'references' ? remote.activeTab : 'resume'),
+      style: nextStyle,
+      sectionOrder: Array.isArray(remote.sectionOrder) && remote.sectionOrder.length > 0 ? remote.sectionOrder : cloneSections(),
+      content: nextContent,
+    };
+    setDocuments((prev) => {
+      const exists = prev.some((d) => d.id === nextDoc.id);
+      return exists ? prev.map((d) => (d.id === nextDoc.id ? nextDoc : d)) : [nextDoc, ...prev];
+    });
+  }, []);
   const addDoc = (_type: DocType, title: string, opts: Partial<Doc> = {}): Doc => {
     const rawTpl = opts.template || opts.series || "11";
     const matchedSeries =
-      SERIES_CATALOG.find((s) => s.id === rawTpl || rawTpl.endsWith(s.id))?.id || "11";
+      (SERIES_CATALOG.find((s) => s.id === String(rawTpl))?.id || SERIES_CATALOG.find((s) => s.id === String(rawTpl).replace(/[^0-9]/g, ""))?.id || "11");
     const newId = createDocumentFromSeries(matchedSeries, title);
     const created = documents.find((d) => d.id === newId) || {
       id: newId,
@@ -2902,7 +2975,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       seriesId: matchedSeries,
       targetRole: "Professional",
       language: "English",
-      updatedAt: "Just now",
+      updatedAt: new Date().toISOString(),
       atsScore: 95,
       activeTab: "resume" as const,
       style: cloneStyle(matchedSeries),
@@ -3031,7 +3104,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           style: nextStyle,
           sectionOrder: nextSectionOrder,
           content: nextContent,
-          updatedAt: "Just now",
+          updatedAt: new Date().toISOString(),
         };
       })
     );
@@ -3077,6 +3150,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         toggleSaveJob: (id) =>
           setSavedJobs((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id])),
         addDoc,
+        upsertDocFromRemote,
         updateDoc,
         removeDoc: deleteDocument,
         duplicateDoc: (id) => {

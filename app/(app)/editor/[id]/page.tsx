@@ -1,15 +1,30 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { useStore, calculateDocScore, type Content } from "@/lib/store";
+import { useStore, calculateDocScore, type Content , JUST_CREATED_DOC_IDS , type Doc } from "@/lib/store";
 import { TEMPLATE_CATALOG } from "@/lib/template-catalog";
 import { LANGS } from "@/lib/catalog";
 import { ResumeRender } from "@/components/render";
 import { WebsiteView } from "@/components/website-view";
 import { ContentEditorPanel } from "@/components/studio/content-editor-panel";
-import { DesignerPanel } from "@/components/studio/designer-panel";
+import { DesignerPanel, type HeaderFooterConfig } from "@/components/studio/designer-panel";
 import { AnalyzerTailorPanel } from "@/components/studio/analyzer-tailor-panel";
+import { ImportResumeModal } from "@/components/studio/import-resume-modal";
+import { AtsPlainView } from "@/components/studio/ats-plain-view";
+import { AiAssistantDrawer } from "@/components/studio/ai-assistant-drawer";
+import { apiTranslateResume } from "@/lib/api/ai-client";
+import { apiSmartAutoFit } from "@/lib/api/editor-client";
+import {
+  apiDownloadInjectedDocx,
+  apiDownloadZipBundle,
+  apiDownloadTxt,
+  apiGetShareLink,
+  apiUpsertShareLink,
+  type ShareLinkRecord,
+} from "@/lib/api/export-client";
+import { Switch } from "@/components/ui/switch";
+import { apiAnalyzeResume, type ResumeAnalysisReport } from "@/lib/api/analyze-client";
 import { ResponsiveModal, Field } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,34 +47,101 @@ import {
   Languages,
   Undo2,
   Redo2,
-  Crown,
   Check,
   ExternalLink,
   FileDown,
-  Lock,
-  ChevronDown,
-  ChevronUp,
+  Loader2,
+  Database,
+  UserCheck,
+  RefreshCw,
+  Upload,
+  Eye,
+  Cpu,
+  Maximize2,
+  Share2,
+  Package,
+  Copy,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  apiGetDocument,
+  apiUpsertDocument,
+  apiPatchDocument,
+  apiListVersions,
+  apiCreateVersion,
+  apiRestoreVersion,
+  apiGetMasterProfile,
+  apiSaveMasterProfile,
+  apiSyncContactToAll,
+  type BackendVersion,
+  type BackendMasterProfile,
+} from "@/lib/api/documents-client";
 
 type StudioTab = "content" | "designer" | "analyzer" | "tailor";
+type SaveState = "syncing" | "saving" | "saved" | "offline";
 
 export default function EditorStudioPage() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const { docs, upsertDocFromRemote } = useStore();
+  const matched = docs.find((d) => d.id === params.id);
+  const [loadState, setLoadState] = useState<"loading" | "not_found">("loading");
+
+  useEffect(() => {
+    if (matched) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const remote = await apiGetDocument(params.id);
+        if (cancelled) return;
+        if (remote) {
+          upsertDocFromRemote(remote);
+        } else {
+          setLoadState("not_found");
+        }
+      } catch (err) {
+        console.warn("[editor] document lookup failed:", err);
+        if (!cancelled) setLoadState("not_found");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [params.id, matched, upsertDocFromRemote]);
+
+  if (matched) {
+    return <EditorStudioInner key={matched.id} doc={matched} />;
+  }
+  if (loadState === "not_found") {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 p-8 text-center">
+        <h1 className="font-serif text-2xl">Document not found</h1>
+        <p className="text-sm text-muted-foreground">This document may have been deleted or has not been saved yet.</p>
+        <button type="button" onClick={() => router.push("/documents")} className="text-sm font-medium text-primary underline">
+          Return to Documents
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center gap-2 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" /> Loading document from workspace...
+    </div>
+  );
+}
+
+function EditorStudioInner({ doc }: { doc: Doc }) {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const sp = useSearchParams();
   const {
     docs,
+    addDoc,
     updateDoc,
     translateDoc,
-    saveDocVersion,
-    restoreDocVersion,
     resetDocToTemplateSample,
-    user,
-    setUser,
   } = useStore();
 
-  const doc = docs.find((d) => d.id === params.id) || docs[0];
+  // doc is guaranteed by EditorStudioPage wrapper (never falls back to docs[0])
   const [studioTab, setStudioTab] = useState<StudioTab>("content");
   const [activeSection, setActiveSection] = useState<string>("personal");
   const [undoStack, setUndoStack] = useState<Content[]>([]);
@@ -67,9 +149,37 @@ export default function EditorStudioPage() {
   const [exportOpen, setExportOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [translateOpen, setTranslateOpen] = useState(false);
+  const [masterOpen, setMasterOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [canvasView, setCanvasView] = useState<"recruiter" | "ats">("recruiter");
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [autoFitBusy, setAutoFitBusy] = useState(false);
+  const [headerFooter, setHeaderFooter] = useState<HeaderFooterConfig>({
+    headerText: "",
+    footerText: "",
+    pageNumbering: "none",
+  });
+  const [customLabels, setCustomLabels] = useState<Record<string, string>>({});
+  const [exportBusy, setExportBusy] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareLink, setShareLink] = useState<ShareLinkRecord | null>(null);
+  const [liveAnalysis, setLiveAnalysis] = useState<ResumeAnalysisReport | null>(null);
   const [targetLang, setTargetLang] = useState("English (US)");
-  const [upgradeReason, setUpgradeReason] = useState("");
-  const [proBannerExpanded, setProBannerExpanded] = useState(false);
+
+  // Backend persistence state
+  const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [dbVersions, setDbVersions] = useState<BackendVersion[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  const [snapshotLabel, setSnapshotLabel] = useState("");
+  const [masterProfile, setMasterProfile] = useState<BackendMasterProfile | null>(null);
+  const [masterBusy, setMasterBusy] = useState(false);
+
+  const initialSeriesRef = useRef<string | null>(null);
+  const hydratedDocRef = useRef<string | null>(null);
+  const lastSavedSigRef = useRef<string>("");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const t = sp.get("tab");
@@ -81,6 +191,168 @@ export default function EditorStudioPage() {
       setExportOpen(true);
     }
   }, [sp]);
+
+  // 1. Hydrate from SQLite backend on open (or seed into DB if first time opening)
+  useEffect(() => {
+    if (!doc?.id || hydratedDocRef.current === doc.id) return;
+    initialSeriesRef.current = String(doc.series || doc.template || '11');
+    let cancelled = false;
+
+    const buildPayload = () => ({
+      id: doc.id,
+      type: doc.type || "resume",
+      title: doc.title || "Untitled Resume",
+      seriesId: String(doc.series || doc.template || "11"),
+      activeTab: doc.activeTab || "resume",
+      language: doc.language || "English",
+      accent: doc.accent || "#202124",
+      font: doc.font || "Merriweather",
+      score: calculateDocScore(doc.content).score,
+      pinned: Boolean(doc.pinned),
+      label: doc.label || null,
+      targetJobTitle: doc.tailoredJobTitle || null,
+      targetCompany: doc.tailoredCompany || null,
+      targetJd: doc.tailoredJd || null,
+      content: doc.content,
+      settings: doc.settings || {},
+      visibility: doc.visibility || {},
+      sectionOrder: doc.sectionOrder || [],
+    });
+
+    (async () => {
+      setSaveState("syncing");
+      try {
+        const isBrandNew = JUST_CREATED_DOC_IDS.has(doc.id);
+        const remote = isBrandNew ? null : await apiGetDocument(doc.id);
+        if (isBrandNew) JUST_CREATED_DOC_IDS.delete(doc.id);
+        if (cancelled) return;
+        if (remote) {
+          hydratedDocRef.current = doc.id;
+          lastSavedSigRef.current = JSON.stringify({
+            title: remote.title,
+            seriesId: remote.seriesId,
+            activeTab: remote.activeTab,
+            content: remote.content,
+            settings: remote.settings,
+            visibility: remote.visibility,
+          });
+          setDbVersions(Array.isArray(remote.versions) ? remote.versions : []);
+          if (remote.headerFooter) setHeaderFooter(remote.headerFooter as HeaderFooterConfig);
+          if (remote.customLabels) setCustomLabels(remote.customLabels);
+          const localSwitched = initialSeriesRef.current && String(doc.series || doc.template || '11') !== initialSeriesRef.current;
+          if (!localSwitched && remote.content && Object.keys(remote.content).length > 0) {
+            updateDoc(doc.id, {
+              title: remote.title,
+              series: remote.seriesId,
+              template: remote.seriesId,
+              activeTab: remote.activeTab,
+              content: remote.content,
+              settings: remote.settings,
+              visibility: remote.visibility,
+            });
+          }
+          setSaveState("saved");
+        } else {
+          const payload = buildPayload();
+          const created = await apiUpsertDocument(payload);
+          if (cancelled) return;
+          hydratedDocRef.current = doc.id;
+          lastSavedSigRef.current = JSON.stringify({
+            title: payload.title,
+            seriesId: payload.seriesId,
+            activeTab: payload.activeTab,
+            content: payload.content,
+            settings: payload.settings,
+            visibility: payload.visibility,
+          });
+          setDbVersions(Array.isArray(created?.versions) ? created.versions : []);
+          setSaveState("saved");
+        }
+      } catch {
+        if (!cancelled) {
+          hydratedDocRef.current = doc.id;
+          setSaveState("offline");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [doc?.id]);
+
+  // 2. Debounced real autosave to SQLite DB on any edit
+  const currentSig = doc
+    ? JSON.stringify({
+        title: doc.title,
+        seriesId: String(doc.series || doc.template || "11"),
+        activeTab: doc.activeTab || "resume",
+        content: doc.content,
+        settings: doc.settings || {},
+        visibility: doc.visibility || {},
+        headerFooter,
+        customLabels,
+      })
+    : "";
+
+  useEffect(() => {
+    if (!doc?.id || hydratedDocRef.current !== doc.id) return;
+    if (!currentSig || currentSig === lastSavedSigRef.current) return;
+
+    setSaveState("saving");
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        await apiPatchDocument(doc.id, {
+          title: doc.title,
+          seriesId: String(doc.series || doc.template || "11"),
+          activeTab: doc.activeTab || "resume",
+          language: doc.language || "English",
+          accent: doc.accent || "#202124",
+          font: doc.font || "Merriweather",
+          score: calculateDocScore(doc.content).score,
+          targetJobTitle: doc.tailoredJobTitle || null,
+          targetCompany: doc.tailoredCompany || null,
+          targetJd: doc.tailoredJd || null,
+          content: doc.content,
+          settings: doc.settings || {},
+          visibility: doc.visibility || {},
+          sectionOrder: doc.sectionOrder || [],
+          headerFooter,
+          customLabels,
+        });
+        lastSavedSigRef.current = currentSig;
+        setSaveState("saved");
+      } catch {
+        setSaveState("offline");
+      }
+    }, 650);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [currentSig, doc?.id]);
+
+  // 3. Live 28-point analysis for topbar issue badge & "What ATS Sees" view
+  useEffect(() => {
+    if (!doc?.id) return;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const rep = await apiAnalyzeResume({
+          content: doc.content,
+          seriesId: String(doc.series || doc.template || "11"),
+          settings: doc.settings || {},
+        });
+        if (!cancelled) setLiveAnalysis(rep);
+      } catch (err) { console.warn("[editor]", err); }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [currentSig, doc?.id]);
 
   if (!doc) {
     return (
@@ -96,7 +368,6 @@ export default function EditorStudioPage() {
   const sId = String(doc.series || doc.template || "11");
   const tplMeta = TEMPLATE_CATALOG.find((t) => t.id === sId) || TEMPLATE_CATALOG[0];
   const calc = calculateDocScore(doc.content);
-  const isProTemplate = tplMeta.tier === "premium";
 
   const handlePatchContent = (nextContentOrPatch: any) => {
     if (nextContentOrPatch && nextContentOrPatch.__settings) {
@@ -130,41 +401,301 @@ export default function EditorStudioPage() {
     toast.success("Redid change");
   };
 
-  const handlePrintVectorPdf = () => {
-    if (isProTemplate && user.plan !== "Pro") {
-      setExportOpen(false);
-      setUpgradeReason(`(${tplMeta.name}) is a Pro Studio template. Upgrade or toggle Pro preview mode to export.`);
-      return;
+  const openHistoryModal = async () => {
+    setHistoryOpen(true);
+    setLoadingVersions(true);
+    try {
+      const list = await apiListVersions(doc.id);
+      setDbVersions(list);
+    } catch {
+      toast.error("Could not load version history from database");
+    } finally {
+      setLoadingVersions(false);
     }
+  };
+
+  const handleSaveSnapshot = async () => {
+    try {
+      // Flush latest state before snapshotting
+      await apiPatchDocument(doc.id, {
+        title: doc.title,
+        seriesId: sId,
+        content: doc.content,
+        settings: doc.settings || {},
+        visibility: doc.visibility || {},
+        headerFooter,
+        customLabels,
+      });
+      const label =
+        snapshotLabel.trim() ||
+        `Manual Snapshot (${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`;
+      const created = await apiCreateVersion(doc.id, label, "manual");
+      setDbVersions((prev) => [created, ...prev]);
+      setSnapshotLabel("");
+      toast.success("Snapshot saved to database");
+    } catch {
+      toast.error("Failed to save snapshot");
+    }
+  };
+
+  const handleRestoreSnapshot = async (versionId: string) => {
+    try {
+      const restored = await apiRestoreVersion(doc.id, versionId);
+      lastSavedSigRef.current = JSON.stringify({
+        title: restored.title,
+        seriesId: restored.seriesId,
+        activeTab: restored.activeTab,
+        content: restored.content,
+        settings: restored.settings,
+        visibility: restored.visibility,
+      });
+      updateDoc(doc.id, {
+        series: restored.seriesId,
+        template: restored.seriesId,
+        content: restored.content,
+        settings: restored.settings,
+        visibility: restored.visibility,
+      });
+      if (Array.isArray(restored.versions)) {
+        setDbVersions(restored.versions);
+      }
+      setHistoryOpen(false);
+      toast.success("Version restored (previous state auto-backed up)");
+    } catch {
+      toast.error("Failed to restore version");
+    }
+  };
+
+  const openMasterModal = async () => {
+    setMasterOpen(true);
+    setMasterBusy(true);
+    try {
+      const mp = await apiGetMasterProfile();
+      setMasterProfile(mp);
+    } catch {
+      toast.error("Could not load Master Profile");
+    } finally {
+      setMasterBusy(false);
+    }
+  };
+
+  const handleSaveToMaster = async () => {
+    setMasterBusy(true);
+    try {
+      const c = doc.content;
+      const saved = await apiSaveMasterProfile({
+        contact: {
+          name: c.name,
+          role: c.role,
+          email: c.email,
+          phone: c.phone,
+          location: c.location,
+          linkedin: c.linkedin,
+          website: c.website,
+        },
+        summary: c.summary || "",
+        experience: c.experience || [],
+        education: c.education || [],
+        skills: c.skills || [],
+        technicalSkills: c.technicalSkills || [],
+        certifications: c.certifications || [],
+        courses: c.courses || [],
+        awards: c.awards || [],
+        volunteering: c.volunteering || [],
+        memberships: c.memberships || [],
+        references: c.references || [],
+      });
+      setMasterProfile(saved);
+      toast.success("Saved current resume into Master Profile");
+    } catch {
+      toast.error("Failed to save Master Profile");
+    } finally {
+      setMasterBusy(false);
+    }
+  };
+
+  const handleSyncContactToAll = async () => {
+    setMasterBusy(true);
+    try {
+      const c = doc.content;
+      const res = await apiSyncContactToAll({
+        name: c.name,
+        role: c.role,
+        email: c.email,
+        phone: c.phone,
+        location: c.location,
+        linkedin: c.linkedin,
+        website: c.website,
+      });
+      toast.success(`Contact info synced across ${res.updatedCount} saved resume(s)`);
+    } catch {
+      toast.error("Failed to sync contact info");
+    } finally {
+      setMasterBusy(false);
+    }
+  };
+
+  const handlePullFromMaster = () => {
+    if (!masterProfile) return;
+    const mc = masterProfile.contact || {};
+    const nextContent: Content = {
+      ...doc.content,
+      name: mc.name || doc.content.name,
+      role: mc.role || doc.content.role,
+      email: mc.email || doc.content.email,
+      phone: mc.phone || doc.content.phone,
+      location: mc.location || doc.content.location,
+      linkedin: mc.linkedin || doc.content.linkedin,
+      website: mc.website || doc.content.website,
+      summary: masterProfile.summary || doc.content.summary,
+      experience:
+        masterProfile.experience.length > 0 ? masterProfile.experience : doc.content.experience,
+      education:
+        masterProfile.education.length > 0 ? masterProfile.education : doc.content.education,
+      skills: masterProfile.skills.length > 0 ? masterProfile.skills : doc.content.skills,
+      technicalSkills:
+        masterProfile.technicalSkills.length > 0
+          ? masterProfile.technicalSkills
+          : doc.content.technicalSkills,
+      certifications:
+        masterProfile.certifications.length > 0
+          ? masterProfile.certifications
+          : doc.content.certifications,
+      courses: masterProfile.courses.length > 0 ? masterProfile.courses : doc.content.courses,
+      awards: masterProfile.awards.length > 0 ? masterProfile.awards : doc.content.awards,
+      volunteering:
+        masterProfile.volunteering.length > 0
+          ? masterProfile.volunteering
+          : doc.content.volunteering,
+      memberships:
+        masterProfile.memberships.length > 0
+          ? masterProfile.memberships
+          : doc.content.memberships,
+      references:
+        masterProfile.references.length > 0 ? masterProfile.references : doc.content.references,
+    };
+    handlePatchContent(nextContent);
+    setMasterOpen(false);
+    toast.success("Master Profile applied to current resume");
+  };
+
+  const flushSaveBeforeExternal = async () => {
+    try {
+      await apiUpsertDocument({
+        id: doc.id,
+        type: doc.type || "resume",
+        title: doc.title || "Untitled Resume",
+        seriesId: sId,
+        activeTab: doc.activeTab || "resume",
+        language: doc.language || "English",
+        accent: doc.accent || "#202124",
+        font: doc.font || "Merriweather",
+        score: calculateDocScore(doc.content).score,
+        pinned: Boolean(doc.pinned),
+        label: doc.label || null,
+        targetJobTitle: doc.tailoredJobTitle || null,
+        targetCompany: doc.tailoredCompany || null,
+        targetJd: doc.tailoredJd || null,
+        content: doc.content,
+        settings: doc.settings || {},
+        visibility: doc.visibility || {},
+        sectionOrder: doc.sectionOrder || [],
+        headerFooter,
+        customLabels,
+      });
+    } catch (err) {
+      console.warn("[editor] pre-export sync failed:", err);
+    }
+  };
+
+  const handlePrintVectorPdf = async (mode: "resume" | "cover" | "references" | "combined" = "resume") => {
+    const printUrl = `/print/${encodeURIComponent(doc.id)}?mode=${mode}&autoprint=1`;
+    const popup = window.open("about:blank", "_blank");
+    setExportBusy(`pdf-${mode}`);
+    await flushSaveBeforeExternal();
+    setExportBusy(null);
     setExportOpen(false);
-    setTimeout(() => {
-      window.print();
-    }, 180);
-  };
-
-  const handleExportLiveDocx = () => {
-    if (user.plan !== "Pro") {
-      setExportOpen(false);
-      setUpgradeReason("Live DOCX export is included in the Pro plan (or download the static master DOCX on the right).");
-      return;
+    if (popup && !popup.closed) {
+      popup.location.href = printUrl;
+    } else {
+      window.open(printUrl, "_blank");
     }
-    const c = doc.content;
-    const html = `<html><head><meta charset="utf-8"><title>${doc.title}</title></head><body style="font-family: '${tplMeta.fonts.body}', Calibri, sans-serif; line-height: 1.45; max-width: 720px; margin: 0 auto;"><h1 style="font-family: '${tplMeta.fonts.heading}', Georgia, serif; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 4px;">${c.name}</h1><div style="color: #44546A; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;">${c.role}</div><div style="border-top: 1px solid #CFCDCD; border-bottom: 1px solid #CFCDCD; padding: 6px 0; font-size: 10pt; margin-bottom: 16px;">${c.phone} | ${c.email} | ${c.linkedin || ""} | ${c.location}</div><h2 style="font-size: 12pt; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #D0CECE; padding-bottom: 4px;">Professional Summary</h2><p style="font-size: 10pt;">${c.summary}</p><h2 style="font-size: 12pt; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #D0CECE; padding-bottom: 4px;">Professional Experience</h2>${(c.experience || []).map((e) => `<div style="margin-bottom: 12px;"><div><strong>${e.role}</strong> — <span style="float:right;"><strong>${e.period}</strong></span></div><div>${e.company}</div>${e.showOverview && e.overview ? `<p>${e.overview}</p>` : ""}<p style="white-space: pre-wrap;">${e.description}</p></div>`).join("")}<h2 style="font-size: 12pt; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #D0CECE; padding-bottom: 4px;">Education & Certifications</h2>${(c.education || []).map((ed) => `<div><strong>${ed.degree}</strong> — ${ed.school} (${ed.period})</div>`).join("")}${(c.certifications || []).map((ct) => `<div><strong>${ct.name}</strong> — ${ct.issuer} (${ct.date})</div>`).join("")}<h2 style="font-size: 12pt; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #D0CECE; padding-bottom: 4px;">Skills</h2><p>${(c.skills || []).join(" · ")}</p></body></html>`;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([html], { type: "application/msword;charset=utf-8" }));
-    a.download = `${doc.title.replace(/\s+/g, "_")}.doc`;
-    a.click();
-    toast.success("Live edited Word document downloaded");
+    toast.success(
+      mode === "combined"
+        ? "Opened Combined Resume + Cover Letter Vector PDF print view"
+        : "Opened 1:1 Vector PDF print view"
+    );
   };
 
-  const handleExportTxt = () => {
-    const c = doc.content;
-    const txt = `${c.name}\n${c.role}\n${c.phone} | ${c.email} | ${c.linkedin || ""} | ${c.location}\n\nPROFESSIONAL SUMMARY\n${c.summary}\n\nPROFESSIONAL EXPERIENCE\n${(c.experience || []).map((e) => `${e.role} | ${e.company} (${e.period})\n${e.description}`).join("\n\n")}\n\nEDUCATION\n${(c.education || []).map((ed) => `${ed.degree} — ${ed.school} (${ed.period})`).join("\n")}\n\nSKILLS\n${(c.skills || []).join(", ")}`;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain;charset=utf-8" }));
-    a.download = `${doc.title.replace(/\s+/g, "_")}.txt`;
-    a.click();
-    toast.success("ATS Plain-Text (.txt) downloaded");
+  const handleExportLiveDocx = async (kind: "resume" | "cover" | "references" = "resume") => {
+    setExportBusy(`docx-${kind}`);
+    try {
+      await apiDownloadInjectedDocx({
+        seriesId: sId,
+        kind,
+        pageSize: (String(doc.settings?.pageSize || "A4").toLowerCase() === "letter" ? "Letter" : "A4") as "A4" | "Letter",
+        pageCount: (Math.min(3, Math.max(1, Number(doc.settings?.pageCount) || 1))) as 1 | 2 | 3,
+        fileName: doc.content.name || doc.title,
+        content: doc.content,
+      });
+      toast.success(`Live-injected Word (.docx) downloaded using original ${tplMeta.name} template`);
+    } catch (err: any) {
+      toast.error(err?.message || "DOCX export failed");
+    } finally {
+      setExportBusy(null);
+    }
+  };
+
+  const handleExportZipBundle = async () => {
+    setExportBusy("zip");
+    try {
+      await apiDownloadZipBundle({
+        seriesId: sId,
+        pageSize: (String(doc.settings?.pageSize || "A4").toLowerCase() === "letter" ? "Letter" : "A4") as "A4" | "Letter",
+        pageCount: (Math.min(3, Math.max(1, Number(doc.settings?.pageCount) || 1))) as 1 | 2 | 3,
+        fileName: doc.content.name || doc.title,
+        content: doc.content,
+      });
+      toast.success("Complete Application Package (.zip) downloaded");
+    } catch (err: any) {
+      toast.error(err?.message || "ZIP export failed");
+    } finally {
+      setExportBusy(null);
+    }
+  };
+
+  const handleExportTxt = async () => {
+    setExportBusy("txt");
+    try {
+      await apiDownloadTxt({
+        fileName: doc.content.name || doc.title,
+        content: doc.content,
+      });
+      toast.success("ATS Plain-Text (.txt) downloaded");
+    } catch {
+      toast.error("TXT export failed");
+    } finally {
+      setExportBusy(null);
+    }
+  };
+
+  const openShareModal = async () => {
+    setShareOpen(true);
+    setShareBusy(true);
+    try {
+      await flushSaveBeforeExternal();
+      const existing = await apiGetShareLink(doc.id);
+      if (existing) {
+        setShareLink(existing);
+      } else {
+        const created = await apiUpsertShareLink(doc.id, { active: true, showContact: true });
+        setShareLink(created);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Could not load share link");
+    } finally {
+      setShareBusy(false);
+    }
   };
 
   if (doc.type === "website") {
@@ -192,11 +723,9 @@ export default function EditorStudioPage() {
 
   return (
     <div className="no-print-shell space-y-4">
-      {/* =====================================================================
-       * UNIFIED STUDIO TOPBAR (Teal + Enhancv + Resume.io Hybrid Header)
-       * =================================================================== */}
+      {/* UNIFIED STUDIO TOPBAR */}
       <div className="sticky top-14 z-30 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card/95 px-3.5 py-2.5 shadow-xs backdrop-blur">
-        {/* Left: Back + Document Title + Autosave Status */}
+        {/* Left: Back + Document Title + Live DB Autosave Badge */}
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -210,14 +739,34 @@ export default function EditorStudioPage() {
           <Input
             value={doc.title}
             onChange={(e) => updateDoc(doc.id, { title: e.target.value })}
-            className="h-8 w-44 border-transparent bg-transparent px-2 text-sm font-semibold hover:border-border focus:border-border focus:bg-background sm:w-56"
+            className="h-8 w-44 border-transparent bg-transparent px-2 text-sm font-semibold hover:border-border focus:border-border focus:bg-background sm:w-52"
           />
-          <span className="hidden items-center gap-1 rounded-full bg-[#e6f0e8] px-2 py-0.5 text-[10px] font-medium text-[#33613d] sm:inline-flex">
-            <Check className="h-3 w-3" /> Saved
+          <span
+            className={cn(
+              "hidden items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium sm:inline-flex",
+              saveState === "saved" && "bg-[#e6f0e8] text-[#33613d]",
+              (saveState === "saving" || saveState === "syncing") && "bg-amber-50 text-amber-800",
+              saveState === "offline" && "bg-muted text-muted-foreground"
+            )}
+          >
+            {saveState === "saving" || saveState === "syncing" ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {saveState === "syncing" ? "Syncing..." : "Saving..."}
+              </>
+            ) : saveState === "saved" ? (
+              <>
+                <Check className="h-3 w-3" /> Saved
+              </>
+            ) : (
+              <>
+                <Database className="h-3 w-3" /> Local
+              </>
+            )}
           </span>
         </div>
 
-        {/* Center: 4 Primary Studio Mode Tabs (Content Editor | Designer | Analyzer | Job Matcher) */}
+        {/* Center: 4 Primary Studio Mode Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
           {[
             { id: "content", label: "Content Editor", icon: FileText },
@@ -226,7 +775,7 @@ export default function EditorStudioPage() {
               id: "analyzer",
               label: "Analyzer & Fix",
               icon: ScanSearch,
-              badge: calc.issues.length > 0 ? String(calc.issues.length) : undefined,
+              badge: liveAnalysis ? ((liveAnalysis.stats.errorCount + liveAnalysis.stats.warningCount) > 0 ? String(liveAnalysis.stats.errorCount + liveAnalysis.stats.warningCount) : undefined) : (calc.issues.length > 0 ? String(calc.issues.length) : undefined),
             },
             { id: "tailor", label: "Job Matcher", icon: Sparkles },
           ].map((tab) => {
@@ -253,7 +802,7 @@ export default function EditorStudioPage() {
           })}
         </div>
 
-        {/* Right: Undo/Redo + History + Translate + Download CTA */}
+        {/* Right: Undo/Redo + Master Profile + History + Translate + Export */}
         <div className="flex items-center gap-1">
           <Button
             type="button"
@@ -279,13 +828,40 @@ export default function EditorStudioPage() {
           </Button>
           <Button
             type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full border-primary/40 bg-sage-mist/40 px-2.5 text-xs font-semibold text-primary hover:bg-sage-mist"
+            onClick={() => setAiDrawerOpen(true)}
+            title="Open Farnavi AI Copilot"
+          >
+            <Sparkles className="mr-1 h-3.5 w-3.5" /> AI Copilot
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="hidden h-8 rounded-full px-2.5 text-xs md:inline-flex"
+            onClick={() => setImportOpen(true)}
+            title="Import PDF, DOCX, or LinkedIn resume"
+          >
+            <Upload className="mr-1 h-3.5 w-3.5" /> Import
+          </Button>
+          <Button
+            type="button"
             variant="ghost"
             size="sm"
             className="hidden h-8 rounded-full px-2.5 text-xs lg:inline-flex"
-            onClick={() => {
-              saveDocVersion(doc.id);
-              setHistoryOpen(true);
-            }}
+            onClick={openMasterModal}
+            title="Sync with Master Profile"
+          >
+            <UserCheck className="mr-1 h-3.5 w-3.5" /> Master
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="hidden h-8 rounded-full px-2.5 text-xs lg:inline-flex"
+            onClick={openHistoryModal}
           >
             <History className="mr-1 h-3.5 w-3.5" /> History
           </Button>
@@ -300,6 +876,16 @@ export default function EditorStudioPage() {
           </Button>
           <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            className="hidden h-8 rounded-full px-2.5 text-xs xl:inline-flex"
+            onClick={openShareModal}
+            title="Share via live link"
+          >
+            <Share2 className="mr-1 h-3.5 w-3.5" /> Share
+          </Button>
+          <Button
+            type="button"
             size="sm"
             className="h-8 rounded-full px-3.5 text-xs font-semibold"
             onClick={() => setExportOpen(true)}
@@ -309,76 +895,26 @@ export default function EditorStudioPage() {
         </div>
       </div>
 
-      {/* =====================================================================
-       * MAIN SPLIT-SCREEN STUDIO WORKSPACE (Left Form / Right Live 1:1 Paper)
-       * =================================================================== */}
+      {/* MAIN SPLIT-SCREEN STUDIO WORKSPACE */}
       <div className="grid items-start gap-6 lg:grid-cols-12">
-        {/* LEFT PANE: Active Mode Panel */}
         <div className="space-y-3.5 lg:col-span-6 xl:col-span-5">
-          {/* Kickresume Pages 1-2 Transparent Premium Features Banner (Only shown when Free user picks a Pro template) */}
-          {isProTemplate && user.plan !== "Pro" && (
-            <div className="rounded-2xl border border-accent bg-accent/25 p-3.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                  <Crown className="h-4 w-4 text-accent-foreground" />
-                  <span>This resume uses 1 Pro Studio feature (Series {sId} · {tplMeta.name}).</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setProBannerExpanded((v) => !v)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {proBannerExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </button>
-              </div>
-              {proBannerExpanded && (
-                <div className="mt-2.5 space-y-2 border-t border-border/60 pt-2.5 text-xs">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Lock className="h-3.5 w-3.5" /> Series {sId} Two-Column / Emblem Master Template
-                  </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                    <span className="text-[11px] text-muted-foreground">
-                      Free ATS templates: Template, Template, Template
-                    </span>
-                    <div className="flex gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 rounded-full text-xs"
-                        onClick={() => updateDoc(doc.id, { template: "11", series: "11" })}
-                      >
-                        Switch to Free Template
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="h-7 rounded-full text-xs"
-                        onClick={() => {
-                          setUser({ plan: "Pro" });
-                          toast.success("Pro Plan enabled for testing!");
-                        }}
-                      >
-                        Enable Pro Plan ($9/mo)
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {studioTab === "content" && (
             <ContentEditorPanel
               doc={doc}
               activeSection={activeSection}
               onSelectSection={setActiveSection}
-              onRequestUpgrade={(reason) => setUpgradeReason(reason)}
+              onRequestUpgrade={() => toast.info("All studio features are unlocked")}
             />
           )}
 
           {studioTab === "designer" && (
             <DesignerPanel
               doc={doc}
-              onRequestUpgrade={(reason) => setUpgradeReason(reason)}
+              headerFooter={headerFooter}
+              customLabels={customLabels}
+              onHeaderFooterChange={setHeaderFooter}
+              onCustomLabelsChange={setCustomLabels}
+              onRequestUpgrade={() => toast.info("All studio features are unlocked")}
             />
           )}
 
@@ -386,8 +922,12 @@ export default function EditorStudioPage() {
             <AnalyzerTailorPanel
               doc={doc}
               mode={studioTab}
-              onRequestUpgrade={(reason) => setUpgradeReason(reason)}
+              onRequestUpgrade={() => toast.info("All studio features are unlocked")}
               onJumpToSection={(sec) => {
+                if (sec === "designer") {
+                  setStudioTab("designer");
+                  return;
+                }
                 setStudioTab("content");
                 setActiveSection(sec);
               }}
@@ -395,22 +935,101 @@ export default function EditorStudioPage() {
           )}
         </div>
 
-        {/* RIGHT PANE: Sticky 1:1 Live Editable Paper Canvas */}
-        <div className="lg:sticky lg:top-28 lg:col-span-6 xl:col-span-7">
-          <ResumeRender
-            doc={doc}
-            onPatch={handlePatchContent}
-            onSelectSection={(sec) => {
-              if (studioTab !== "content") setStudioTab("content");
-              setActiveSection(sec);
-            }}
-          />
+        <div className="space-y-2.5 lg:sticky lg:top-28 lg:col-span-6 xl:col-span-7">
+          {/* Recruiter View vs What ATS Sees Toggle (Enhancv Pattern — 100% non-invasive to templates) */}
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-card px-3 py-1.5 shadow-xs">
+            <div className="inline-flex items-center gap-1 rounded-full bg-muted p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setCanvasView("recruiter")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-medium transition-all",
+                  canvasView === "recruiter"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Eye className="h-3.5 w-3.5" /> What Recruiters See
+              </button>
+              <button
+                type="button"
+                onClick={() => setCanvasView("ats")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-medium transition-all",
+                  canvasView === "ats"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Cpu className="h-3.5 w-3.5" /> What ATS Sees
+              </button>
+            </div>
+            <div className="flex items-center gap-2 text-[11px]">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 rounded-full px-2.5 text-[11px]"
+                disabled={autoFitBusy}
+                onClick={async () => {
+                  setAutoFitBusy(true);
+                  try {
+                    const res = await apiSmartAutoFit({
+                      content: doc.content,
+                      seriesId: sId,
+                      pageSize: (String(doc.settings?.pageSize || "A4").toLowerCase() === "letter" ? "Letter" : "A4") as "A4" | "Letter",
+                      targetPages: (doc.settings?.pageCount || 1) as 1 | 2 | 3,
+                    });
+                    updateDoc(doc.id, {
+                      settings: {
+                        ...(doc.settings || {}),
+                        ...res.settings,
+                      } as any,
+                    });
+                    toast.success(res.summary);
+                  } catch {
+                    toast.error("Auto-Fit failed");
+                  } finally {
+                    setAutoFitBusy(false);
+                  }
+                }}
+              >
+                {autoFitBusy ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : (
+                  <Maximize2 className="mr-1 h-3 w-3" />
+                )}
+                Auto-Fit
+              </Button>
+              {liveAnalysis && (
+                <>
+                  <span className="hidden text-muted-foreground sm:inline">
+                    Score: <strong className="text-foreground">{liveAnalysis.overallScore}/100</strong>
+                  </span>
+                  <Badge variant="secondary" className="bg-[#e6f0e8] text-[10px] text-[#33613d]">
+                    ATS {liveAnalysis.atsView.parseRate}%
+                  </Badge>
+                </>
+              )}
+            </div>
+          </div>
+
+          {canvasView === "recruiter" ? (
+            <ResumeRender
+              doc={doc}
+              onPatch={handlePatchContent}
+              onSelectSection={(sec) => {
+                if (studioTab !== "content") setStudioTab("content");
+                setActiveSection(sec);
+              }}
+            />
+          ) : (
+            <AtsPlainView data={liveAnalysis?.atsView || null} />
+          )}
         </div>
       </div>
 
-      {/* =====================================================================
-       * TWO-COLUMN EXPORT & ORIGINAL TEMPLATE PACKAGE MODAL
-       * =================================================================== */}
+      {/* EXPORT MODAL */}
       <ResponsiveModal
         open={exportOpen}
         onOpenChange={setExportOpen}
@@ -418,7 +1037,6 @@ export default function EditorStudioPage() {
         description="Download your live edited document or access the original static Word, PDF, and Google Docs master files."
       >
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Left Column: Live Edited Document Exports */}
           <div className="space-y-2.5 rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center justify-between">
               <div className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -433,49 +1051,88 @@ export default function EditorStudioPage() {
             </p>
 
             <div className="space-y-2 pt-2">
-              <Button className="w-full justify-between rounded-xl" onClick={handlePrintVectorPdf}>
+              <Button
+                className="w-full justify-between rounded-xl"
+                disabled={Boolean(exportBusy)}
+                onClick={() => handlePrintVectorPdf(doc.activeTab === "cover" ? "cover" : doc.activeTab === "references" ? "references" : "resume")}
+              >
                 <span className="flex items-center gap-2">
                   <FileDown className="h-4 w-4" /> Download Live Vector PDF
                 </span>
-                {isProTemplate && user.plan !== "Pro" ? (
-                  <Badge className="bg-accent text-accent-foreground">PRO</Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-[10px]">100% Vector</Badge>
-                )}
+                <Badge variant="secondary" className="text-[10px]">100% Vector</Badge>
               </Button>
 
-              <Button variant="outline" className="w-full justify-between rounded-xl" onClick={handleExportLiveDocx}>
+              <Button
+                variant="outline"
+                className="w-full justify-between rounded-xl border-primary/40 bg-sage-mist/25 text-primary hover:bg-sage-mist"
+                disabled={Boolean(exportBusy)}
+                onClick={() => handleExportLiveDocx(doc.activeTab === "cover" ? "cover" : doc.activeTab === "references" ? "references" : "resume")}
+              >
                 <span className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Export Edited Word (.doc)
+                  {exportBusy?.startsWith("docx") ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
+                  Download True Word (.docx)
                 </span>
-                {user.plan !== "Pro" ? (
-                  <Badge className="bg-accent text-accent-foreground">PRO</Badge>
-                ) : (
-                  <span className="text-[10px] text-muted-foreground">Editable</span>
-                )}
+                <Badge className="bg-[#e6f0e8] text-[10px] text-[#33613d] hover:bg-[#e6f0e8]">Direct Inject</Badge>
               </Button>
 
-              <Button variant="outline" className="w-full justify-between rounded-xl" onClick={handleExportTxt}>
+              <Button
+                variant="outline"
+                className="w-full justify-between rounded-xl"
+                disabled={Boolean(exportBusy)}
+                onClick={() => handlePrintVectorPdf("combined")}
+              >
+                <span className="flex items-center gap-2">
+                  <Layers className="h-4 w-4" /> Combine Resume + Cover Letter (PDF)
+                </span>
+                <span className="text-[10px] text-muted-foreground">Merged</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full justify-between rounded-xl"
+                disabled={Boolean(exportBusy)}
+                onClick={handleExportZipBundle}
+              >
+                <span className="flex items-center gap-2">
+                  {exportBusy === "zip" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Package className="h-4 w-4" />
+                  )}
+                  Full Application Bundle (.zip)
+                </span>
+                <span className="text-[10px] text-muted-foreground">3 DOCX + TXT</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full justify-between rounded-xl"
+                disabled={Boolean(exportBusy)}
+                onClick={handleExportTxt}
+              >
                 <span className="flex items-center gap-2">
                   <FileText className="h-4 w-4" /> Download Plain Text (.txt)
                 </span>
-                <span className="text-[10px] text-[#33613d]">Free · ATS Raw</span>
+                <span className="text-[10px] text-[#33613d]">ATS Raw</span>
               </Button>
             </div>
           </div>
 
-          {/* Right Column: Original Uploaded Package Files (Word, PDF & Google Docs) */}
           <div className="space-y-2.5 rounded-2xl border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between">
               <div className="text-xs font-bold uppercase tracking-wider text-foreground">
-                2. Original Series {sId} Master Package
+                2. Original {tplMeta.name} Package
               </div>
               <Badge variant="outline" className="rounded-full text-[10px]">
-                Original Files
+                Master Files
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              Direct downloads of your uploaded `.docx`, `.pdf`, and Google Docs template files.
+              Direct downloads of the master `.docx`, `.pdf`, and Google Docs template files.
             </p>
 
             <div className="max-h-[210px] space-y-1.5 overflow-y-auto pr-1 pt-1">
@@ -484,7 +1141,7 @@ export default function EditorStudioPage() {
                 .map((f, i) => (
                   <a
                     key={i}
-                    href={f.path}
+                    href={f.url || f.path}
                     download
                     className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium transition-colors hover:border-primary hover:bg-sage-mist/30"
                   >
@@ -514,71 +1171,269 @@ export default function EditorStudioPage() {
         </div>
       </ResponsiveModal>
 
-      {/* VERSION HISTORY MODAL (Enhancv Page 22) */}
+      {/* REAL DATABASE VERSION HISTORY MODAL */}
       <ResponsiveModal
         open={historyOpen}
         onOpenChange={setHistoryOpen}
-        title="Version History"
-        description="Restore any saved snapshot of your resume or reset to the original template sample."
+        title="Version History (Database Snapshots)"
+        description="Save named milestones or restore any previous version. Restoring automatically backs up your current draft first."
       >
-        <div className="space-y-2.5">
-          <div className="flex justify-between">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={snapshotLabel}
+              onChange={(e) => setSnapshotLabel(e.target.value)}
+              placeholder="Optional label (e.g., Before tailoring for Stripe)"
+              className="h-8 flex-1 text-xs"
+            />
             <Button
               size="sm"
-              variant="outline"
-              className="rounded-full text-xs"
-              onClick={() => {
-                saveDocVersion(doc.id, `Manual Snapshot (${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`);
-                toast.success("Snapshot saved");
-              }}
+              className="h-8 rounded-full text-xs"
+              onClick={handleSaveSnapshot}
             >
-              + Save Current Snapshot
+              + Save Snapshot
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="rounded-full text-xs text-primary"
+              className="h-8 rounded-full text-xs text-primary"
               onClick={() => {
                 resetDocToTemplateSample(doc.id);
                 setHistoryOpen(false);
                 toast.success("Reset to original template sample text");
               }}
             >
-              Reset to Original Series {sId} Sample
+              Reset Sample
             </Button>
           </div>
 
-          <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
-            {(doc.versions || []).map((v) => (
-              <div
-                key={v.id}
-                className="flex items-center justify-between rounded-xl border border-border bg-card p-3"
-              >
-                <div>
-                  <div className="text-xs font-semibold">{v.label}</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    Series {v.template} · {new Date(v.savedAt).toLocaleString()}
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full text-xs"
-                  onClick={() => {
-                    restoreDocVersion(doc.id, v.id);
-                    setHistoryOpen(false);
-                    toast.success("Version restored");
-                  }}
-                >
-                  Restore
-                </Button>
+          <div className="max-h-[300px] space-y-2 overflow-y-auto pr-1">
+            {loadingVersions ? (
+              <div className="flex items-center justify-center py-8 text-xs text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading snapshots...
               </div>
-            ))}
+            ) : dbVersions.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                No saved snapshots yet. Click &ldquo;+ Save Snapshot&rdquo; to create your first milestone.
+              </div>
+            ) : (
+              dbVersions.map((v) => (
+                <div
+                  key={v.id}
+                  className="flex items-center justify-between rounded-xl border border-border bg-card p-3"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-semibold">
+                      <span>{v.label}</span>
+                      <Badge variant="outline" className="text-[9px] uppercase">
+                        {v.trigger}
+                      </Badge>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Template {v.seriesId} · {new Date(v.savedAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full text-xs"
+                    onClick={() => handleRestoreSnapshot(v.id)}
+                  >
+                    Restore
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </ResponsiveModal>
 
-      {/* TRANSLATE MODAL (Enhancv / Kickresume Pattern) */}
+      {/* FARNAVI AI COPILOT DRAWER (Phase 4) */}
+      <AiAssistantDrawer
+        open={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
+        content={doc.content}
+        seriesId={sId}
+        onApplyContent={(next) => handlePatchContent(next)}
+      />
+
+      {/* SMART IMPORT + DIFF MODAL (Phase 2) */}
+      <ImportResumeModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        currentContent={doc.content}
+        onApplyToCurrent={async (merged, sourceLabel) => {
+          try {
+            await apiCreateVersion(doc.id, `Auto-Backup before importing ${sourceLabel}`, "pre-import");
+          } catch (err) { console.warn("[editor]", err); }
+          handlePatchContent(merged);
+          toast.success("Imported sections applied (previous version auto-backed up)");
+        }}
+        onCreateNewFromImport={(merged, title) => {
+          const created = addDoc("resume", title, {
+            series: sId,
+            template: sId,
+            content: merged,
+          });
+          toast.success(`Created "${title}" from imported resume`);
+          router.push(`/editor/${created.id}`);
+        }}
+      />
+
+      {/* LIVE SHARE LINK MODAL (Phase 6) */}
+      <ResponsiveModal
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        title="Share via Live Link"
+        description="Send a clean, always-up-to-date link to recruiters or mentors, with optional contact privacy."
+      >
+        <div className="space-y-3.5 text-xs">
+          {shareBusy && !shareLink ? (
+            <div className="flex items-center justify-center py-6 text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating share link...
+            </div>
+          ) : shareLink ? (
+            <>
+              <div className="flex items-center justify-between rounded-xl border border-border bg-muted/25 px-3 py-2.5">
+                <div>
+                  <div className="font-semibold text-foreground">Public Link Active</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {shareLink.viewCount} total view(s)
+                  </div>
+                </div>
+                <Switch
+                  checked={shareLink.active}
+                  onCheckedChange={async (v) => {
+                    const updated = await apiUpsertShareLink(doc.id, { active: v });
+                    setShareLink(updated);
+                    toast.success(v ? "Share link enabled" : "Share link disabled");
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-border bg-muted/25 px-3 py-2.5">
+                <div>
+                  <div className="font-semibold text-foreground">Show Email & Phone on Link</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Turn off to redact personal contact details for public/Reddit feedback.
+                  </div>
+                </div>
+                <Switch
+                  checked={shareLink.showContact}
+                  onCheckedChange={async (v) => {
+                    const updated = await apiUpsertShareLink(doc.id, { showContact: v });
+                    setShareLink(updated);
+                    toast.success(v ? "Contact details visible on link" : "Contact details hidden on link");
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={
+                    typeof window !== "undefined"
+                      ? `${window.location.origin}/s/${shareLink.token}`
+                      : `/s/${shareLink.token}`
+                  }
+                  className="h-9 flex-1 font-mono text-[11px]"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-9 rounded-lg text-xs"
+                  onClick={() => {
+                    const url = `${window.location.origin}/s/${shareLink.token}`;
+                    navigator.clipboard?.writeText(url);
+                    toast.success("Live share link copied to clipboard");
+                  }}
+                >
+                  <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-9 rounded-lg text-xs"
+                  onClick={() => window.open(`/s/${shareLink.token}`, "_blank")}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </div>
+      </ResponsiveModal>
+
+      {/* MASTER PROFILE MODAL */}
+      <ResponsiveModal
+        open={masterOpen}
+        onOpenChange={setMasterOpen}
+        title="Master Profile Sync"
+        description="Maintain one master career profile and push contact details across all your tailored resumes in one click."
+      >
+        <div className="space-y-3 text-xs">
+          <div className="rounded-xl border border-border bg-muted/30 p-3.5">
+            {masterBusy && !masterProfile ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading Master Profile...
+              </div>
+            ) : masterProfile && masterProfile.contact?.name ? (
+              <div className="space-y-1">
+                <div className="font-semibold text-foreground">{masterProfile.contact.name}</div>
+                <div className="text-muted-foreground">
+                  {masterProfile.contact.role || "No title"} · {masterProfile.contact.email || "No email"}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Stored: {masterProfile.experience.length} roles · {masterProfile.education.length} education ·{" "}
+                  {masterProfile.skills.length} skills · Updated{" "}
+                  {new Date(masterProfile.updatedAt).toLocaleString()}
+                </div>
+              </div>
+            ) : (
+              <div className="text-muted-foreground">
+                Your Master Profile is empty. Save this resume as your Master Profile to reuse it across tailored applications.
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-2">
+            <Button
+              size="sm"
+              className="w-full justify-between rounded-xl"
+              disabled={masterBusy}
+              onClick={handleSaveToMaster}
+            >
+              <span>Save Current Resume to Master Profile</span>
+              <UserCheck className="h-4 w-4" />
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full justify-between rounded-xl"
+              disabled={masterBusy}
+              onClick={handleSyncContactToAll}
+            >
+              <span>Sync Current Contact Details to All Saved Resumes</span>
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full justify-between rounded-xl"
+              disabled={masterBusy || !masterProfile?.contact?.name}
+              onClick={handlePullFromMaster}
+            >
+              <span>Pull Master Profile into This Resume</span>
+              <Database className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </ResponsiveModal>
+
+      {/* TRANSLATE MODAL */}
       <ResponsiveModal
         open={translateOpen}
         onOpenChange={setTranslateOpen}
@@ -587,12 +1442,32 @@ export default function EditorStudioPage() {
         footer={
           <Button
             className="rounded-full"
-            onClick={() => {
-              translateDoc(doc.id, targetLang);
-              toast.success(`Translated resume & headings to ${targetLang}`);
-              setTranslateOpen(false);
+            disabled={translating}
+            onClick={async () => {
+              setTranslating(true);
+              try {
+                const res = await apiTranslateResume({
+                  content: doc.content,
+                  targetLanguage: targetLang,
+                });
+                if (res.translated) {
+                  handlePatchContent(res.translated);
+                  toast.success(`Neural AI translated your resume to ${targetLang}`);
+                } else {
+                  translateDoc(doc.id, targetLang);
+                  toast.success(`Translated template headings & text to ${targetLang}`);
+                }
+                setTranslateOpen(false);
+              } catch {
+                translateDoc(doc.id, targetLang);
+                toast.success(`Translated to ${targetLang}`);
+                setTranslateOpen(false);
+              } finally {
+                setTranslating(false);
+              }
             }}
           >
+            {translating && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
             Translate to {targetLang}
           </Button>
         }
@@ -611,41 +1486,6 @@ export default function EditorStudioPage() {
             </SelectContent>
           </Select>
         </Field>
-      </ResponsiveModal>
-
-      {/* TRANSPARENT PRO UPGRADE MODAL */}
-      <ResponsiveModal
-        open={Boolean(upgradeReason)}
-        onOpenChange={(v) => !v && setUpgradeReason("")}
-        title="Upgrade to Farnavi Pro Studio"
-        description={upgradeReason || "Unlock all 8 signature templates, DOCX exports, and unlimited AI tailoring."}
-        footer={
-          <div className="flex w-full items-center justify-between">
-            <Button variant="ghost" className="rounded-full" onClick={() => setUpgradeReason("")}>
-              Continue on Free Plan
-            </Button>
-            <Button
-              className="rounded-full"
-              onClick={() => {
-                setUser({ plan: "Pro" });
-                setUpgradeReason("");
-                toast.success("Farnavi Pro activated!");
-              }}
-            >
-              <Crown className="mr-1.5 h-4 w-4" /> Activate Pro Now ($9/mo)
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-2 rounded-xl border border-sage-line bg-sage-mist/30 p-3.5 text-xs">
-          <div className="font-semibold text-foreground">Included in Farnavi Pro:</div>
-          <ul className="space-y-1.5 pl-4 text-muted-foreground list-disc">
-            <li>All 8 Master Templates (Template, 3, 4, 11, 12, 14, 22, 24) in A4 & US Letter</li>
-            <li>Live Vector PDF & Editable Word (.DOCX) Exports + Google Docs Access</li>
-            <li>All 5 Recruiter Screening Checks (Credibility, Interview Risks, Age Bias, Gaps)</li>
-            <li>Turbo AI Job Description Tailoring & Pre-Written Phrase Library</li>
-          </ul>
-        </div>
       </ResponsiveModal>
     </div>
   );

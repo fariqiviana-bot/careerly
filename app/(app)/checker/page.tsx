@@ -66,7 +66,7 @@ export default function Checker() {
         const text = await file.text();
         const found = text.match(/\b(Figma|React|TypeScript|Python|SQL|SaaS|B2B|Research|Prototyping|Marketing|Leadership)\b/gi) ?? [];
         extraSkills = Array.from(new Set(found));
-      } catch {}
+      } catch (err) { console.warn("[page]", err); }
     }
 
     const newDoc = addDoc("resume", `${cleanTitle} (Uploaded)`, {

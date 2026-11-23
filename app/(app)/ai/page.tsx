@@ -17,7 +17,7 @@ export default function AI() {
   const [msgs, setMsgs] = useState([{ me: false, text: "You are back. What has happened since? I can write, tailor, review, or plan your next move." }]);
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [msgs]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
   const send = (t?: string) => {
     const q = t ?? input; if (!q.trim()) return;

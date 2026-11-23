@@ -13,6 +13,12 @@ import { PageHeader, ResponsiveModal, StatusBadge, StatCard, Field, DangerConfir
 import { Plus, MoreHorizontal, SquareKanban, Table as TableIcon, Download, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+function formatTrackDate(raw?: string): string {
+  if (!raw) return "Recently";
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? raw : d.toLocaleDateString();
+}
+
 export default function Tracker() {
   const { tracker, addTrack, moveTrack, updateTrack, removeTrack, docs, addInterview } = useStore();
   const [view, setView] = useState<"board" | "table">("board");
@@ -25,7 +31,7 @@ export default function Tracker() {
   const current = sel ? tracker.find((t) => t.id === sel.id) ?? null : null;
 
   const exportCsv = () => {
-    const rows = [["Title", "Company", "Status", "Location", "Salary", "Date"], ...tracker.map((t) => [t.title, t.company, STATUS[t.status].label, t.location, t.salary, new Date(t.date).toLocaleDateString()])];
+    const rows = [["Title", "Company", "Status", "Location", "Salary", "Date"], ...tracker.map((t) => [t.title, t.company, STATUS[t.status].label, t.location, t.salary, formatTrackDate(t.date)])];
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n")], { type: "text/csv" }));
     a.download = "job-tracker.csv"; a.click(); toast.success("CSV exported");
@@ -37,7 +43,7 @@ export default function Tracker() {
         <button className="min-w-0 text-left" onClick={() => setSel(t)}>
           <div className="truncate text-sm font-medium">{t.title}</div>
           <div className="text-xs text-muted-foreground">{t.company} · {t.location}</div>
-          <div className="mt-1 text-[11px] text-muted-foreground">{new Date(t.date).toLocaleDateString()} · {t.salary}</div>
+          <div className="mt-1 text-[11px] text-muted-foreground">{formatTrackDate(t.date)} · {t.salary}</div>
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -100,7 +106,7 @@ export default function Tracker() {
                   <td className="px-4 py-3 font-medium">{t.title}</td><td className="px-4 py-3">{t.company}</td>
                   <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
                   <td className="px-4 py-3">{t.location}</td><td className="px-4 py-3">{t.salary}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(t.date).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{formatTrackDate(t.date)}</td>
                 </tr>
               ))}
             </tbody>

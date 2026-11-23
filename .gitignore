@@ -45,3 +45,14 @@ project-code.txt
 diagnose-report.txt
 _revert_backup/
 template-inventory.json
+
+# Backend DB & Secrets
+.env.local
+prisma/*.db
+prisma/*.db-journal
+playwright-report/
+test-results/
+audit-report.json
+audit-static.json
+repo-snapshot.txt
+*.bak

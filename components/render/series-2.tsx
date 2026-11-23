@@ -407,11 +407,12 @@ function S2Header({
             fontSize: pt(26.04, fontScale),
             fontWeight: 400,
             lineHeight: pt(33.0, fontScale),
-            letterSpacing: pt(6.5, fontScale),
-            paddingLeft: pt(6.5, fontScale),
+            letterSpacing: pt(fullName.length > 22 ? 3.5 : 6.5, fontScale),
+            paddingLeft: pt(fullName.length > 22 ? 3.5 : 6.5, fontScale),
             color: S2_COLORS.ink,
             textTransform: "uppercase",
             textAlign: "center",
+            whiteSpace: "nowrap",
           }}
         />
       </div>
@@ -478,11 +479,13 @@ function S2ContactBlock({
   content,
   fontScale = 1,
   editable = false,
+  inFlow = false,
   onPatch,
 }: {
   content: any;
   fontScale?: number;
   editable?: boolean;
+  inFlow?: boolean;
   onPatch?: (patch: Partial<ResumeContent>) => void;
 }) {
   const phone = content?.phone ?? content?.personal?.phone ?? "(555) 555-5555";
@@ -506,18 +509,33 @@ function S2ContactBlock({
   const fs = pt(9.96, fontScale);
 
   return (
-    <>
+    <div
+      style={
+        inFlow
+          ? {
+              width: "156pt",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6.2pt",
+            }
+          : {
+              position: "absolute",
+              left: "31.3pt",
+              top: "122.8pt",
+              width: "156pt",
+              display: "flex",
+              flexDirection: "column",
+              gap: "6.2pt",
+            }
+      }
+    >
       {rows.map((row) => (
         <div
           key={row.key}
           style={{
-            position: "absolute",
-            left: "31.3pt",
-            top: `${row.yPt}pt`,
-            width: "156pt",
             display: "flex",
             alignItems: "center",
-            gap: "11.2pt",
+            gap: "10.5pt",
           }}
         >
           <S2ContactBadge kind={row.key} />
@@ -528,17 +546,18 @@ function S2ContactBlock({
             onCommit={(v) => onPatch?.({ [row.key]: v } as Partial<ResumeContent>)}
             style={{
               flex: 1,
+              minWidth: 0,
               fontFamily: F_RUBIK,
               fontSize: fs,
               fontWeight: 400,
               lineHeight: lh,
               color: S2_COLORS.ink,
-              wordBreak: "break-word",
+              overflowWrap: "anywhere",
             }}
           />
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
@@ -1179,10 +1198,9 @@ export function Series2Exact({
       ? c.professionalSkills
       : ["Time Management", "Critical Thinking", "Leadership", "Problem Solving", "Creativity", "Attention to Detail"];
 
-  const techSkills: string[] =
-    Array.isArray(c.technicalSkills) && c.technicalSkills.length > 0
-      ? c.technicalSkills
-      : ["Microsoft Office Suite", "Canva & Adobe Photoshop", "WordPress Basics", "SEO"];
+  const techSkills: string[] = Array.isArray(c.technicalSkills)
+    ? c.technicalSkills
+    : ["Microsoft Office Suite", "Canva & Adobe Photoshop", "WordPress Basics", "SEO"];
 
   const eduList: any[] =
     Array.isArray(c.education) && c.education.length > 0
@@ -1193,187 +1211,217 @@ export function Series2Exact({
           { id: "ed3", degree: "COURSE OR PROGRAM", school: "Institution or Platform", date: "Completion Year" },
         ];
 
+  const contactMinH = (skillsY - 122.8).toFixed(2);
+  const skillsMinH = (eduY - skillsY).toFixed(2);
+  const summaryMinH = (skillsY - 126.19).toFixed(2);
+  const compactSkillGap = proSkills.length + techSkills.length > 12 ? 2.6 : 5.6;
+
   return (
-    <div className="s2-page" style={{ width: "100%", height: "100%", fontFamily: F_RUBIK }}>
+    <div className="s2-page" style={{ width: "100%", height: "100%", fontFamily: F_RUBIK, overflow: "hidden" }}>
       <style dangerouslySetInnerHTML={{ __html: S2_FONT_CSS }} />
       <BulletStylesOnce />
       <S2Header content={c} isLetter={isLetter} fontScale={fontScale} editable={editable} onPatch={patch} />
 
-      {/* LEFT TOP: CONTACT */}
-      <S2ContactBlock content={c} fontScale={fontScale} editable={editable} onPatch={patch} />
-
-      {/* LEFT MIDDLE: SKILLS */}
-      {isVisible("skills") && (
-        <div style={{ position: "absolute", left: "32.16pt", top: `${skillsY}pt`, width: "152pt" }}>
-          <S2Heading lines={["SKILLS"]} fontScale={fontScale} />
-
-          {/* PROFESSIONAL */}
-          <ul
-            className="tpl-bullet-list"
-            style={{
-              marginTop: pt(8.2, fontScale),
-              paddingLeft: "11pt",
-              fontFamily: F_RUBIK,
-              fontSize: fs,
-              fontWeight: 700,
-              lineHeight: lh,
-              color: S2_COLORS.ink,
-              "--bl-marker-size": `${(10.5 * fontScale).toFixed(2)}pt`,
-              "--bl-marker-color": S2_COLORS.ink,
-            } as React.CSSProperties}
-          >
-            <li style={{ paddingLeft: "6pt" }}>PROFESSIONAL</li>
-          </ul>
-          <div style={{ marginTop: pt(5.6, fontScale) }}>
-            {proSkills.map((sk, idx) => (
-              <InlineEd
-                key={idx}
-                value={sk}
-                editable={editable}
-                onCommit={(v) => {
-                  const next = proSkills.map((it, i) => (i === idx ? v : it));
-                  patch({ professionalSkills: next });
-                }}
-                style={{
-                  fontFamily: F_RUBIK,
-                  fontSize: fs,
-                  fontWeight: 400,
-                  lineHeight: lh,
-                  marginTop: idx === 0 ? "0pt" : pt(5.6, fontScale),
-                  color: S2_COLORS.ink,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* TECHNICAL */}
-          <ul
-            className="tpl-bullet-list"
-            style={{
-              marginTop: pt(25.0, fontScale),
-              paddingLeft: "11pt",
-              fontFamily: F_RUBIK,
-              fontSize: fs,
-              fontWeight: 700,
-              lineHeight: lh,
-              color: S2_COLORS.ink,
-              "--bl-marker-size": `${(10.5 * fontScale).toFixed(2)}pt`,
-              "--bl-marker-color": S2_COLORS.ink,
-            } as React.CSSProperties}
-          >
-            <li style={{ paddingLeft: "6pt" }}>TECHNICAL</li>
-          </ul>
-          <div style={{ marginTop: pt(5.6, fontScale) }}>
-            {techSkills.map((sk, idx) => (
-              <InlineEd
-                key={idx}
-                value={sk}
-                editable={editable}
-                onCommit={(v) => {
-                  const next = techSkills.map((it, i) => (i === idx ? v : it));
-                  patch({ technicalSkills: next });
-                }}
-                style={{
-                  fontFamily: F_RUBIK,
-                  fontSize: fs,
-                  fontWeight: 400,
-                  lineHeight: lh,
-                  marginTop: idx === 0 ? "0pt" : pt(5.6, fontScale),
-                  color: S2_COLORS.ink,
-                }}
-              />
-            ))}
-          </div>
+      {/* LEFT FLOW COLUMN (Zero-Overlap: Contact -> Skills -> Education & Certifications) */}
+      <div
+        style={{
+          position: "absolute",
+          left: "31.3pt",
+          top: "122.8pt",
+          width: "156pt",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div style={{ minHeight: `${contactMinH}pt`, paddingBottom: "14pt" }}>
+          <S2ContactBlock content={c} fontScale={fontScale} editable={editable} inFlow onPatch={patch} />
         </div>
-      )}
 
-      {/* LEFT BOTTOM: EDUCATION & CERTIFICATIONS */}
-      {isVisible("education") && (
-        <div style={{ position: "absolute", left: "32.16pt", top: `${eduY}pt`, width: "152pt" }}>
-          <S2Heading lines={["EDUCATION &", "CERTIFICATIONS"]} fontScale={fontScale} />
-          <div style={{ marginTop: pt(7.0, fontScale) }}>
-            {eduList.map((ed, idx) => (
-              <div
-                key={ed.id || idx}
-                style={{
-                  marginTop: idx === 0 ? "0pt" : pt(8.2, fontScale),
-                  fontFamily: F_RUBIK,
-                  fontSize: fs,
-                  lineHeight: lh,
-                  color: S2_COLORS.ink,
-                }}
-              >
+        {isVisible("skills") && (
+          <div style={{ paddingLeft: "0.86pt", minHeight: `${skillsMinH}pt`, paddingBottom: "14pt" }}>
+            <S2Heading lines={["SKILLS"]} fontScale={fontScale} />
+
+            {/* PROFESSIONAL */}
+            <ul
+              className="tpl-bullet-list"
+              style={{
+                marginTop: pt(8.2, fontScale),
+                paddingLeft: "11pt",
+                fontFamily: F_RUBIK,
+                fontSize: fs,
+                fontWeight: 700,
+                lineHeight: lh,
+                color: S2_COLORS.ink,
+                "--bl-marker-size": `${(10.5 * fontScale).toFixed(2)}pt`,
+                "--bl-marker-color": S2_COLORS.ink,
+              } as React.CSSProperties}
+            >
+              <li style={{ paddingLeft: "6pt" }}>PROFESSIONAL</li>
+            </ul>
+            <div style={{ marginTop: pt(compactSkillGap, fontScale) }}>
+              {proSkills.map((sk, idx) => (
                 <InlineEd
-                  value={(ed.degree || "DEGREE TITLE").toUpperCase()}
+                  key={idx}
+                  value={sk}
                   editable={editable}
                   onCommit={(v) => {
-                    const next = eduList.map((it, i) => (i === idx ? { ...it, degree: v } : it));
-                    patch({ education: next });
+                    const next = proSkills.map((it, i) => (i === idx ? v : it));
+                    patch({ professionalSkills: next });
                   }}
-                  style={{ fontWeight: 700, textTransform: "uppercase" }}
-                />
-                <InlineEd
-                  value={ed.school || "University Name - Location"}
-                  editable={editable}
-                  onCommit={(v) => {
-                    const next = eduList.map((it, i) => (i === idx ? { ...it, school: v } : it));
-                    patch({ education: next });
-                  }}
-                />
-                <InlineEd
-                  value={ed.date || ed.period || "Graduation Year"}
-                  editable={editable}
-                  onCommit={(v) => {
-                    const next = eduList.map((it, i) => (i === idx ? { ...it, date: v, period: v } : it));
-                    patch({ education: next });
+                  style={{
+                    fontFamily: F_RUBIK,
+                    fontSize: fs,
+                    fontWeight: 400,
+                    lineHeight: lh,
+                    marginTop: idx === 0 ? "0pt" : pt(compactSkillGap, fontScale),
+                    color: S2_COLORS.ink,
                   }}
                 />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
 
-      {/* RIGHT TOP: PROFESSIONAL SUMMARY */}
-      {isVisible("summary") && (
-        <div style={{ position: "absolute", left: `${rightX}pt`, top: "126.19pt", width: `${rightTextW}pt` }}>
-          <S2Heading lines={["PROFESSIONAL SUMMARY"]} fontScale={fontScale} />
-          <InlineEd
-            value={summaryText}
-            editable={editable}
-            multiline
-            placeholder="Professional summary..."
-            onCommit={(v) => patch({ summary: v })}
-            style={{
-              marginTop: pt(6.6, fontScale),
-              fontFamily: F_RUBIK,
-              fontSize: fs,
-              fontWeight: 400,
-              lineHeight: lh,
-              color: S2_COLORS.ink,
-            }}
-          />
-        </div>
-      )}
-
-      {/* RIGHT BOTTOM: PROFESSIONAL EXPERIENCE */}
-      {isVisible("experience") && (
-        <div style={{ position: "absolute", left: `${rightX}pt`, top: `${skillsY}pt`, width: `${rightTextW}pt` }}>
-          <S2Heading lines={["PROFESSIONAL EXPERIENCE"]} fontScale={fontScale} />
-          <div style={{ marginTop: pt(7.8, fontScale) }}>
-            {page1Exp.map((exp, idx) => (
-              <S2ExperienceItem
-                key={exp.id || `p1-exp-${idx}`}
-                exp={exp}
-                fontScale={fontScale}
-                marginBottomPt={idx === page1Exp.length - 1 ? 0 : 28.0}
-                editable={editable}
-                onUpdateExp={(nextExp) => updateExperienceAt(idx, nextExp)}
-              />
-            ))}
+            {/* TECHNICAL (only rendered if present) */}
+            {techSkills.length > 0 && (
+              <>
+                <ul
+                  className="tpl-bullet-list"
+                  style={{
+                    marginTop: pt(proSkills.length > 8 ? 14.0 : 25.0, fontScale),
+                    paddingLeft: "11pt",
+                    fontFamily: F_RUBIK,
+                    fontSize: fs,
+                    fontWeight: 700,
+                    lineHeight: lh,
+                    color: S2_COLORS.ink,
+                    "--bl-marker-size": `${(10.5 * fontScale).toFixed(2)}pt`,
+                    "--bl-marker-color": S2_COLORS.ink,
+                  } as React.CSSProperties}
+                >
+                  <li style={{ paddingLeft: "6pt" }}>TECHNICAL</li>
+                </ul>
+                <div style={{ marginTop: pt(compactSkillGap, fontScale) }}>
+                  {techSkills.map((sk, idx) => (
+                    <InlineEd
+                      key={idx}
+                      value={sk}
+                      editable={editable}
+                      onCommit={(v) => {
+                        const next = techSkills.map((it, i) => (i === idx ? v : it));
+                        patch({ technicalSkills: next });
+                      }}
+                      style={{
+                        fontFamily: F_RUBIK,
+                        fontSize: fs,
+                        fontWeight: 400,
+                        lineHeight: lh,
+                        marginTop: idx === 0 ? "0pt" : pt(compactSkillGap, fontScale),
+                        color: S2_COLORS.ink,
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {isVisible("education") && (
+          <div style={{ paddingLeft: "0.86pt" }}>
+            <S2Heading lines={["EDUCATION &", "CERTIFICATIONS"]} fontScale={fontScale} />
+            <div style={{ marginTop: pt(7.0, fontScale) }}>
+              {eduList.map((ed, idx) => (
+                <div
+                  key={ed.id || idx}
+                  style={{
+                    marginTop: idx === 0 ? "0pt" : pt(8.2, fontScale),
+                    fontFamily: F_RUBIK,
+                    fontSize: fs,
+                    lineHeight: lh,
+                    color: S2_COLORS.ink,
+                  }}
+                >
+                  <InlineEd
+                    value={(ed.degree || "DEGREE TITLE").toUpperCase()}
+                    editable={editable}
+                    onCommit={(v) => {
+                      const next = eduList.map((it, i) => (i === idx ? { ...it, degree: v } : it));
+                      patch({ education: next });
+                    }}
+                    style={{ fontWeight: 700, textTransform: "uppercase" }}
+                  />
+                  <InlineEd
+                    value={ed.school || "University Name - Location"}
+                    editable={editable}
+                    onCommit={(v) => {
+                      const next = eduList.map((it, i) => (i === idx ? { ...it, school: v } : it));
+                      patch({ education: next });
+                    }}
+                  />
+                  <InlineEd
+                    value={ed.date || ed.period || "Graduation Year"}
+                    editable={editable}
+                    onCommit={(v) => {
+                      const next = eduList.map((it, i) => (i === idx ? { ...it, date: v, period: v } : it));
+                      patch({ education: next });
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT FLOW COLUMN (Zero-Overlap: Professional Summary -> Professional Experience) */}
+      <div
+        style={{
+          position: "absolute",
+          left: `${rightX}pt`,
+          top: "126.19pt",
+          width: `${rightTextW}pt`,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {isVisible("summary") && (
+          <div style={{ minHeight: `${summaryMinH}pt`, paddingBottom: "14pt" }}>
+            <S2Heading lines={["PROFESSIONAL SUMMARY"]} fontScale={fontScale} />
+            <InlineEd
+              value={summaryText}
+              editable={editable}
+              multiline
+              placeholder="Professional summary..."
+              onCommit={(v) => patch({ summary: v })}
+              style={{
+                marginTop: pt(6.6, fontScale),
+                fontFamily: F_RUBIK,
+                fontSize: fs,
+                fontWeight: 400,
+                lineHeight: lh,
+                color: S2_COLORS.ink,
+              }}
+            />
+          </div>
+        )}
+
+        {isVisible("experience") && (
+          <div>
+            <S2Heading lines={["PROFESSIONAL EXPERIENCE"]} fontScale={fontScale} />
+            <div style={{ marginTop: pt(7.8, fontScale) }}>
+              {page1Exp.map((exp, idx) => (
+                <S2ExperienceItem
+                  key={exp.id || `p1-exp-${idx}`}
+                  exp={exp}
+                  fontScale={fontScale}
+                  marginBottomPt={idx === page1Exp.length - 1 ? 0 : 24.0}
+                  editable={editable}
+                  onUpdateExp={(nextExp) => updateExperienceAt(idx, nextExp)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
