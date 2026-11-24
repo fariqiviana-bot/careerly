@@ -1,5 +1,6 @@
 "use client";
 
+import { apiGetMe, apiLogout, apiListDocuments, apiListTracker, apiCreateTracker, apiUpdateTracker, apiDeleteTracker, apiListInterviews, apiCreateInterview } from "@/lib/api/workspace-client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import type { TrackStatus } from "./catalog";
 import { SERIES_CATALOG, SeriesTemplate } from "./templates-dna";
@@ -2396,7 +2397,7 @@ const TRANSLATION_DICTIONARY: Record<string, {
 };
 
 function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
-  const tpl = SERIES_CATALOG.find((s) => s.id === d.seriesId) || SERIES_CATALOG[0];
+  const tpl = SERIES_CATALOG.find((s) => s.id === d?.seriesId) || SERIES_CATALOG[0];
   const baseSettings = defaultSettings(tpl.columns === 2);
   return {
     id: d.id,
@@ -2550,6 +2551,8 @@ export interface UnifiedAppStore {
   restoreDocVersion: (id: string, versionId: string) => void;
   resetDocToTemplateSample: (id: string, seriesId?: string) => void;
   upsertDocFromRemote: (remote: any) => void;
+  authenticated: boolean;
+  signOut: () => Promise<void>;
 }
 
 export const JUST_CREATED_DOC_IDS = new Set<string>();
@@ -2660,9 +2663,9 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     } catch (err) { console.warn("[store]", err); }
   }, [documents, activeDocId, user, tracker, interviews]);
 
-  const activeDocument = documents.find((d) => d.id === activeDocId) || documents[0];
+  const activeDocument = documents.find((d) => d.id === activeDocId) || documents[0] || INITIAL_DOCUMENTS[0];
   const activeSeries =
-    SERIES_CATALOG.find((s) => s.id === activeDocument.seriesId) || SERIES_CATALOG[0];
+    SERIES_CATALOG.find((s) => s.id === activeDocument?.seriesId) || SERIES_CATALOG[0];
 
   const pushUndoState = (currentDocs: ResumeDocument[]) => {
     setHistoryPast((prev) => [...prev.slice(-19), JSON.parse(JSON.stringify(currentDocs))]);
@@ -3110,7 +3113,90 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  return (
+    const [authenticated, setAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const me = await apiGetMe();
+        if (cancelled) return;
+        if (me.authenticated && me.user) {
+          setAuthenticated(true);
+          setUserState((prev) => ({
+            ...prev,
+            name: me.user!.name,
+            email: me.user!.email,
+            plan: (me.user!.plan === "Pro" ? "Pro" : "Free") as any,
+          }));
+        } else {
+          setAuthenticated(false);
+        }
+
+        const [dbTracks, dbInterviews, dbDocs] = await Promise.all([
+          apiListTracker(),
+          apiListInterviews(),
+          me.authenticated ? apiListDocuments() : Promise.resolve(null),
+        ]);
+        if (cancelled) return;
+
+        if (me.authenticated) {
+          setTracker(dbTracks as TrackItem[]);
+          setInterviews(dbInterviews as Interview[]);
+          if (Array.isArray(dbDocs)) {
+            if (dbDocs.length > 0) {
+              dbDocs.forEach((rd) => upsertDocFromRemote(rd));
+              const dbIds = new Set(dbDocs.map((rd) => rd.id));
+              setDocuments((prev) => prev.filter((d) => dbIds.has(d.id)));
+            } else {
+              setDocuments([]);
+            }
+          }
+        } else {
+          if (dbTracks.length > 0) setTracker(dbTracks as TrackItem[]);
+          if (dbInterviews.length > 0) setInterviews(dbInterviews as Interview[]);
+        }
+      } catch (err) {
+        console.warn("[store] DB workspace hydration warning:", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [upsertDocFromRemote]);
+
+  const signOut = React.useCallback(async () => {
+    try { await apiLogout(); } catch (err) { console.warn("[store] signOut error:", err); }
+    try { localStorage.removeItem(STORAGE_KEY); } catch (err) { console.warn("[store] clear error:", err); }
+    setAuthenticated(false);
+    window.location.assign("/login");
+  }, []);
+
+  const addTrackDb = (item: Omit<TrackItem, "id" | "date">) => {
+    const id = "tr_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+    const date = new Date().toISOString().slice(0, 10);
+    const next: TrackItem = { ...item, id, date };
+    setTracker((prev) => [next, ...prev]);
+    apiCreateTracker(next).catch((err) => console.warn("[store] addTrack sync error:", err));
+  };
+  const moveTrackDb = (id: string, status: TrackStatus) => {
+    setTracker((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+    apiUpdateTracker(id, { status }).catch((err) => console.warn("[store] moveTrack sync error:", err));
+  };
+  const updateTrackDb = (id: string, patch: Partial<TrackItem>) => {
+    setTracker((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    apiUpdateTracker(id, patch).catch((err) => console.warn("[store] updateTrack sync error:", err));
+  };
+  const removeTrackDb = (id: string) => {
+    setTracker((prev) => prev.filter((t) => t.id !== id));
+    apiDeleteTracker(id).catch((err) => console.warn("[store] removeTrack sync error:", err));
+  };
+  const addInterviewDb = (item: Omit<Interview, "id" | "createdAt">) => {
+    const id = "int_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+    const createdAt = new Date().toISOString();
+    const next: Interview = { ...item, id, createdAt };
+    setInterviews((prev) => [next, ...prev]);
+    apiCreateInterview(next).catch((err) => console.warn("[store] addInterview sync error:", err));
+  };
+return (
     <StoreContext.Provider
       value={{
         documents,
@@ -3151,18 +3237,18 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           setSavedJobs((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id])),
         addDoc,
         upsertDocFromRemote,
+        authenticated,
+        signOut,
         updateDoc,
         removeDoc: deleteDocument,
         duplicateDoc: (id) => {
           duplicateDocument(id);
         },
-        addTrack: (t) => setTracker((p) => [{ ...t, id: uid(), date: "Just now" }, ...p]),
-        moveTrack: (id, s) => setTracker((p) => p.map((t) => (t.id === id ? { ...t, status: s } : t))),
-        updateTrack: (id, patch) =>
-          setTracker((p) => p.map((t) => (t.id === id ? { ...t, ...patch } : t))),
-        removeTrack: (id) => setTracker((p) => p.filter((t) => t.id !== id)),
-        addInterview: (i) =>
-          setInterviews((p) => [{ ...i, id: uid(), createdAt: "Just now" }, ...p]),
+        addTrack: addTrackDb,
+        moveTrack: moveTrackDb,
+        updateTrack: updateTrackDb,
+        removeTrack: removeTrackDb,
+        addInterview: addInterviewDb,
         translateDoc: (_id, lang) => translateActiveDocument(lang),
         saveDocVersion: (_id, label) => saveVersionSnapshot(label || "Saved Version"),
         restoreDocVersion: (_id, versionId) => restoreVersionSnapshot(versionId),

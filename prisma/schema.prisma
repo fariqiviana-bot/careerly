@@ -8,40 +8,56 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String         @default("Farnavi User")
-  plan          String         @default("Pro")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id            String             @id @default(cuid())
+  email         String             @unique
+  name          String             @default("Farnavi User")
+  plan          String             @default("Pro")
+  passwordHash  String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
+  sessions      Session[]
   masterProfile MasterProfile?
   documents     Document[]
+  applications  JobApplication[]
+  interviews    InterviewSession[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model MasterProfile {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  contactJson        String   @default("{}")
-  summary            String   @default("")
-  experienceJson     String   @default("[]")
-  educationJson      String   @default("[]")
-  skillsJson         String   @default("[]")
-  technicalSkillsJson String  @default("[]")
-  certificationsJson String   @default("[]")
-  coursesJson        String   @default("[]")
-  awardsJson         String   @default("[]")
-  volunteeringJson   String   @default("[]")
-  membershipsJson    String   @default("[]")
-  languagesJson      String   @default("[]")
-  projectsJson       String   @default("[]")
-  publicationsJson   String   @default("[]")
-  referencesJson     String   @default("[]")
+  contactJson         String   @default("{}")
+  summary             String   @default("")
+  experienceJson      String   @default("[]")
+  educationJson       String   @default("[]")
+  skillsJson          String   @default("[]")
+  technicalSkillsJson String   @default("[]")
+  certificationsJson  String   @default("[]")
+  coursesJson         String   @default("[]")
+  awardsJson          String   @default("[]")
+  volunteeringJson    String   @default("[]")
+  membershipsJson     String   @default("[]")
+  languagesJson       String   @default("[]")
+  projectsJson        String   @default("[]")
+  publicationsJson    String   @default("[]")
+  referencesJson      String   @default("[]")
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Document {
@@ -49,6 +65,7 @@ model Document {
   userId           String
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  slug             String?           @unique
   type             String            @default("resume")
   title            String            @default("Untitled Resume")
   seriesId         String            @default("11")
@@ -111,4 +128,45 @@ model ShareLink {
   createdAt   DateTime  @default(now())
 
   @@index([documentId])
+}
+
+model JobApplication {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String
+  company   String
+  url       String   @default("")
+  status    String   @default("saved")
+  location  String   @default("Remote")
+  salary    String   @default("")
+  notes     String   @default("")
+  date      String   @default("")
+  resumeId  String?
+  coverId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model InterviewSession {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String
+  company     String
+  seniority   String   @default("Mid")
+  mode        String   @default("Basic")
+  resumeId    String?
+  answersJson String   @default("[]")
+  score       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, createdAt])
 }

@@ -6,7 +6,7 @@ import { getWorkspaceUser, serializeDocument } from "@/lib/server/workspace";
 export const runtime = "nodejs";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -19,6 +19,9 @@ export async function GET(
     });
 
     if (!doc) {
+      if (req.nextUrl.searchParams.get("optional") === "1") {
+        return NextResponse.json({ document: null }, { status: 200 });
+      }
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
@@ -55,6 +58,7 @@ export async function PATCH(
     const d = parsed.data;
     const data: Record<string, any> = {};
     if (d.type !== undefined) data.type = d.type;
+    if (d.slug !== undefined) data.slug = d.slug ? d.slug.toLowerCase() : null;
     if (d.title !== undefined) data.title = d.title;
     if (d.seriesId !== undefined) data.seriesId = d.seriesId;
     if (d.activeTab !== undefined) data.activeTab = d.activeTab;
@@ -75,7 +79,7 @@ export async function PATCH(
     if (d.headerFooter !== undefined) data.headerFooterJson = JSON.stringify(d.headerFooter);
 
     let saved;
-    if (!existing) {
+    if (!existing && req.nextUrl.searchParams.get("upsert") !== "1") {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     } else {
       saved = await prisma.document.update({

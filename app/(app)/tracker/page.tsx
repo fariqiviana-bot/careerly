@@ -31,7 +31,7 @@ export default function Tracker() {
   const current = sel ? tracker.find((t) => t.id === sel.id) ?? null : null;
 
   const exportCsv = () => {
-    const rows = [["Title", "Company", "Status", "Location", "Salary", "Date"], ...tracker.map((t) => [t.title, t.company, STATUS[t.status].label, t.location, t.salary, formatTrackDate(t.date)])];
+    const rows = [["Title", "Company", "Status", "Location", "Salary", "Date"], ...tracker.map((t) => [t.title, t.company, (STATUS[t.status] ?? STATUS.shortlist).label, t.location, t.salary, formatTrackDate(t.date)])];
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n")], { type: "text/csv" }));
     a.download = "job-tracker.csv"; a.click(); toast.success("CSV exported");

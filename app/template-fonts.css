@@ -1,45 +1,45 @@
 /* Template design fonts. LOCKED — do not substitute.
    Real TTF/OTF extracted from the template packs. @font-face only; UI font untouched. */
-@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Inter/Inter-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/fonts/Inter/Inter-500-normal.ttf") format("truetype");}
-@font-face{font-family:"Inter";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Inter/Inter-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Lato";font-style:normal;font-weight:300;font-display:swap;src:url("/fonts/fonts/Lato/Lato-300-normal.ttf") format("truetype");}
-@font-face{font-family:"Lato";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Lato/Lato-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Lato";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Lato/Lato-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Libre Baskerville";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/LibreBaskerville/LibreBaskerville-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Libre Baskerville";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/LibreBaskerville/LibreBaskerville-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Manrope";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Manrope/Manrope-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Manrope";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/fonts/Manrope/Manrope-500-normal.ttf") format("truetype");}
-@font-face{font-family:"Manrope";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Manrope/Manrope-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Merriweather";font-style:normal;font-weight:300;font-display:swap;src:url("/fonts/fonts/Merriweather/Merriweather-300-normal.ttf") format("truetype");}
-@font-face{font-family:"Merriweather";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Merriweather/Merriweather-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Merriweather";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Merriweather/Merriweather-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Montserrat";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Montserrat/Montserrat-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Montserrat";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/fonts/Montserrat/Montserrat-500-normal.ttf") format("truetype");}
-@font-face{font-family:"Montserrat";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Montserrat/Montserrat-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Nunito";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Nunito/Nunito-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Nunito";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/fonts/Nunito/Nunito-500-normal.ttf") format("truetype");}
-@font-face{font-family:"Nunito";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Nunito/Nunito-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Open Sans";font-style:normal;font-weight:300;font-display:swap;src:url("/fonts/fonts/OpenSans/OpenSans-300-normal.ttf") format("truetype");}
-@font-face{font-family:"Open Sans";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/OpenSans/OpenSans-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Open Sans";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/OpenSans/OpenSans-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Playfair Display";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/PlayfairDisplay/PlayfairDisplay-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Playfair Display";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/PlayfairDisplay/PlayfairDisplay-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Poppins";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Poppins/Poppins-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Poppins";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/fonts/Poppins/Poppins-500-normal.ttf") format("truetype");}
-@font-face{font-family:"Poppins";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Poppins/Poppins-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Roboto";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Roboto/Roboto-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Roboto";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/fonts/Roboto/Roboto-500-normal.ttf") format("truetype");}
-@font-face{font-family:"Roboto";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Roboto/Roboto-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Rubik";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/Rubik/Rubik-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Rubik";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/fonts/Rubik/Rubik-500-normal.ttf") format("truetype");}
-@font-face{font-family:"Rubik";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/Rubik/Rubik-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Source Sans 3";font-style:normal;font-weight:300;font-display:swap;src:url("/fonts/fonts/SourceSans3/SourceSans3-300-normal.ttf") format("truetype");}
-@font-face{font-family:"Source Sans 3";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/SourceSans3/SourceSans3-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Source Sans 3";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/SourceSans3/SourceSans3-700-normal.ttf") format("truetype");}
-@font-face{font-family:"Work Sans";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/fonts/WorkSans/WorkSans-400-normal.ttf") format("truetype");}
-@font-face{font-family:"Work Sans";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/fonts/WorkSans/WorkSans-500-normal.ttf") format("truetype");}
-@font-face{font-family:"Work Sans";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/fonts/WorkSans/WorkSans-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Inter/Inter-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/Inter/Inter-500-normal.ttf") format("truetype");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Inter/Inter-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Lato";font-style:normal;font-weight:300;font-display:swap;src:url("/fonts/Lato/Lato-300-normal.ttf") format("truetype");}
+@font-face{font-family:"Lato";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Lato/Lato-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Lato";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Lato/Lato-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Libre Baskerville";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/LibreBaskerville/LibreBaskerville-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Libre Baskerville";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/LibreBaskerville/LibreBaskerville-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Manrope";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Manrope/Manrope-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Manrope";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/Manrope/Manrope-500-normal.ttf") format("truetype");}
+@font-face{font-family:"Manrope";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Manrope/Manrope-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Merriweather";font-style:normal;font-weight:300;font-display:swap;src:url("/fonts/Merriweather/Merriweather-300-normal.ttf") format("truetype");}
+@font-face{font-family:"Merriweather";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Merriweather/Merriweather-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Merriweather";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Merriweather/Merriweather-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Montserrat/Montserrat-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/Montserrat/Montserrat-500-normal.ttf") format("truetype");}
+@font-face{font-family:"Montserrat";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Montserrat/Montserrat-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Nunito";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Nunito/Nunito-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Nunito";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/Nunito/Nunito-500-normal.ttf") format("truetype");}
+@font-face{font-family:"Nunito";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Nunito/Nunito-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Open Sans";font-style:normal;font-weight:300;font-display:swap;src:url("/fonts/OpenSans/OpenSans-300-normal.ttf") format("truetype");}
+@font-face{font-family:"Open Sans";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/OpenSans/OpenSans-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Open Sans";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/OpenSans/OpenSans-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Playfair Display";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/PlayfairDisplay/PlayfairDisplay-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Playfair Display";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/PlayfairDisplay/PlayfairDisplay-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Poppins";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Poppins/Poppins-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Poppins";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/Poppins/Poppins-500-normal.ttf") format("truetype");}
+@font-face{font-family:"Poppins";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Poppins/Poppins-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Roboto";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Roboto/Roboto-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Roboto";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/Roboto/Roboto-500-normal.ttf") format("truetype");}
+@font-face{font-family:"Roboto";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Roboto/Roboto-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Rubik";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/Rubik/Rubik-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Rubik";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/Rubik/Rubik-500-normal.ttf") format("truetype");}
+@font-face{font-family:"Rubik";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/Rubik/Rubik-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Source Sans 3";font-style:normal;font-weight:300;font-display:swap;src:url("/fonts/SourceSans3/SourceSans3-300-normal.ttf") format("truetype");}
+@font-face{font-family:"Source Sans 3";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/SourceSans3/SourceSans3-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Source Sans 3";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/SourceSans3/SourceSans3-700-normal.ttf") format("truetype");}
+@font-face{font-family:"Work Sans";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/WorkSans/WorkSans-400-normal.ttf") format("truetype");}
+@font-face{font-family:"Work Sans";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/WorkSans/WorkSans-500-normal.ttf") format("truetype");}
+@font-face{font-family:"Work Sans";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/WorkSans/WorkSans-700-normal.ttf") format("truetype");}
 
 /* LOCKED FONTS — never let the browser fake a weight or an italic.
    Only the weights listed in FONT_WEIGHTS may be used by the renderer. */

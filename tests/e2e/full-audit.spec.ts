@@ -125,8 +125,8 @@ test.describe.serial("Farnavi Master Full-Site & Backend Audit", () => {
 
       try {
         // 1. Open /templates and click exact template card
-        await page.goto("/templates", { waitUntil: "domcontentloaded" });
-        await page.waitForTimeout(350);
+        await page.goto("/templates", { waitUntil: "networkidle" });
+        await page.waitForTimeout(300);
 
         const card = page
           .locator("div.grid > div.group")
@@ -139,7 +139,10 @@ test.describe.serial("Farnavi Master Full-Site & Backend Audit", () => {
         }
 
         await card.locator("[role='button']").first().click();
-        await page.waitForTimeout(300);
+        await page.locator("[role='dialog']").waitFor({ state: "visible", timeout: 8000 }).catch(async () => {
+          await card.locator("[role='button']").first().click();
+          await page.locator("[role='dialog']").waitFor({ state: "visible", timeout: 8000 });
+        });
 
         // Verify static Word & PDF links inside template modal return HTTP 200
         const staticLinks = await page.locator("[role='dialog'] a[download]").evaluateAll((els) =>
@@ -154,7 +157,7 @@ test.describe.serial("Farnavi Master Full-Site & Backend Audit", () => {
         }
 
         // 2. Click "Edit ... Live in Studio"
-        await page.getByRole("button", { name: /Live in Studio/i }).click();
+        await page.getByRole("button", { name: /Live in Studio/i }).click({ timeout: 15_000 });
         await page.waitForURL(/\/editor\/[^?]+/, { timeout: 15_000 });
         await page.waitForTimeout(1200);
 

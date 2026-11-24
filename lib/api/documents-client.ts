@@ -33,9 +33,7 @@ export interface BackendMasterProfile {
 }
 
 export async function apiGetDocument(id: string) {
-  const res = await fetch(`/api/documents/${encodeURIComponent(id)}`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`/api/documents/${encodeURIComponent(id)}?optional=1`, { cache: "no-store" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GET /api/documents/${id} failed (${res.status})`);
   const data = await res.json();
@@ -54,8 +52,7 @@ export async function apiUpsertDocument(payload: Record<string, any>) {
 }
 
 export async function apiPatchDocument(id: string, payload: Record<string, any>) {
-  const res = await fetch(`/api/documents/${encodeURIComponent(id)}`, {
-    method: "PATCH",
+  const res = await fetch(`/api/documents/${encodeURIComponent(id)}?upsert=1`, { method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });

@@ -1,3 +1,4 @@
+import { resolveWorkspaceUser } from "@/lib/server/auth";
 import { prisma } from "./prisma";
 import type { Document as PrismaDoc, DocumentVersion, MasterProfile } from "@prisma/client";
 
@@ -5,16 +6,7 @@ const DEFAULT_USER_ID = "local-workspace-user";
 const DEFAULT_USER_EMAIL = "workspace@farnavi.local";
 
 export async function getWorkspaceUser() {
-  return prisma.user.upsert({
-    where: { id: DEFAULT_USER_ID },
-    update: {},
-    create: {
-      id: DEFAULT_USER_ID,
-      email: DEFAULT_USER_EMAIL,
-      name: "Farnavi Studio User",
-      plan: "Pro",
-    },
-  });
+  return resolveWorkspaceUser();
 }
 
 export function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
@@ -32,6 +24,7 @@ export function serializeDocument(
   return {
     id: doc.id,
     type: doc.type,
+    slug: doc.slug ?? undefined,
     title: doc.title,
     seriesId: doc.seriesId,
     series: doc.seriesId,

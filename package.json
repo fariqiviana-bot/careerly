@@ -8,7 +8,10 @@
     "start": "next start",
     "qa": "playwright test",
     "qa:report": "playwright show-report",
-    "audit": "node scripts/static-health-audit.js && playwright test tests/e2e/full-audit.spec.ts --reporter=list"
+    "audit": "node scripts/static-health-audit.js && playwright test tests/e2e/full-audit.spec.ts --reporter=list",
+    "db:use:sqlite": "node scripts/use-db-provider.js sqlite && npx prisma generate",
+    "db:use:postgres": "node scripts/use-db-provider.js postgresql && npx prisma generate",
+    "db:push": "npx prisma db push"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

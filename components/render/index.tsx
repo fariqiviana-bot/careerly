@@ -501,10 +501,7 @@ export function MasterSeriesCanvas({
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Courgette&family=Great+Vibes&family=Kaushan+Script&family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lumanosimo&family=Manrope:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&family=Pacifico&family=Parisienne&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@400;500;600;700&family=Rubik:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;600;700&family=Work+Sans:wght@400;500;600;700&display=swap"
-      />
+      {/* Local self-hosted fonts active */}
       {pages.map((pageIndex) => {
         const renderedSheet =
           activeTab === "cover" ? (

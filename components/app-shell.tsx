@@ -67,7 +67,7 @@ function NavLinks({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?:
 }
 
 function UserBlock({ collapsed }: { collapsed?: boolean }) {
-  const { user } = useStore();
+  const { user , authenticated, signOut } = useStore();
   return (
     <div className={cn("flex items-center gap-3 px-4 py-4", collapsed && "justify-center px-0")}>
       <Avatar className="h-9 w-9 border border-sage-line"><AvatarFallback className="bg-peach text-accent-foreground text-sm">VF</AvatarFallback></Avatar>
@@ -91,7 +91,7 @@ function UpgradeCard() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
-  const { user, docs } = useStore();
+  const { user, docs, authenticated, signOut } = useStore();
   const isEditorRoute = path.startsWith("/editor");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
@@ -166,7 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <DropdownMenuItem onClick={() => router.push("/settings")}>Profile & Settings</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/pricing")}>Plans <Badge variant="secondary" className="ml-auto">{user.plan}</Badge></DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push("/login")}><LogOut className="mr-2 h-4 w-4" />Log out</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => (authenticated ? signOut() : router.push('/login'))}><LogOut className="mr-2 h-4 w-4" />Log out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

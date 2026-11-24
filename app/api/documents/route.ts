@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
       where: { id },
       update: {
         type: d.type,
+      ...(d.slug !== undefined ? { slug: d.slug ? d.slug.toLowerCase() : null } : {}),
         title: d.title,
         seriesId: d.seriesId,
         activeTab: d.activeTab,
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
         id,
         userId: user.id,
         type: d.type,
+      ...(d.slug !== undefined ? { slug: d.slug ? d.slug.toLowerCase() : null } : {}),
         title: d.title,
         seriesId: d.seriesId,
         activeTab: d.activeTab,
