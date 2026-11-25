@@ -770,8 +770,13 @@ function mapDocToResumeContent(doc: any): ResumeContent {
           })
       : base.experience;
 
+  const isCustomUserDoc =
+    !isLegacyPlaceholder &&
+    Boolean(c.name && String(c.name).trim()) &&
+    String(c.name).trim().toLowerCase() !== String(base.fullName || "").trim().toLowerCase();
+
   const fullExp =
-    mappedExp.length < base.experience.length
+    !isCustomUserDoc && mappedExp.length < base.experience.length
       ? [...mappedExp, ...base.experience.slice(mappedExp.length)]
       : mappedExp;
 
@@ -789,7 +794,7 @@ function mapDocToResumeContent(doc: any): ResumeContent {
   const mappedCerts =
     Array.isArray(c.certifications) && c.certifications.length > 0
       ? c.certifications
-      : base.certifications;
+      : isCustomUserDoc ? [] : base.certifications;
 
   return {
     ...base,

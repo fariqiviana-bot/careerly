@@ -179,6 +179,16 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
   const initialSeriesRef = useRef<string | null>(null);
   const hydratedDocRef = useRef<string | null>(null);
   const isSavingRef = useRef(false);
+  const lastSyncedSnapshotRef = useRef<{
+    title?: string;
+    seriesId?: string;
+    activeTab?: string;
+    content?: Record<string, any>;
+    settings?: Record<string, any>;
+    visibility?: Record<string, any>;
+  } | null>(null);
+  const updateDocRef = useRef(updateDoc);
+  updateDocRef.current = updateDoc;
   const lastSavedSigRef = useRef<string>("");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serverUpdatedAtRef = useRef<string | null>(null);
@@ -246,6 +256,14 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
             headerFooter: (remote.headerFooter as HeaderFooterConfig) || headerFooter,
             customLabels: remote.customLabels || customLabels,
           });
+          lastSyncedSnapshotRef.current = {
+            title: remote.title,
+            seriesId: remote.seriesId,
+            activeTab: remote.activeTab,
+            content: JSON.parse(JSON.stringify(remote.content || {})),
+            settings: JSON.parse(JSON.stringify(remote.settings || {})),
+            visibility: JSON.parse(JSON.stringify(remote.visibility || {})),
+          };
           setDbVersions(Array.isArray(remote.versions) ? remote.versions : []);
           if (remote.headerFooter) setHeaderFooter(remote.headerFooter as HeaderFooterConfig);
           if (remote.customLabels) setCustomLabels(remote.customLabels);
@@ -278,6 +296,14 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
             headerFooter,
             customLabels,
           });
+          lastSyncedSnapshotRef.current = {
+            title: payload.title,
+            seriesId: payload.seriesId,
+            activeTab: payload.activeTab,
+            content: JSON.parse(JSON.stringify(payload.content || {})),
+            settings: JSON.parse(JSON.stringify(payload.settings || {})),
+            visibility: JSON.parse(JSON.stringify(payload.visibility || {})),
+          };
           setDbVersions(Array.isArray(created?.versions) ? created.versions : []);
           setSaveState("saved");
         }
@@ -341,6 +367,14 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         { keepalive: opts?.keepalive }
       );
       if (saved?.updatedAt) serverUpdatedAtRef.current = saved.updatedAt;
+      lastSyncedSnapshotRef.current = {
+        title: pending.payload.title,
+        seriesId: pending.payload.seriesId,
+        activeTab: pending.payload.activeTab,
+        content: JSON.parse(JSON.stringify(pending.payload.content || {})),
+        settings: JSON.parse(JSON.stringify(pending.payload.settings || {})),
+        visibility: JSON.parse(JSON.stringify(pending.payload.visibility || {})),
+      };
       lastSavedSigRef.current = pending.sig;
       if (pendingSaveRef.current?.sig === pending.sig) {
         pendingSaveRef.current = null;
@@ -354,6 +388,86 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
     } catch (err: any) {
       if (err?.name === "AbortError") return;
       if (err?.status === 409) {
+        const remoteDoc = err?.serverDocument;
+        if (remoteDoc && !opts?.keepalive) {
+          try {
+            const base = lastSyncedSnapshotRef.current || {};
+            const mergeObj = (b: any, r: any, l: any) => {
+              const out: Record<string, any> = { ...(r || {}) };
+              const bObj = b || {};
+              const lObj = l || {};
+              for (const k of Object.keys(lObj)) {
+                if (JSON.stringify(lObj[k]) !== JSON.stringify(bObj[k])) {
+                  out[k] = lObj[k];
+                }
+              }
+              return out;
+            };
+
+            const mergedContent = mergeObj(base.content, remoteDoc.content, pending.payload.content);
+            const mergedSettings = mergeObj(base.settings, remoteDoc.settings, pending.payload.settings);
+            const mergedVisibility = mergeObj(base.visibility, remoteDoc.visibility, pending.payload.visibility);
+            const mergedTitle =
+              pending.payload.title !== base.title ? pending.payload.title : remoteDoc.title ?? pending.payload.title;
+            const mergedSeries =
+              pending.payload.seriesId !== base.seriesId
+                ? pending.payload.seriesId
+                : remoteDoc.seriesId ?? pending.payload.seriesId;
+            const mergedTab =
+              pending.payload.activeTab !== base.activeTab
+                ? pending.payload.activeTab
+                : remoteDoc.activeTab ?? pending.payload.activeTab;
+
+            const mergedPayload: Record<string, any> = {
+              ...pending.payload,
+              title: mergedTitle,
+              seriesId: mergedSeries,
+              activeTab: mergedTab,
+              content: mergedContent,
+              settings: mergedSettings,
+              visibility: mergedVisibility,
+            };
+
+            const retried = await apiPatchDocument(pending.docId, {
+              ...mergedPayload,
+              ...(remoteDoc.updatedAt ? { expectedUpdatedAt: remoteDoc.updatedAt } : {}),
+            });
+            if (retried?.updatedAt) serverUpdatedAtRef.current = retried.updatedAt;
+            lastSyncedSnapshotRef.current = {
+              title: mergedTitle,
+              seriesId: mergedSeries,
+              activeTab: mergedTab,
+              content: JSON.parse(JSON.stringify(mergedContent)),
+              settings: JSON.parse(JSON.stringify(mergedSettings)),
+              visibility: JSON.parse(JSON.stringify(mergedVisibility)),
+            };
+            lastSavedSigRef.current = JSON.stringify({
+              title: mergedTitle,
+              seriesId: mergedSeries,
+              activeTab: mergedTab,
+              content: mergedContent,
+              settings: mergedSettings,
+              visibility: mergedVisibility,
+              headerFooter: mergedPayload.headerFooter,
+              customLabels: mergedPayload.customLabels,
+            });
+            pendingSaveRef.current = null;
+            updateDocRef.current(pending.docId, {
+              title: mergedTitle,
+              series: mergedSeries,
+              template: mergedSeries,
+              activeTab: mergedTab,
+              content: mergedContent as any,
+              settings: mergedSettings as any,
+              visibility: mergedVisibility as any,
+            });
+            retryAttemptRef.current = 0;
+            setSaveState("saved");
+            return;
+          } catch (mergeErr) {
+            console.warn("[editor] auto-merge retry failed:", mergeErr);
+          }
+        }
         setSaveState("conflict");
         toast.error("Updated in another tab. Refresh to avoid overwriting newer edits.", {
           id: "doc-conflict",

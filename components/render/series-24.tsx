@@ -1395,6 +1395,15 @@ export function Series24Exact({
           { id: "ed3", degree: "Continuing Education:", school: "Patient Assessment", date: "Graduation Date" },
         ];
 
+  const hasUserCerts = Array.isArray(c.certifications) && c.certifications.length > 0;
+  const page1SkillsList: string[] =
+    Array.isArray(c.professionalSkills) && c.professionalSkills.length > 0
+      ? c.professionalSkills
+      : Array.isArray((c as any).skills) && (c as any).skills.length > 0
+      ? (c as any).skills
+      : [];
+  const showSkillsOnPage1 = !hasUserCerts && page1SkillsList.length > 0;
+
   const certsList: any[] =
     Array.isArray(c.certifications) && c.certifications.length > 0
       ? c.certifications
@@ -1500,8 +1509,35 @@ export function Series24Exact({
         </>
       )}
 
-      {/* LEFT BOTTOM: CERTIFICATION & LICENSES */}
-      {isVisible("certifications") && (
+      {/* LEFT BOTTOM: SKILLS (when user switched template with skills & no certs) OR CERTIFICATION & LICENSES */}
+      {showSkillsOnPage1 && isVisible("skills") && (
+        <>
+          <div style={{ position: "absolute", left: "30pt", top: `${(certRuleY - 20.6).toFixed(2)}pt`, width: "145pt" }}>
+            <S24Heading lines={["SKILLS"]} fontScale={fontScale} />
+          </div>
+          <div style={{ position: "absolute", left: "30pt", top: `${(certRuleY + 11.8).toFixed(2)}pt`, width: "145pt" }}>
+            {page1SkillsList.map((sk, idx) => (
+              <InlineEd
+                key={idx}
+                value={sk}
+                editable={editable}
+                onCommit={(v) => {
+                  const next = page1SkillsList.map((it, i) => (i === idx ? v : it));
+                  patch({ professionalSkills: next });
+                }}
+                style={{
+                  fontFamily: F_INTER,
+                  fontSize: fs,
+                  lineHeight: lh,
+                  color: S24_COLORS.ink,
+                  marginTop: idx === 0 ? "0pt" : pt(6.5, fontScale),
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+      {!showSkillsOnPage1 && isVisible("certifications") && (
         <>
           <div style={{ position: "absolute", left: "30pt", top: `${certHeadY}pt`, width: "145pt" }}>
             <S24Heading lines={["CERTIFICATION", "& LICENSES"]} fontScale={fontScale} />
