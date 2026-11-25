@@ -761,6 +761,7 @@ function S14SkillsSection({
             />
           )}
         </li>
+        {(techText.trim().length > 0 || editable) && (
         <li style={{ paddingLeft: "1.5pt", marginTop: pt(13.92, fontScale) }}>
           <span style={{ fontWeight: 700 }}>TECHNICAL: </span>
           {is2P && !editable ? (
@@ -783,6 +784,7 @@ function S14SkillsSection({
             />
           )}
         </li>
+        )}
       </ul>
     </section>
   );
@@ -942,6 +944,11 @@ export function Series14Exact({
       ? S14_2P_PRO_SKILLS_LINES.join("\n")
       : S14_1P_PRO_SKILLS.join(" - ");
 
+  const isCustomS14Doc =
+    Boolean(c.fullName && String(c.fullName).trim()) &&
+    String(c.fullName).trim().toLowerCase() !== "enter your name here" &&
+    !/^(enter your name|your name|name here|first last)/i.test(String(c.fullName).trim());
+
   const rawTechSkills: string[] = Array.isArray(c.technicalSkills) ? c.technicalSkills : [];
   const isLegacyTechSkills =
     rawTechSkills.length === 5 && rawTechSkills[0] === "Microsoft Office Suite";
@@ -949,6 +956,8 @@ export function Series14Exact({
   const techSkillsText =
     rawTechSkills.length > 0 && !isLegacyTechSkills
       ? rawTechSkills.join(" - ")
+      : isCustomS14Doc
+      ? ""
       : is2P
       ? S14_2P_TECH_SKILLS_LINES.join("\n")
       : S14_1P_TECH_SKILLS.join(" - ");
@@ -956,6 +965,8 @@ export function Series14Exact({
   const coursesList: any[] =
     Array.isArray(c.courses) && c.courses.length > 0
       ? c.courses.slice(0, 2)
+      : isCustomS14Doc
+      ? []
       : [
           {
             id: "s14-crs-1",
@@ -1373,6 +1384,40 @@ export function Series14Exact({
             }}
           />
         </div>
+      )}
+
+      {/* 1-Page mode: EDUCATION (for custom user resumes) */}
+      {!is2P && isCustomS14Doc && isVisible("education") && Array.isArray(c.education) && c.education.length > 0 && (
+        <section style={{ marginTop: pt(16, fontScale) }}>
+          <S14SectionHeading
+        title="EDUCATION"
+        fontScale={fontScale}
+        marginBottomPt={11.3}
+      />
+          <div style={{ marginTop: pt(6, fontScale) }}>
+            {c.education.map((ed: any, idx: number) => (
+              <div
+                key={ed?.id || idx}
+                style={{
+                  marginTop: idx === 0 ? "0pt" : pt(8, fontScale),
+                  fontSize: pt(10, fontScale),
+                  lineHeight: pt(13.92, fontScale),
+                  color: S14_COLORS.ink,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "8pt" }}>
+                  <span style={{ fontWeight: 700 }}>{ed?.degree || "DEGREE TITLE"}</span>
+                  {(ed?.date || ed?.period) && <span>{ed?.date || ed?.period}</span>}
+                </div>
+                {ed?.school && (
+                  <div style={{ fontWeight: 400 }}>
+                    {ed.school}{ed?.location ? ` / ${ed.location}` : ""}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {!is2P && isVisible("courses") && coursesList.length > 0 && (

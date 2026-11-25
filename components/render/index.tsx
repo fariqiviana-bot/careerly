@@ -817,19 +817,19 @@ function mapDocToResumeContent(doc: any): ResumeContent {
     technicalSkills:
       Array.isArray(c.technicalSkills) && c.technicalSkills.length > 0
         ? c.technicalSkills
-        : base.technicalSkills,
+        : isCustomUserDoc ? [] : base.technicalSkills,
     experience: fullExp,
     education: mappedEdu,
     certifications: mappedCerts,
-    courses: Array.isArray(c.courses) && c.courses.length > 0 ? c.courses : base.courses,
-    awards: Array.isArray(c.awards) && c.awards.length > 0 ? c.awards : base.awards,
+    courses: Array.isArray(c.courses) && c.courses.length > 0 ? c.courses : isCustomUserDoc ? [] : base.courses,
+    awards: Array.isArray(c.awards) && c.awards.length > 0 ? c.awards : isCustomUserDoc ? [] : base.awards,
     volunteering:
       Array.isArray(c.volunteering) && c.volunteering.length > 0
         ? c.volunteering
-        : base.volunteering,
+        : isCustomUserDoc ? [] : base.volunteering,
     memberships:
-      Array.isArray(c.memberships) && c.memberships.length > 0 ? c.memberships : base.memberships,
-    interests: Array.isArray(c.interests) && c.interests.length > 0 ? c.interests : base.interests,
+      Array.isArray(c.memberships) && c.memberships.length > 0 ? c.memberships : isCustomUserDoc ? [] : base.memberships,
+    interests: Array.isArray(c.interests) && c.interests.length > 0 ? c.interests : isCustomUserDoc ? [] : base.interests,
     references:
       Array.isArray(c.references) && c.references.length > 0 ? c.references : base.references,
     coverLetter: c.coverLetter ? { ...base.coverLetter, ...c.coverLetter } : base.coverLetter,

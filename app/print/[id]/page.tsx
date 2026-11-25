@@ -277,6 +277,10 @@ export default function VectorPrintPage() {
                 page-break-after: auto;
                 break-after: auto;
               }
+              .print-sheet,
+              .print-sheet * {
+                letter-spacing: normal !important;
+              }
             }
           `,
         }}
