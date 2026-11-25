@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState , useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useStore, calculateDocScore, type Content , JUST_CREATED_DOC_IDS , type Doc } from "@/lib/store";
@@ -79,7 +79,7 @@ import {
 } from "@/lib/api/documents-client";
 
 type StudioTab = "content" | "designer" | "analyzer" | "tailor";
-type SaveState = "syncing" | "saving" | "saved" | "offline";
+type SaveState = "syncing" | "saving" | "saved" | "offline" | "conflict";
 
 export default function EditorStudioPage() {
   const params = useParams<{ id: string }>();
@@ -178,8 +178,15 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
 
   const initialSeriesRef = useRef<string | null>(null);
   const hydratedDocRef = useRef<string | null>(null);
+  const isSavingRef = useRef(false);
   const lastSavedSigRef = useRef<string>("");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const serverUpdatedAtRef = useRef<string | null>(null);
+  const saveSeqRef = useRef<number>(0);
+  const abortCtrlRef = useRef<AbortController | null>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryAttemptRef = useRef<number>(0);
+  const pendingSaveRef = useRef<{ docId: string; sig: string; payload: Record<string, any> } | null>(null);
 
   useEffect(() => {
     const t = sp.get("tab");
@@ -227,14 +234,17 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         if (isBrandNew) JUST_CREATED_DOC_IDS.delete(doc.id);
         if (cancelled) return;
         if (remote) {
+          if (remote.updatedAt) serverUpdatedAtRef.current = remote.updatedAt;
           hydratedDocRef.current = doc.id;
           lastSavedSigRef.current = JSON.stringify({
             title: remote.title,
             seriesId: remote.seriesId,
             activeTab: remote.activeTab,
             content: remote.content,
-            settings: remote.settings,
-            visibility: remote.visibility,
+            settings: remote.settings || {},
+            visibility: remote.visibility || {},
+            headerFooter: (remote.headerFooter as HeaderFooterConfig) || headerFooter,
+            customLabels: remote.customLabels || customLabels,
           });
           setDbVersions(Array.isArray(remote.versions) ? remote.versions : []);
           if (remote.headerFooter) setHeaderFooter(remote.headerFooter as HeaderFooterConfig);
@@ -255,6 +265,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         } else {
           const payload = buildPayload();
           const created = await apiUpsertDocument(payload);
+          if (created?.updatedAt) serverUpdatedAtRef.current = created.updatedAt;
           if (cancelled) return;
           hydratedDocRef.current = doc.id;
           lastSavedSigRef.current = JSON.stringify({
@@ -262,8 +273,10 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
             seriesId: payload.seriesId,
             activeTab: payload.activeTab,
             content: payload.content,
-            settings: payload.settings,
-            visibility: payload.visibility,
+            settings: payload.settings || {},
+            visibility: payload.visibility || {},
+            headerFooter,
+            customLabels,
           });
           setDbVersions(Array.isArray(created?.versions) ? created.versions : []);
           setSaveState("saved");
@@ -295,44 +308,142 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
       })
     : "";
 
+  const flushAutosave = useCallback(async (opts?: { keepalive?: boolean }) => {
+    const pending = pendingSaveRef.current;
+    if (!pending) return;
+    if (pending.sig === lastSavedSigRef.current) {
+      pendingSaveRef.current = null;
+      return;
+    }
+
+    // Never abort an in-flight DB commit; let it finish updating serverUpdatedAtRef, then drain latest pending state
+    if (!opts?.keepalive && isSavingRef.current) {
+      return;
+    }
+
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+
+    if (!opts?.keepalive) isSavingRef.current = true;
+    const seq = ++saveSeqRef.current;
+    setSaveState("saving");
+    let shouldDrain = false;
+
+    try {
+      const saved = await apiPatchDocument(
+        pending.docId,
+        {
+          ...pending.payload,
+          ...(serverUpdatedAtRef.current ? { expectedUpdatedAt: serverUpdatedAtRef.current } : {}),
+        },
+        { keepalive: opts?.keepalive }
+      );
+      if (saved?.updatedAt) serverUpdatedAtRef.current = saved.updatedAt;
+      lastSavedSigRef.current = pending.sig;
+      if (pendingSaveRef.current?.sig === pending.sig) {
+        pendingSaveRef.current = null;
+        if (seq === saveSeqRef.current) {
+          retryAttemptRef.current = 0;
+          setSaveState("saved");
+        }
+      } else if (pendingSaveRef.current) {
+        shouldDrain = true;
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+      if (err?.status === 409) {
+        setSaveState("conflict");
+        toast.error("Updated in another tab. Refresh to avoid overwriting newer edits.", {
+          id: "doc-conflict",
+        });
+        return;
+      }
+      setSaveState("offline");
+      const delay = Math.min(15000, 2000 * Math.pow(2, retryAttemptRef.current++));
+      retryTimerRef.current = setTimeout(() => {
+        flushAutosave();
+      }, delay);
+    } finally {
+      if (!opts?.keepalive) {
+        isSavingRef.current = false;
+        if (shouldDrain && pendingSaveRef.current && pendingSaveRef.current.sig !== lastSavedSigRef.current) {
+          setTimeout(() => {
+            flushAutosave();
+          }, 40);
+        }
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!doc?.id || hydratedDocRef.current !== doc.id) return;
     if (!currentSig || currentSig === lastSavedSigRef.current) return;
 
+    pendingSaveRef.current = {
+      docId: doc.id,
+      sig: currentSig,
+      payload: {
+        title: doc.title,
+        seriesId: String(doc.series || doc.template || "11"),
+        activeTab: doc.activeTab || "resume",
+        language: doc.language || "English",
+        accent: doc.accent || "#202124",
+        font: doc.font || "Merriweather",
+        score: calculateDocScore(doc.content).score,
+        targetJobTitle: doc.tailoredJobTitle || null,
+        targetCompany: doc.tailoredCompany || null,
+        targetJd: doc.tailoredJd || null,
+        content: doc.content,
+        settings: doc.settings || {},
+        visibility: doc.visibility || {},
+        sectionOrder: doc.sectionOrder || [],
+        headerFooter,
+        customLabels,
+      },
+    };
+
     setSaveState("saving");
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
-    saveTimerRef.current = setTimeout(async () => {
-      try {
-        await apiPatchDocument(doc.id, {
-          title: doc.title,
-          seriesId: String(doc.series || doc.template || "11"),
-          activeTab: doc.activeTab || "resume",
-          language: doc.language || "English",
-          accent: doc.accent || "#202124",
-          font: doc.font || "Merriweather",
-          score: calculateDocScore(doc.content).score,
-          targetJobTitle: doc.tailoredJobTitle || null,
-          targetCompany: doc.tailoredCompany || null,
-          targetJd: doc.tailoredJd || null,
-          content: doc.content,
-          settings: doc.settings || {},
-          visibility: doc.visibility || {},
-          sectionOrder: doc.sectionOrder || [],
-          headerFooter,
-          customLabels,
-        });
-        lastSavedSigRef.current = currentSig;
-        setSaveState("saved");
-      } catch {
-        setSaveState("offline");
-      }
+    saveTimerRef.current = setTimeout(() => {
+      flushAutosave();
     }, 650);
 
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [currentSig, doc?.id]);
+  }, [currentSig, doc?.id, flushAutosave]);
+
+  useEffect(() => {
+    const onOnline = () => {
+      if (pendingSaveRef.current) {
+        retryAttemptRef.current = 0;
+        flushAutosave();
+      }
+    };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (pendingSaveRef.current && pendingSaveRef.current.sig !== lastSavedSigRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    const onPageHide = () => {
+      if (pendingSaveRef.current && pendingSaveRef.current.sig !== lastSavedSigRef.current) {
+        flushAutosave({ keepalive: true });
+      }
+    };
+    window.addEventListener("online", onOnline);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onPageHide);
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, [flushAutosave]);
 
   // 3. Live 28-point analysis for topbar issue badge & "What ATS Sees" view
   useEffect(() => {
@@ -417,7 +528,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
   const handleSaveSnapshot = async () => {
     try {
       // Flush latest state before snapshotting
-      await apiPatchDocument(doc.id, {
+      const savedSnap = await apiPatchDocument(doc.id, {
         title: doc.title,
         seriesId: sId,
         content: doc.content,
@@ -426,6 +537,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         headerFooter,
         customLabels,
       });
+      if (savedSnap?.updatedAt) serverUpdatedAtRef.current = savedSnap.updatedAt;
       const label =
         snapshotLabel.trim() ||
         `Manual Snapshot (${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`;
@@ -441,6 +553,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
   const handleRestoreSnapshot = async (versionId: string) => {
     try {
       const restored = await apiRestoreVersion(doc.id, versionId);
+      if ((restored as any)?.updatedAt) serverUpdatedAtRef.current = (restored as any).updatedAt;
       lastSavedSigRef.current = JSON.stringify({
         title: restored.title,
         seriesId: restored.seriesId,
@@ -580,8 +693,12 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
   };
 
   const flushSaveBeforeExternal = async () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
     try {
-      await apiUpsertDocument({
+      const savedExt = await apiUpsertDocument({
         id: doc.id,
         type: doc.type || "resume",
         title: doc.title || "Untitled Resume",
@@ -603,13 +720,23 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         headerFooter,
         customLabels,
       });
+      if (savedExt?.updatedAt) serverUpdatedAtRef.current = savedExt.updatedAt;
+      lastSavedSigRef.current = currentSig;
+      pendingSaveRef.current = null;
+      setSaveState("saved");
     } catch (err) {
       console.warn("[editor] pre-export sync failed:", err);
     }
   };
 
   const handlePrintVectorPdf = async (mode: "resume" | "cover" | "references" | "combined" = "resume") => {
-    const printUrl = `/print/${encodeURIComponent(doc.id)}?mode=${mode}&autoprint=1`;
+    try {
+      localStorage.setItem(
+        `farnavi_print_snapshot_${doc.id}`,
+        JSON.stringify({ ...doc, series: sId, seriesId: sId, template: sId, _snapAt: Date.now() })
+      );
+    } catch {}
+    const printUrl = `/print/${encodeURIComponent(doc.id)}?mode=${mode}&series=${encodeURIComponent(sId)}&autoprint=1`;
     const popup = window.open("about:blank", "_blank");
     setExportBusy(`pdf-${mode}`);
     await flushSaveBeforeExternal();
@@ -627,18 +754,28 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
     );
   };
 
-  const handleExportLiveDocx = async (kind: "resume" | "cover" | "references" = "resume") => {
-    setExportBusy(`docx-${kind}`);
+  const handleExportLiveDocx = async (
+    kind: "resume" | "cover" | "references" = "resume",
+    mode: "visual" | "ats" = "visual"
+  ) => {
+    setExportBusy(`docx-${mode}-${kind}`);
     try {
       await apiDownloadInjectedDocx({
         seriesId: sId,
         kind,
+        mode,
+        accent: doc.accent || "#1F3A5F",
+        font: doc.font || "Calibri",
         pageSize: (String(doc.settings?.pageSize || "A4").toLowerCase() === "letter" ? "Letter" : "A4") as "A4" | "Letter",
         pageCount: (Math.min(3, Math.max(1, Number(doc.settings?.pageCount) || 1))) as 1 | 2 | 3,
         fileName: doc.content.name || doc.title,
         content: doc.content,
       });
-      toast.success(`Live-injected Word (.docx) downloaded using original ${tplMeta.name} template`);
+      toast.success(
+        mode === "ats"
+          ? "ATS-Safe Word (.docx) downloaded ? 0 TextBoxes, 100% machine-readable"
+          : `Live-injected Word (.docx) downloaded using original ${tplMeta.name} template`
+      );
     } catch (err: any) {
       toast.error(err?.message || "DOCX export failed");
     } finally {
@@ -746,7 +883,9 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
               "hidden items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium sm:inline-flex",
               saveState === "saved" && "bg-[#e6f0e8] text-[#33613d]",
               (saveState === "saving" || saveState === "syncing") && "bg-amber-50 text-amber-800",
-              saveState === "offline" && "bg-muted text-muted-foreground"
+              saveState === "offline" && "bg-muted text-muted-foreground",
+              saveState === "conflict" && "bg-red-50 text-red-700",
+              saveState === "conflict" && "bg-red-50 text-red-700"
             )}
           >
             {saveState === "saving" || saveState === "syncing" ? (
@@ -1059,7 +1198,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
                 <span className="flex items-center gap-2">
                   <FileDown className="h-4 w-4" /> Download Live Vector PDF
                 </span>
-                <Badge variant="secondary" className="text-[10px]">100% Vector</Badge>
+                <Badge variant="secondary" className="text-[10px]">{["11", "12", "14"].includes(sId) ? "100% ATS Vector" : "Best for ATS Portals"}</Badge>
               </Button>
 
               <Button
@@ -1069,15 +1208,20 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
                 onClick={() => handleExportLiveDocx(doc.activeTab === "cover" ? "cover" : doc.activeTab === "references" ? "references" : "resume")}
               >
                 <span className="flex items-center gap-2">
-                  {exportBusy?.startsWith("docx") ? (
+                  {exportBusy?.startsWith("docx-visual") ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <FileText className="h-4 w-4" />
                   )}
                   Download True Word (.docx)
                 </span>
-                <Badge className="bg-[#e6f0e8] text-[10px] text-[#33613d] hover:bg-[#e6f0e8]">Direct Inject</Badge>
+                <Badge className="bg-[#e6f0e8] text-[10px] text-[#33613d] hover:bg-[#e6f0e8]">{["11", "12", "14"].includes(sId) ? "100% ATS-Native" : "1:1 Visual ? Word"}</Badge>
               </Button>
+              {!["11", "12", "14"].includes(sId) && (
+                <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">
+                  True Word keeps this template&apos;s exact 1:1 layout for Word editing &amp; direct email. For strict ATS portals, download <strong>Vector PDF</strong> or switch to an ATS-Native template (Series 11, 12, or 14).
+                </p>
+              )}
 
               <Button
                 variant="outline"

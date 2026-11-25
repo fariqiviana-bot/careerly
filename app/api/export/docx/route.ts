@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateInjectedDocxBuffer } from "@/lib/server/docx-injector";
+import { generateAtsSafeDocxBuffer } from "@/lib/server/ats-docx-builder";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,9 @@ const DocxExportSchema = z.object({
   pageSize: z.string().optional().default("A4").transform((v): "A4" | "Letter" => (v.toLowerCase() === "letter" ? "Letter" : "A4")),
   pageCount: z.coerce.number().int().min(1).max(3).catch(1).transform((n): 1 | 2 | 3 => (n === 2 ? 2 : n === 3 ? 3 : 1)),
   fileName: z.string().optional(),
+  mode: z.enum(["visual", "ats"]).optional().default("visual"),
+  accent: z.string().optional(),
+  font: z.string().optional(),
   content: z.record(z.any()).refine((c) => Object.keys(c).length > 0, { message: "Resume content is required" }),
 });
 
@@ -25,19 +29,28 @@ export async function POST(req: NextRequest) {
     }
 
     const d = parsed.data;
-    const { buffer } = await generateInjectedDocxBuffer({
-      seriesId: d.seriesId,
-      kind: d.kind,
-      pageSize: d.pageSize,
-      pageCount: d.pageCount,
-      content: d.content,
-    });
+    const { buffer } = d.mode === "ats"
+      ? await generateAtsSafeDocxBuffer({
+          seriesId: d.seriesId,
+          kind: d.kind,
+          pageSize: d.pageSize,
+          accent: d.accent,
+          font: d.font,
+          content: d.content,
+        })
+      : await generateInjectedDocxBuffer({
+          seriesId: d.seriesId,
+          kind: d.kind,
+          pageSize: d.pageSize,
+          pageCount: d.pageCount,
+          content: d.content,
+        });
 
     const baseName = (d.fileName || String(d.content?.name || "Farnavi_Document"))
       .replace(/[^a-zA-Z0-9_\-\s]/g, "")
       .trim()
       .replace(/\s+/g, "_") || "Farnavi_Document";
-    const downloadName = `${baseName}_${d.kind}_${d.pageSize}.docx`;
+    const downloadName = `${baseName}_${d.kind}_${d.pageSize}${d.mode === "ats" ? "_ATS" : ""}.docx`;
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

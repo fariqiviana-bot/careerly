@@ -64,7 +64,7 @@ const BULLET_LIST_CSS = `
 }
 .tpl-bullet-add {
   position: absolute;
-  left: 18pt;
+  left: 13.5pt;
   bottom: -13pt;
   border: 1px dashed rgba(93, 111, 97, 0.55);
   border-radius: 9999px;
@@ -90,6 +90,11 @@ const BULLET_LIST_CSS = `
   background: #eaf0ea;
 }
 @media print {
+  .tpl-bullet-wrap,
+  .tpl-bullet-list,
+  .tpl-bullet-list > li {
+    position: static !important;
+  }
   .tpl-bullet-del,
   .tpl-bullet-add {
     display: none !important;
@@ -241,8 +246,8 @@ export function EditableBulletList({
   color = "#000000",
   marginTop,
   markerSizePt = 10.6,
-  ulPaddingLeftPt = 24,
-  liPaddingLeftPt = 12,
+  ulPaddingLeftPt = 13.5,
+  liPaddingLeftPt = 1.5,
   placeholder = "Type bullet point... (Enter for new bullet)",
 }: {
   bullets: string[];

@@ -1111,7 +1111,7 @@ export function Series12Exact({
 
             {/* PROFESSIONAL */}
             <div>
-              <ul className="tpl-bullet-list" style={{ paddingLeft: "10pt", fontFamily: F_WORK, fontSize: fs, fontWeight: 400, lineHeight: lh, color: S12_COLORS.ink, "--bl-marker-size": `${(10.8 * fontScale).toFixed(2)}pt`, "--bl-marker-color": S12_COLORS.ink } as React.CSSProperties}><li style={{ paddingLeft: "11.36pt" }}>PROFESSIONAL</li></ul>
+              <ul className="tpl-bullet-list" style={{ paddingLeft: "12pt", fontFamily: F_WORK, fontSize: fs, fontWeight: 400, lineHeight: lh, color: S12_COLORS.ink, "--bl-marker-size": `${(10.8 * fontScale).toFixed(2)}pt`, "--bl-marker-color": S12_COLORS.ink } as React.CSSProperties}><li style={{ paddingLeft: "1.5pt" }}>PROFESSIONAL</li></ul>
               <InlineEd
                 value={
                   !isLetter && proSkillsList.length === 6
@@ -1128,7 +1128,7 @@ export function Series12Exact({
                   patch({ professionalSkills: next });
                 }}
                 style={{
-                  paddingLeft: "7.08pt",
+                  paddingLeft: "13.5pt",
                   fontFamily: F_WORK,
                   fontSize: fs,
                   fontWeight: 400,
@@ -1140,7 +1140,7 @@ export function Series12Exact({
 
             {/* TECHNICAL */}
             <div style={{ marginTop: pt(8.1, fontScale) }}>
-              <ul className="tpl-bullet-list" style={{ paddingLeft: "10pt", fontFamily: F_WORK, fontSize: fs, fontWeight: 400, lineHeight: lh, color: S12_COLORS.ink, "--bl-marker-size": `${(10.8 * fontScale).toFixed(2)}pt`, "--bl-marker-color": S12_COLORS.ink } as React.CSSProperties}><li style={{ paddingLeft: "11.36pt" }}>TECHNICAL</li></ul>
+              <ul className="tpl-bullet-list" style={{ paddingLeft: "12pt", fontFamily: F_WORK, fontSize: fs, fontWeight: 400, lineHeight: lh, color: S12_COLORS.ink, "--bl-marker-size": `${(10.8 * fontScale).toFixed(2)}pt`, "--bl-marker-color": S12_COLORS.ink } as React.CSSProperties}><li style={{ paddingLeft: "1.5pt" }}>TECHNICAL</li></ul>
               <InlineEd
                 value={techSkillsList.join(" - ")}
                 editable={editable}
@@ -1153,7 +1153,7 @@ export function Series12Exact({
                   patch({ technicalSkills: next });
                 }}
                 style={{
-                  paddingLeft: "7.08pt",
+                  paddingLeft: "13.5pt",
                   fontFamily: F_WORK,
                   fontSize: fs,
                   fontWeight: 400,

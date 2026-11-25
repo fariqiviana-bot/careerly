@@ -48,9 +48,18 @@ export async function POST(req: NextRequest) {
     const d = parsed.data;
     const id = d.id || `doc_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
 
+    const SEEDED_DOC_IDS = new Set(["doc-executive","doc-ivy-league","doc-elegant","doc-photo-column","doc-modern","doc-contemporary","doc-minimal","doc-single-column"]);
+    const existingOwner = await prisma.document.findUnique({ where: { id }, select: { userId: true } });
+    if (existingOwner && existingOwner.userId !== user.id) {
+      if (!(SEEDED_DOC_IDS.has(id))) {
+        return NextResponse.json({ error: "Document belongs to another user" }, { status: 403 });
+      }
+    }
+
     const saved = await prisma.document.upsert({
       where: { id },
       update: {
+        userId: user.id,
         type: d.type,
       ...(d.slug !== undefined ? { slug: d.slug ? d.slug.toLowerCase() : null } : {}),
         title: d.title,

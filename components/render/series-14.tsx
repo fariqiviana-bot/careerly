@@ -42,14 +42,14 @@ const S14_FONT_CSS = `
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/Inter_18pt-Regular.ttf") format("truetype");
+  src: url("/fonts/WorkSans-Regular.ttf") format("truetype");
 }
 @font-face {
   font-family: "S14Inter";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/fonts/Inter_18pt-Bold.ttf") format("truetype");
+  src: url("/fonts/WorkSans-Bold.ttf") format("truetype");
 }
 @font-face {
   font-family: "S14Courgette";
@@ -730,7 +730,7 @@ function S14SkillsSection({
       <ul
         className="tpl-bullet-list"
         style={{
-          paddingLeft: "10pt",
+          paddingLeft: "12pt",
           fontFamily: F_INTER,
           fontSize: fs,
           lineHeight: lh,
@@ -739,7 +739,7 @@ function S14SkillsSection({
           "--bl-marker-color": S14_COLORS.ink,
         } as React.CSSProperties}
       >
-        <li style={{ paddingLeft: "11.5pt" }}>
+        <li style={{ paddingLeft: "1.5pt" }}>
           <span style={{ fontWeight: 700 }}>PROFESSIONAL: </span>
           {is2P && !editable ? (
             <>
@@ -761,7 +761,7 @@ function S14SkillsSection({
             />
           )}
         </li>
-        <li style={{ paddingLeft: "11.5pt", marginTop: pt(13.92, fontScale) }}>
+        <li style={{ paddingLeft: "1.5pt", marginTop: pt(13.92, fontScale) }}>
           <span style={{ fontWeight: 700 }}>TECHNICAL: </span>
           {is2P && !editable ? (
             <>

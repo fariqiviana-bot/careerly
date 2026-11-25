@@ -244,7 +244,7 @@
 @media print {
   @page { margin: 10mm; size: auto; }
   body { background: #ffffff !important; color: #000000 !important; }
-  aside, header, nav, .no-print, [data-sonner-toaster] { display: none !important; }
+  aside:not(.print-sheet *):not(#resume-print-area *):not(.print-paper *), header:not(.print-sheet *):not(#resume-print-area *):not(.print-paper *), nav:not(.print-sheet *):not(#resume-print-area *):not(.print-paper *), .no-print, [data-sonner-toaster] { display: none !important; }
   main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
   #resume-print-area {
     box-shadow: none !important;
@@ -268,7 +268,7 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  aside, header, nav, .no-print {
+  aside:not(.print-sheet *):not(#resume-print-area *):not(.print-paper *), header:not(.print-sheet *):not(#resume-print-area *):not(.print-paper *), nav:not(.print-sheet *):not(#resume-print-area *):not(.print-paper *), .no-print {
     display: none !important;
   }
   .print-paper {

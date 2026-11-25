@@ -51,13 +51,29 @@ export async function apiUpsertDocument(payload: Record<string, any>) {
   return data.document;
 }
 
-export async function apiPatchDocument(id: string, payload: Record<string, any>) {
-  const res = await fetch(`/api/documents/${encodeURIComponent(id)}?upsert=1`, { method: "PATCH",
+export async function apiPatchDocument(
+  id: string,
+  payload: Record<string, any>,
+  opts?: { signal?: AbortSignal; keepalive?: boolean }
+) {
+  const res = await fetch(`/api/documents/${encodeURIComponent(id)}?upsert=1`, {
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal: opts?.signal,
+    keepalive: opts?.keepalive,
   });
+  if (res.status === 409) {
+    const conflictData = await res.json().catch(() => ({}));
+    const err: any = new Error(conflictData.error || "Document modified in another tab");
+    err.status = 409;
+    err.code = "CONFLICT";
+    err.serverDocument = conflictData.document;
+    throw err;
+  }
   if (!res.ok) throw new Error(`PATCH /api/documents/${id} failed (${res.status})`);
-  return res.json();
+  const data = await res.json();
+  return data.document;
 }
 
 export async function apiListVersions(id: string): Promise<BackendVersion[]> {

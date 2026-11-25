@@ -236,19 +236,19 @@ function looksLikeJobTitle(s: string): boolean {
   return JOB_TITLE_KEYWORDS_RE.test(clean);
 }
 
-function extractParagraphsFromWordXml(xml: string): ExtractedLine[] {
-  const cleaned = xml.replace(/<mc:Fallback[\s\S]*?<\/mc:Fallback>/g, "");
+function extractParasFromXmlFragment(xmlFragment: string): ExtractedLine[] {
   const paras: ExtractedLine[] = [];
   const pRegex = /<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g;
   let m: RegExpExecArray | null;
 
-  while ((m = pRegex.exec(cleaned)) !== null) {
+  while ((m = pRegex.exec(xmlFragment)) !== null) {
     const inner = m[1];
     const szMatch = inner.match(/<w:sz\s+w:val="(\d+)"/);
     const fontSize = szMatch ? Number(szMatch[1]) / 2 : 10;
+    const isWordBullet = /<w:numPr\b/.test(inner);
 
     const withDelims = inner
-      .replace(/<w:tab\s*\/>/g, "  |  ")
+      .replace(/<w:tab(?:\s[^>]*)?\/>/g, "  |  ")
       .replace(/<w:(?:br|cr)(?:\s[^>]*)?\/>/g, "\n");
 
     const texts: string[] = [];
@@ -259,13 +259,73 @@ function extractParagraphsFromWordXml(xml: string): ExtractedLine[] {
     }
     const line = normalizeText(texts.join("")).replace(/[ \t]+/g, " ").trim();
     if (line) {
-      for (const sub of line.split("\n")) {
-        const s = collapseSpacedLetters(sub.trim());
-        if (s) paras.push({ text: s, fontSize, page: 1, yRatio: 0.2 });
+      const subs = line.split("\n");
+      for (let i = 0; i < subs.length; i++) {
+        let sub = collapseSpacedLetters(subs[i].trim());
+        if (!sub) continue;
+        if (
+          i === 0 &&
+          isWordBullet &&
+          !/^[\u2022\u2023\u25e6\u2043\u2219\-\*]\s*/.test(sub) &&
+          !detectSectionHeading(sub)
+        ) {
+          sub = "\u2022 " + sub;
+        }
+        paras.push({ text: sub, fontSize, page: 1, yRatio: 0.2 });
       }
     }
   }
   return paras;
+}
+
+function extractParagraphsFromWordXml(xml: string): ExtractedLine[] {
+  const cleaned = xml.replace(/<mc:Fallback[\s\S]*?<\/mc:Fallback>/g, "");
+
+  // Detect 2-column anchored TextBox DOCX layouts (e.g. modern Word templates) and de-interleave by X column
+  const anchorRe = /<wp:anchor[\s\S]*?<\/wp:anchor>/g;
+  const boxes: Array<{ xPt: number; idx: number; lines: ExtractedLine[] }> = [];
+  let am: RegExpExecArray | null;
+  let bIdx = 0;
+  while ((am = anchorRe.exec(cleaned)) !== null) {
+    const block = am[0];
+    const xM = block.match(/<wp:positionH[^>]*>[\s\S]*?<wp:posOffset>(-?\d+)<\/wp:posOffset>/);
+    const lines = extractParasFromXmlFragment(block);
+    if (xM && lines.length > 0) {
+      boxes.push({ xPt: Math.round(Number(xM[1]) / 12700), idx: bIdx++, lines });
+    }
+  }
+
+  if (boxes.length >= 4) {
+    const xs = [...new Set(boxes.map((b) => b.xPt))].sort((a, b) => a - b);
+    let bestGap = 0;
+    let splitX: number | null = null;
+    for (let i = 0; i < xs.length - 1; i++) {
+      const gap = xs[i + 1] - xs[i];
+      if (gap > bestGap) {
+        bestGap = gap;
+        splitX = (xs[i] + xs[i + 1]) / 2;
+      }
+    }
+    if (splitX !== null && bestGap >= 75) {
+      const firstHeadingPos = boxes.findIndex((b) =>
+        b.lines.some((ln) => detectSectionHeading(ln.text) !== null)
+      );
+      const headerBoxes = firstHeadingPos > 0 ? boxes.slice(0, firstHeadingPos) : [];
+      const bodyBoxes = firstHeadingPos > 0 ? boxes.slice(firstHeadingPos) : boxes;
+      const leftBody = bodyBoxes.filter((b) => b.xPt <= splitX!);
+      const rightBody = bodyBoxes.filter((b) => b.xPt > splitX!);
+      if (leftBody.length >= 2 && rightBody.length >= 2) {
+        const ordered: ExtractedLine[] = [];
+        for (const b of headerBoxes) ordered.push(...b.lines);
+        // Main column (usually right in 2-col resumes) first, then sidebar, preserving XML vertical order within each
+        for (const b of rightBody) ordered.push(...b.lines);
+        for (const b of leftBody) ordered.push(...b.lines);
+        return ordered;
+      }
+    }
+  }
+
+  return extractParasFromXmlFragment(cleaned);
 }
 
 export async function extractLinesFromDocxBuffer(buffer: Buffer): Promise<ExtractedLine[]> {
@@ -486,7 +546,7 @@ const SECTION_PATTERNS: Array<{ key: SectionKey; re: RegExp }> = [
   },
   {
     key: "experience",
-    re: /^(?:professional\s+experience|work\s+experience|employment\s+history|experience(?:\s+continued)?|work\s+history|career\s+history|relevant\s+experience)$/i,
+    re: /^(?:professional\s+experience|work\s+experience|employment\s+history|experience(?:\s+continued)?|work\s+history|career\s+history|relevant\s+experience|research\s+experience|academic\s+experience|clinical\s+experience|teaching\s+experience|leadership\s+experience)$/i,
   },
   {
     key: "education",
@@ -498,7 +558,7 @@ const SECTION_PATTERNS: Array<{ key: SectionKey; re: RegExp }> = [
   },
   {
     key: "skills",
-    re: /^(?:skills|core\s+skills|key\s+skills|areas\s+of\s+expertise|core\s+competencies|competencies|skills\s*(?:&|and)\s*interests|skills\s*(?:&|and)\s*expertise|professional\s+skills)$/i,
+    re: /^(?:skills|top\s+skills|core\s+skills|key\s+skills|areas\s+of\s+expertise|expertise|core\s+competencies|competencies|technical\s+competencies|skills\s*(?:&|and)\s*(?:interests|expertise|endorsements)|professional\s+skills)$/i,
   },
   {
     key: "certifications",
@@ -510,7 +570,7 @@ const SECTION_PATTERNS: Array<{ key: SectionKey; re: RegExp }> = [
   },
   {
     key: "awards",
-    re: /^(?:awards?|achievements?(?:\s*(?:&|and)\s*awards?)?|honors?(?:\s*(?:&|and)\s*awards?)?|awards?\s*(?:&|and)\s*scholarships?|key\s+achievements?)$/i,
+    re: /^(?:awards?|achievements?(?:\s*(?:&|and)\s*awards?)?|honors?(?:\s*(?:&|and|-)\s*awards?)?|awards?\s*(?:&|and)\s*scholarships?|key\s+achievements?)$/i,
   },
   {
     key: "volunteering",
@@ -519,7 +579,7 @@ const SECTION_PATTERNS: Array<{ key: SectionKey; re: RegExp }> = [
   { key: "references", re: /^(?:references?)$/i },
   {
     key: "other",
-    re: /^(?:languages?|interests?|hobbies|projects?|publications?|memberships?|affiliations?|contact|contact\s+info(?:rmation)?)$/i,
+    re: /^(?:languages?|interests?|hobbies|projects?|selected\s+publications?|publications?|memberships?|affiliations?|contact|contact\s+info(?:rmation)?)$/i,
   },
 ];
 
@@ -695,29 +755,72 @@ function parseExperienceBlock(lines: string[]): ImportedExperience[] {
 
 function parseEducationBlock(lines: string[]): ImportedEducation[] {
   const items: ImportedEducation[] = [];
+  const seen = new Set<string>();
   let cur: ImportedEducation | null = null;
 
+  const stripDates = (val: string) =>
+    val
+      .replace(DATE_RANGE_RE, "")
+      .replace(SINGLE_YEAR_RE, "")
+      .replace(/[\|\/,\-\u2013\u2014\s]+$/g, "")
+      .replace(/^[\|\/,\-\u2013\u2014\s]+/g, "")
+      .trim();
+
   const flush = () => {
-    if (cur && (cur.degree || cur.school)) items.push(cur);
+    if (cur && (cur.degree || cur.school)) {
+      const key = `${cur.degree.toLowerCase()}::${cur.school.toLowerCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        items.push(cur);
+      }
+    }
     cur = null;
   };
 
+  const DEG_RE =
+    /\b(bachelor|master|ph\.?d|doctor|b\.?s\.?c?|b\.?a\.?|m\.?s\.?c?|m\.?b\.?a|m\.?a\.?|associate|diploma|degree|postdoc|fellowship)\b/i;
+  const SCH_RE =
+    /\b(university|college|institute|school|academy|polytechnic|eth\s+zurich|mit|stanford|harvard)\b/i;
+
   for (const raw of lines) {
-    const line = raw.trim();
+    const line = cleanBullet(raw).trim();
     if (!line || isBrowserPrintNoise(line)) continue;
-    const isDegree =
-      /\b(bachelor|master|ph\.?d|doctor|b\.?s\.?c?|b\.?a\.?|m\.?s\.?c?|m\.?b\.?a|m\.?a\.?|associate|diploma|degree|certificate|certification)\b/i.test(
-        line
-      );
-    const isSchool =
-      /\b(university|college|institute|school|academy|polytechnic)\b/i.test(line);
+    const isDegree = DEG_RE.test(line);
+    const isSchool = SCH_RE.test(line);
     const dateM = line.match(DATE_RANGE_RE) || line.match(SINGLE_YEAR_RE);
+
+    // Handle combined single-line "M.Sc. Computational Biology / Technical University of Munich | 2019"
+    if (isDegree && isSchool) {
+      flush();
+      const segs = line
+        .split(/\s*(?:\/|\||\u2014|\u2013|\s-\s|,)\s*/)
+        .map((x) => x.trim())
+        .filter(Boolean);
+      const degSegs: string[] = [];
+      const schSegs: string[] = [];
+      for (const seg of segs) {
+        if (DATE_RANGE_RE.test(seg) && stripDates(seg).length < 2) continue;
+        if (SINGLE_YEAR_RE.test(seg) && stripDates(seg).length < 2) continue;
+        if (SCH_RE.test(seg) && !DEG_RE.test(seg)) schSegs.push(stripDates(seg));
+        else degSegs.push(stripDates(seg));
+      }
+      cur = {
+        id: makeId("edu", items.length),
+        degree: degSegs.filter(Boolean).join(", ") || stripDates(line),
+        field: "",
+        school: schSegs.filter(Boolean).join(", "),
+        location: "",
+        period: dateM ? dateM[0].trim() : "",
+      };
+      flush();
+      continue;
+    }
 
     if (isDegree && (!cur || cur.degree)) {
       flush();
       cur = {
         id: makeId("edu", items.length),
-        degree: line.replace(DATE_RANGE_RE, "").trim(),
+        degree: stripDates(line),
         field: "",
         school: "",
         location: "",
@@ -729,9 +832,9 @@ function parseEducationBlock(lines: string[]): ImportedEducation[] {
     if (!cur) {
       cur = {
         id: makeId("edu", items.length),
-        degree: isSchool ? "" : line.replace(DATE_RANGE_RE, "").trim(),
+        degree: isSchool ? "" : stripDates(line),
         field: "",
-        school: isSchool ? line.replace(DATE_RANGE_RE, "").trim() : "",
+        school: isSchool ? stripDates(line) : "",
         location: "",
         period: dateM ? dateM[0].trim() : "",
       };
@@ -739,17 +842,17 @@ function parseEducationBlock(lines: string[]): ImportedEducation[] {
     }
 
     if (isSchool && !cur.school) {
-      cur.school = line.replace(DATE_RANGE_RE, "").trim();
+      cur.school = stripDates(line);
       if (dateM && !cur.period) cur.period = dateM[0].trim();
     } else if (dateM && !cur.period && line.length <= 36) {
       cur.period = dateM[0].trim();
     } else if (!cur.school) {
-      cur.school = line;
+      cur.school = stripDates(line);
     } else {
       flush();
       cur = {
         id: makeId("edu", items.length),
-        degree: line.replace(DATE_RANGE_RE, "").trim(),
+        degree: stripDates(line),
         field: "",
         school: "",
         location: "",
@@ -771,7 +874,7 @@ function parseCategorizedSkills(
   const seenTech = new Set<string>();
 
   const pushItems = (text: string, target: "pro" | "tech") => {
-    const parts = text.split(/\s*(?:,|\u2022|\u00b7|\||;)\s*/);
+    const parts = text.split(/\s*(?:,|\u2022|\u00b7|\||;|\s+[-\u2013\u2014]\s+)\s*/);
     for (const part of parts) {
       const s = part.trim();
       if (!s || s.length < 2 || s.length > 48) continue;
@@ -945,50 +1048,86 @@ export function parseResumeLinesDeterministic(
     buckets[activeSection].push(item);
   }
 
+  const NAME_PREFIX_RE = /^(?:Dr\.?|Prof\.?|Mr\.?|Ms\.?|Mrs\.?|Eng\.?)\s+/i;
+  const CREDENTIAL_SUFFIX_RE =
+    /(?:,\s*(?:Ph\.?D\.?|M\.?D\.?|M\.?S\.?c?\.?|M\.?B\.?A\.?|B\.?S\.?c?\.?|RN|CPA|PMP|PE|Esq\.?|CFA|JD|D\.?Phil\.?|FACS|Jr\.?|Sr\.?|III?|IV))+$/i;
+
   const isContactLine = (l: string) =>
     (email && l.includes(email)) ||
     (phone && l.includes(phone)) ||
     (linkedin && l.toLowerCase().includes("linkedin")) ||
-    /https?:\/\//i.test(l) ||
-    l.includes("|");
+    /https?:\/\/|mailto:|tel:|github\.com/i.test(l);
 
   const isValidPersonName = (l: string) => {
     const s = l.replace(/^[\|\s]+|[\|\s]+$/g, "").trim();
-    if (s.length < 3 || s.length > 40) return false;
-    if (/\d|@|http|\.com|\bresume\b|\bcv\b/i.test(s)) return false;
+    if (s.length < 3 || s.length > 56) return false;
+    if (/\d|@|http|\.com|\bresume\b|\bcv\b|\|/i.test(s)) return false;
     if (detectSectionHeading(s)) return false;
-    if (/^[A-Za-z\s.\-']+,\s*[A-Za-z\s.\-']+$/.test(s)) return false; // City, Country
-    if (looksLikeJobTitle(s)) return false; // Never confuse job title with person's name!
-    const words = s.split(/\s+/);
+    const hasCredential = CREDENTIAL_SUFFIX_RE.test(s);
+    const core = s.replace(CREDENTIAL_SUFFIX_RE, "").replace(NAME_PREFIX_RE, "").trim();
+    if (!core || core.length < 3) return false;
+    if (!hasCredential && /^[A-Za-z\s.\-']+,\s*[A-Za-z\s.\-']+$/.test(core)) return false; // City, Country
+    if (looksLikeJobTitle(core)) return false;
+    const words = core.split(/\s+/);
     return words.length >= 2 && words.length <= 4;
   };
 
-  // 1. Detect Person Name cleanly (prefer largest-font valid person name in top 35% of Page 1)
+  // 1. Detect Person Name cleanly (supports academic titles, credentials, and "Name | Role" lines)
   const headerNonContact = buckets.header.filter((x) => !isContactLine(x.text));
-  const topCandidates = cleanLines.filter(
-    (x) =>
-      x.page === 1 &&
-      x.yRatio <= 0.35 &&
-      !isContactLine(x.text) &&
-      isValidPersonName(x.text)
-  );
+  const topCandidates: Array<{ item: ExtractedLine; name: string; role: string }> = [];
+  for (const x of cleanLines) {
+    if (x.page !== 1 || x.yRatio > 0.35 || isContactLine(x.text)) continue;
+    if (isValidPersonName(x.text)) {
+      topCandidates.push({
+        item: x,
+        name: x.text.replace(/^[\|\s]+|[\|\s]+$/g, "").trim(),
+        role: "",
+      });
+    } else if (/\u2014|\u2013|\||(?:\s-\s)/.test(x.text)) {
+      const split = splitCombinedNameAndRole(x.text);
+      if (isValidPersonName(split.name)) {
+        const cleanRole = split.role.split(/\s*\|\s*/)[0].trim();
+        topCandidates.push({ item: x, name: split.name, role: cleanRole });
+      }
+    }
+  }
 
   let name = "";
   let role = "";
   let nameIdx = -1;
 
   if (topCandidates.length > 0) {
-    const maxFs = topCandidates.reduce((m, c) => Math.max(m, c.fontSize), 0);
-    const best = topCandidates.find((c) => c.fontSize >= maxFs - 0.5) || topCandidates[0];
-    name = best.text.replace(/^[\|\s]+|[\|\s]+$/g, "").trim();
-    nameIdx = headerNonContact.findIndex((x) => x.text === best.text);
+    const maxFs = topCandidates.reduce((m, c) => Math.max(m, c.item.fontSize), 0);
+    const SKILL_PHRASE_RE =
+      /\b(?:systems?|learning|management|architecture|engineering|development|computing|analytics|science|design|testing|security|infrastructure|operations|strategy|marketing|communications?|leadership|administration|programming|databases?|networking)\b/i;
+
+    const scored = topCandidates.map((c) => {
+      const idxInClean = cleanLines.indexOf(c.item);
+      const nextLine = idxInClean >= 0 && idxInClean + 1 < cleanLines.length ? cleanLines[idxInClean + 1].text.trim() : "";
+      const nextIsRole = Boolean(nextLine && !isContactLine(nextLine) && !detectSectionHeading(nextLine) && looksLikeJobTitle(nextLine));
+      let score = 0;
+      if (c.item.fontSize >= maxFs - 0.5) score += 4;
+      if (c.role) score += 3;
+      if (nextIsRole) score += 6;
+      if (SKILL_PHRASE_RE.test(c.name)) score -= 5;
+      return { c, score, nextLine, nextIsRole };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    const winner = scored[0];
+    name = winner.c.name;
+    if (winner.c.role) {
+      role = winner.c.role;
+    } else if (winner.nextIsRole) {
+      role = winner.nextLine;
+    }
+    nameIdx = headerNonContact.findIndex((x) => x.text === winner.c.item.text);
   } else {
-    // Fallback: check if top header line combined "Name — Role"
     for (let i = 0; i < headerNonContact.length; i++) {
       const split = splitCombinedNameAndRole(headerNonContact[i].text);
       if (isValidPersonName(split.name)) {
         name = split.name;
-        if (split.role) role = split.role;
+        if (split.role) role = split.role.split(/\s*\|\s*/)[0].trim();
         nameIdx = i;
         break;
       }
@@ -999,7 +1138,6 @@ export function parseResumeLinesDeterministic(
   let roleIdx = -1;
   if (!role) {
     const searchPool = nameIdx >= 0 ? headerNonContact.slice(nameIdx + 1) : headerNonContact;
-    // First pass: prefer lines with actual job title keywords
     for (let i = 0; i < searchPool.length; i++) {
       const cand = searchPool[i].text.trim();
       if (
@@ -1013,7 +1151,6 @@ export function parseResumeLinesDeterministic(
         break;
       }
     }
-    // Second pass: short non-location line right below Name
     if (!role) {
       for (let i = 0; i < searchPool.length; i++) {
         const cand = searchPool[i].text.trim();
@@ -1035,7 +1172,7 @@ export function parseResumeLinesDeterministic(
     }
   }
 
-  // 3. Extract Location (even if inline with email/phone/linkedin/icons!)
+  // 3. Extract Location (never confuse academic name+credential with City, Country)
   let location = "";
   const locCandidates = [
     ...buckets.header.map((x) => x.text),
@@ -1043,7 +1180,7 @@ export function parseResumeLinesDeterministic(
     ...allTextLines.slice(0, 30),
   ];
   for (const rawLine of locCandidates) {
-    // Strip known contact tokens first so "Tehran, Iran +98 912..." isolates "Tehran, Iran"
+    if (name && rawLine.trim().toLowerCase() === name.trim().toLowerCase()) continue;
     let stripped = rawLine;
     if (email) stripped = stripped.split(email).join(" | ");
     if (phone) stripped = stripped.split(phone).join(" | ");
@@ -1060,6 +1197,9 @@ export function parseResumeLinesDeterministic(
         /^[A-Za-z][A-Za-z\s.\-']{1,24},\s*[A-Za-z][A-Za-z\s.\-']{1,24}$/.test(s) &&
         !/@/.test(s) &&
         !/linkedin/i.test(s) &&
+        !NAME_PREFIX_RE.test(s) &&
+        !CREDENTIAL_SUFFIX_RE.test(s) &&
+        (!name || s.toLowerCase() !== name.toLowerCase()) &&
         !/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(s) &&
         !looksLikeJobTitle(s)
     );
@@ -1091,7 +1231,18 @@ export function parseResumeLinesDeterministic(
   }
 
   const experience = parseExperienceBlock(buckets.experience.map((x) => x.text));
-  const education = parseEducationBlock(buckets.education.map((x) => x.text));
+  let education = parseEducationBlock(buckets.education.map((x) => x.text));
+  if (education.length === 0 && buckets.certifications.length > 0) {
+    const eduLikeCerts = buckets.certifications
+      .map((x) => x.text)
+      .filter((t) =>
+        /\b(bachelor|master|ph\.?d|doctor|b\.?s\.?c?|b\.?a\.?|m\.?s\.?c?|m\.?b\.?a|university|college|institute|school|polytechnic)\b/i.test(t) ||
+        /^\d{4}$/.test(t.trim())
+      );
+    if (eduLikeCerts.length > 0) {
+      education = parseEducationBlock(eduLikeCerts);
+    }
+  }
   const { skills, technicalSkills } = parseCategorizedSkills(
     buckets.skills.map((x) => x.text),
     buckets.technicalSkills.map((x) => x.text)

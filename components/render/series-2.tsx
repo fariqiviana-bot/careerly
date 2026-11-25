@@ -1246,7 +1246,7 @@ export function Series2Exact({
               className="tpl-bullet-list"
               style={{
                 marginTop: pt(8.2, fontScale),
-                paddingLeft: "11pt",
+                paddingLeft: "12pt",
                 fontFamily: F_RUBIK,
                 fontSize: fs,
                 fontWeight: 700,
@@ -1256,7 +1256,7 @@ export function Series2Exact({
                 "--bl-marker-color": S2_COLORS.ink,
               } as React.CSSProperties}
             >
-              <li style={{ paddingLeft: "6pt" }}>PROFESSIONAL</li>
+              <li style={{ paddingLeft: "1.5pt" }}>PROFESSIONAL</li>
             </ul>
             <div style={{ marginTop: pt(compactSkillGap, fontScale) }}>
               {proSkills.map((sk, idx) => (
@@ -1287,7 +1287,7 @@ export function Series2Exact({
                   className="tpl-bullet-list"
                   style={{
                     marginTop: pt(proSkills.length > 8 ? 14.0 : 25.0, fontScale),
-                    paddingLeft: "11pt",
+                    paddingLeft: "12pt",
                     fontFamily: F_RUBIK,
                     fontSize: fs,
                     fontWeight: 700,
@@ -1297,7 +1297,7 @@ export function Series2Exact({
                     "--bl-marker-color": S2_COLORS.ink,
                   } as React.CSSProperties}
                 >
-                  <li style={{ paddingLeft: "6pt" }}>TECHNICAL</li>
+                  <li style={{ paddingLeft: "1.5pt" }}>TECHNICAL</li>
                 </ul>
                 <div style={{ marginTop: pt(compactSkillGap, fontScale) }}>
                   {techSkills.map((sk, idx) => (

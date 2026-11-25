@@ -2431,6 +2431,8 @@ function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
     updatedAt: d.updatedAt,
     content: {
       name: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).fullName,
+      firstName: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).firstName,
+      lastName: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).lastName,
       role: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).profession || (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).title || "",
       email: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).email || "",
       phone: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).phone || "",
@@ -2562,7 +2564,7 @@ const STORAGE_KEY = "farnavi_store_v35";
 export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [documents, setDocuments] = useState<ResumeDocument[]>(INITIAL_DOCUMENTS);
   const [activeDocId, setActiveDocId] = useState<string>("d1");
-  const [loadSampleOnTemplateSwitch, setLoadSampleOnTemplateSwitch] = useState<boolean>(true);
+  const [loadSampleOnTemplateSwitch, setLoadSampleOnTemplateSwitch] = useState<boolean>(false);
   const [historyPast, setHistoryPast] = useState<ResumeDocument[][]>([]);
   const [historyFuture, setHistoryFuture] = useState<ResumeDocument[][]>([]);
   const [versions, setVersions] = useState<VersionSnapshot[]>([
@@ -2914,6 +2916,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     const nextContent: ResumeContent = {
       ...baseContent,
       fullName: c.name ?? c.fullName ?? baseContent.fullName,
+      firstName: c.firstName !== undefined ? c.firstName : baseContent.firstName,
+      lastName: c.lastName !== undefined ? c.lastName : baseContent.lastName,
       profession: c.role ?? c.profession ?? baseContent.profession,
       email: c.email ?? baseContent.email,
       phone: c.phone ?? baseContent.phone,
@@ -3035,18 +3039,30 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           );
         }
 
-        let nextContent: ResumeContent = seriesChanged && !patch.content
-          ? cloneContent(nextSeries)
-          : { ...d.content };
+        let nextContent: ResumeContent = { ...d.content };
 
         if (patch.content) {
           const c = patch.content;
           if (seriesChanged && c.name === SAMPLE_CONTENT_BY_SERIES[nextSeries]?.fullName) {
             nextContent = cloneContent(nextSeries);
           } else {
+            const nextFullName = c.name ?? nextContent.fullName;
+            let nextFirstName = c.firstName !== undefined ? c.firstName : nextContent.firstName;
+            let nextLastName = c.lastName !== undefined ? c.lastName : nextContent.lastName;
+            if (
+              nextFullName &&
+              nextFullName !== nextContent.fullName &&
+              `${nextFirstName || ""} ${nextLastName || ""}`.trim().toLowerCase() !== nextFullName.trim().toLowerCase()
+            ) {
+              const nameParts = nextFullName.trim().split(/\s+/);
+              nextFirstName = nameParts[0] || "";
+              nextLastName = nameParts.slice(1).join(" ");
+            }
             nextContent = {
               ...nextContent,
-              fullName: c.name ?? nextContent.fullName,
+              fullName: nextFullName,
+              firstName: nextFirstName,
+              lastName: nextLastName,
               profession: c.role ?? nextContent.profession,
               email: c.email ?? nextContent.email,
               phone: c.phone ?? nextContent.phone,
@@ -3101,7 +3117,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
 
         return {
           ...d,
-          title: patch.title ?? (seriesChanged ? `${tpl.name} Resume` : d.title),
+          title: patch.title ?? (seriesChanged && SERIES_CATALOG.some((sc) => d.title === `${sc.name} Resume`) ? `${tpl.name} Resume` : d.title),
           seriesId: nextSeries,
           activeTab: nextTab,
           style: nextStyle,
@@ -3252,7 +3268,25 @@ return (
         translateDoc: (_id, lang) => translateActiveDocument(lang),
         saveDocVersion: (_id, label) => saveVersionSnapshot(label || "Saved Version"),
         restoreDocVersion: (_id, versionId) => restoreVersionSnapshot(versionId),
-        resetDocToTemplateSample: (_id, seriesId) => resetToSeriesSample(seriesId),
+        resetDocToTemplateSample: (id, seriesId) => {
+          setDocuments((prev) =>
+            prev.map((d) => {
+              if (d.id !== id) return d;
+              const targetSeries = seriesId || d.seriesId;
+              const tpl = SERIES_CATALOG.find((sc) => sc.id === targetSeries);
+              return {
+                ...d,
+                seriesId: targetSeries,
+                language: "English",
+                title: tpl ? `${tpl.name} Resume` : d.title,
+                style: cloneStyle(targetSeries),
+                sectionOrder: cloneSections(),
+                content: cloneContent(targetSeries),
+                updatedAt: new Date().toISOString(),
+              };
+            })
+          );
+        },
       }}
     >
       {children}
@@ -3278,6 +3312,8 @@ export function templateContentForSeries(seriesId?: string): Content {
   const src = SAMPLE_CONTENT_BY_SERIES[id];
   return {
     name: src.fullName,
+    firstName: src.firstName,
+    lastName: src.lastName,
     role: src.profession,
     email: src.email,
     phone: src.phone,

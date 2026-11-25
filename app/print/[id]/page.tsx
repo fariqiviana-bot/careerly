@@ -36,7 +36,7 @@ function toResumeContent(c: any): ResumeContent {
         title: e.role || e.title || "",
         company: e.company || "",
         location: e.location || "",
-        period: e.period || "",
+        period: e.period || e.date || "",
         summaryParagraph: e.showOverview ? e.overview : undefined,
         bullets:
           Array.isArray(e.bullets) && e.bullets.length > 0
@@ -137,6 +137,7 @@ export default function VectorPrintPage() {
   const { docs } = useStore();
   const mode = sp.get("mode") || "resume"; // resume | cover | references | combined
   const autoprint = sp.get("autoprint") === "1";
+  const querySeries = sp.get("series") || "";
 
   const [doc, setDoc] = useState<Doc | null>(null);
   const [ready, setReady] = useState(false);
@@ -144,6 +145,18 @@ export default function VectorPrintPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // 1. Fresh live snapshot from Editor (guarantees exact current template & unsaved edits)
+      try {
+        const snapRaw = localStorage.getItem(`farnavi_print_snapshot_${params.id}`);
+        if (snapRaw) {
+          const snap = JSON.parse(snapRaw);
+          if (snap && snap.id === params.id && Date.now() - Number(snap._snapAt || 0) < 5 * 60 * 1000) {
+            if (!cancelled) { setDoc(snap); setReady(true); }
+            return;
+          }
+        }
+      } catch {}
+      // 2. Live DB document
       try {
         const remote = await apiGetDocument(params.id);
         if (!cancelled && remote) {
@@ -152,6 +165,15 @@ export default function VectorPrintPage() {
           return;
         }
       } catch (err) { console.warn("[print] fallback to local store:", err); }
+      // 3. Hydrated localStorage store (avoids unhydrated seed fallback to Series 2)
+      try {
+        const storeRaw = localStorage.getItem("farnavi_store_v35");
+        if (storeRaw) {
+          const parsed = JSON.parse(storeRaw);
+          const found = Array.isArray(parsed?.docs) ? parsed.docs.find((d: any) => d.id === params.id) : null;
+          if (!cancelled && found) { setDoc(found); setReady(true); return; }
+        }
+      } catch {}
       const local = docs.find((d) => d.id === params.id) || null;
       if (!cancelled) {
         setDoc(local);
@@ -186,7 +208,7 @@ export default function VectorPrintPage() {
     );
   }
 
-  const sId = String(doc.series || (doc as any).seriesId || doc.template || "11");
+  const sId = String(querySeries || (doc as any).seriesId || doc.series || doc.template || "11");
   const isLetter = doc.settings?.pageSize === "Letter";
   const pageCount = (doc.settings?.pageCount || 1) as 1 | 2 | 3;
   const content = toResumeContent(doc.content);

@@ -354,7 +354,7 @@ export function ContentEditorPanel({
                   </div>
                   <div>
                     <div className="text-xs font-medium text-foreground">This template doesn&apos;t use a photo upload</div>
-                    <div className="text-[11px] text-muted-foreground">Series {sId} is engineered for photo-free ATS compliance.</div>
+                    <div className="text-[11px] text-muted-foreground">Series {sId} is a photo-free visual layout (use Vector PDF for strict ATS portals).</div>
                   </div>
                 </div>
                 <Button

@@ -141,6 +141,7 @@ export const CreateDocumentSchema = z.object({
   id: z.string().min(1).max(120).optional(),
   type: z.enum(["resume", "cover", "resignation", "website", "tailored"]).optional().default("resume"),
   slug: z.string().trim().min(1).max(120).nullable().optional(),
+  expectedUpdatedAt: z.string().nullable().optional(),
   title: z.string().min(1).max(180).optional().default("Untitled Resume"),
   seriesId: z.string().min(1).max(20).optional().default("11"),
   activeTab: z.enum(["resume", "cover", "references"]).optional().default("resume"),

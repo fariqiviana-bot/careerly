@@ -758,6 +758,44 @@ function injectDocumentXml(xml: string, input: DocxInjectInput): string {
   return result;
 }
 
+
+// Normalize wide default Word bullet hanging indents (720/360 = 36pt/18pt) to natural resume spacing (320/180 = 16pt/9pt -> ~6pt clear gap)
+function normalizeDocxBulletNumberingXml(numXml: string): string {
+  return numXml.replace(/<w:lvl\s+w:ilvl="0"[^>]*>[\s\S]*?<\/w:lvl>/g, (lvl) => {
+    if (!/w:val="bullet"/.test(lvl)) return lvl;
+    let out = lvl.replace(/<w:ind\b[^>]*\/>/g, (indTag) => {
+      const lM = indTag.match(/w:left="(\d+)"/);
+      const hM = indTag.match(/w:hanging="(\d+)"/);
+      const left = lM ? Number(lM[1]) : 0;
+      const hang = hM ? Number(hM[1]) : 0;
+      if (hang >= 240 || left >= 480) {
+        return '<w:ind w:left="320" w:hanging="180"/>';
+      }
+      return indTag;
+    });
+    out = out.replace(/<w:tab\s+w:val="num"\s+w:pos="(\d+)"\s*\/>/g, (tabTag, pos) =>
+      Number(pos) >= 480 ? '<w:tab w:val="num" w:pos="320"/>' : tabTag
+    );
+    return out;
+  });
+}
+
+function normalizeDocxBulletParagraphIndents(docXml: string): string {
+  return docXml.replace(/<w:p(?:>|\s[^>]*[^\/]>)(?:(?!<w:p[\s>\/])[\s\S])*?<\/w:p>/g, (pXml) => {
+    if (!pXml.includes("<w:numPr>") || !pXml.includes("w:hanging=")) return pXml;
+    return pXml.replace(/<w:ind\b[^>]*\/>/g, (indTag) => {
+      const lM = indTag.match(/w:left="(\d+)"/);
+      const hM = indTag.match(/w:hanging="(\d+)"/);
+      const left = lM ? Number(lM[1]) : 0;
+      const hang = hM ? Number(hM[1]) : 0;
+      if (hang >= 240 || left >= 480) {
+        return '<w:ind w:left="320" w:hanging="180"/>';
+      }
+      return indTag;
+    });
+  });
+}
+
 export async function generateInjectedDocxBuffer(input: DocxInjectInput): Promise<{
   buffer: Buffer;
   templateFile: string;
@@ -771,8 +809,13 @@ export async function generateInjectedDocxBuffer(input: DocxInjectInput): Promis
     throw new Error("Master template missing word/document.xml");
   }
   const origXml = await docEntry.async("string");
-  const injectedXml = injectDocumentXml(origXml, input);
+  const injectedXml = normalizeDocxBulletParagraphIndents(injectDocumentXml(origXml, input));
   zip.file("word/document.xml", injectedXml);
+  const numEntry = zip.files["word/numbering.xml"];
+  if (numEntry) {
+    const origNumXml = await numEntry.async("string");
+    zip.file("word/numbering.xml", normalizeDocxBulletNumberingXml(origNumXml));
+  }
 
   const outBuf = await zip.generateAsync({
     type: "nodebuffer",

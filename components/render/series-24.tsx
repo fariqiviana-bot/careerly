@@ -42,14 +42,14 @@ const S24_FONT_CSS = `
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/Inter_18pt-Regular.ttf") format("truetype");
+  src: url("/fonts/WorkSans-Regular.ttf") format("truetype");
 }
 @font-face {
   font-family: "S24Inter";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/fonts/Inter_18pt-Bold.ttf") format("truetype");
+  src: url("/fonts/WorkSans-Bold.ttf") format("truetype");
 }
 @font-face {
   font-family: "S24LibreBaskerville";

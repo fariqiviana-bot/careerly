@@ -573,8 +573,8 @@ function ExecutiveExperienceBlock({ jobs }: { jobs: any[] }) {
               <ul
                 style={{
                   margin: 0,
-                  marginLeft: "18pt",
-                  paddingLeft: "6pt",
+                  marginLeft: "11pt",
+                  paddingLeft: "2pt",
                   listStyleType: "disc",
                 }}
               >
@@ -1704,8 +1704,8 @@ function ElegantExperienceBlock({ jobs }: { jobs: any[] }) {
               <ul
                 style={{
                   margin: 0,
-                  marginLeft: "18pt",
-                  paddingLeft: "6pt",
+                  marginLeft: "11pt",
+                  paddingLeft: "2pt",
                   listStyleType: "disc",
                 }}
               >
@@ -2731,8 +2731,8 @@ function DoubleColumnExperienceBlock({ jobs, isLetter = false }: { jobs: any[]; 
               <ul
                 style={{
                   margin: 0,
-                  marginLeft: "18pt",
-                  paddingLeft: "6pt",
+                  marginLeft: "11pt",
+                  paddingLeft: "2pt",
                   listStyleType: "disc",
                 }}
               >
@@ -3147,13 +3147,13 @@ export function Series4({ content, style, pageIndex = 0, totalPages }: any) {
         <ul
           style={{
             margin: 0,
-            paddingLeft: "28pt",
+            paddingLeft: "13.5pt",
             listStyleType: "disc",
             listStylePosition: "outside",
           }}
         >
           {exp.bullets.map((b: string, bi: number) => (
-            <li key={bi} style={{ paddingLeft: "6pt", marginBottom: 0 }}>
+            <li key={bi} style={{ paddingLeft: "1.5pt", marginBottom: 0 }}>
               {b}
             </li>
           ))}
@@ -3623,7 +3623,7 @@ export function Series11({ content: c, style: s, pageIndex, totalPages }: any) {
         style={{
           margin: 0,
           marginTop: isLetter ? "5pt" : "7pt",
-          paddingLeft: "36pt",
+          paddingLeft: "13.5pt",
           listStyleType: "disc",
           listStylePosition: "outside",
         }}
@@ -3969,7 +3969,7 @@ function SingleExperienceBlock({
           style={{
             margin: 0,
             marginTop: isA4 ? "8pt" : "6pt",
-            paddingLeft: "36pt",
+            paddingLeft: "13.5pt",
             listStyleType: "disc",
             listStylePosition: "outside",
           }}
@@ -4250,7 +4250,7 @@ export function Series12({ content: c, style: s, pageIndex, totalPages }: any) {
         <ul
           style={{
             margin: 0,
-            paddingLeft: "21pt",
+            paddingLeft: "13.5pt",
             listStyleType: "disc",
             listStylePosition: "outside",
           }}
@@ -4268,7 +4268,7 @@ export function Series12({ content: c, style: s, pageIndex, totalPages }: any) {
           style={{
             margin: 0,
             marginTop: isA4 ? "8pt" : "6pt",
-            paddingLeft: "21pt",
+            paddingLeft: "13.5pt",
             listStyleType: "disc",
             listStylePosition: "outside",
           }}
@@ -4634,7 +4634,7 @@ export function Series14(props: any) {
           </div>
         </div>
         <MinimalSectionHeading title="SKILLS" onClick={() => onSelectSection?.("skills")} />
-        <ul onClick={() => onSelectSection?.("skills")} style={{ margin: 0, marginLeft: "18pt", paddingLeft: "6pt", listStyleType: "disc", cursor: "pointer" }}>
+        <ul onClick={() => onSelectSection?.("skills")} style={{ margin: 0, marginLeft: "11pt", paddingLeft: "2pt", listStyleType: "disc", cursor: "pointer" }}>
           <li style={{ marginBottom: "5pt", lineHeight: "13.5pt" }}>
             <strong style={{ fontWeight: 700 }}>PROFESSIONAL:</strong> Schedule Coordination - Time Planning - Critical Thinking - Group Leadership - Problem Resolution - Decision Making - Adaptability - Attention to Detail - Conflict Management - Strategic Decision-Making
           </li>
@@ -4671,7 +4671,7 @@ export function Series14(props: any) {
       {targetPages <= 1 && (
         <>
           <MinimalSectionHeading title="SKILLS" onClick={() => onSelectSection?.("skills")} />
-          <ul onClick={() => onSelectSection?.("skills")} style={{ margin: 0, marginLeft: "18pt", paddingLeft: "6pt", listStyleType: "disc", cursor: "pointer" }}>
+          <ul onClick={() => onSelectSection?.("skills")} style={{ margin: 0, marginLeft: "11pt", paddingLeft: "2pt", listStyleType: "disc", cursor: "pointer" }}>
             <li style={{ marginBottom: "5pt", lineHeight: "13.5pt" }}>
               <strong style={{ fontWeight: 700 }}>PROFESSIONAL:</strong> Time Planning - Critical Thinking - Group Leadership - Problem Resolution
             </li>
@@ -5990,11 +5990,11 @@ export function CoverLetterSheet(props: any) {
               listStyleType: "disc",
               listStylePosition: "outside",
               margin: `0 0 ${pGap} 0`,
-              paddingLeft: "36pt",
+              paddingLeft: "13.5pt",
             }}
           >
             {accomplishments.map((item, i) => (
-              <li key={i} style={{ paddingLeft: "6pt", marginBottom: i < accomplishments.length - 1 ? "1.5pt" : "0" }}>
+              <li key={i} style={{ paddingLeft: "1.5pt", marginBottom: i < accomplishments.length - 1 ? "1.5pt" : "0" }}>
                 {item}
               </li>
             ))}

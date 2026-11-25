@@ -17,6 +17,9 @@ export async function apiDownloadInjectedDocx(payload: {
   pageSize: "A4" | "Letter";
   pageCount: 1 | 2 | 3;
   fileName: string;
+  mode?: "visual" | "ats";
+  accent?: string;
+  font?: string;
   content: Record<string, any>;
 }) {
   const res = await fetch("/api/export/docx", {
@@ -30,7 +33,7 @@ export async function apiDownloadInjectedDocx(payload: {
   }
   const blob = await res.blob();
   const safe = payload.fileName.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_") || "Farnavi";
-  triggerBlobDownload(blob, `${safe}_${payload.kind}_${payload.pageSize}.docx`);
+  triggerBlobDownload(blob, `${safe}_${payload.kind}_${payload.mode === "ats" ? "_ATS" : ""}${payload.pageSize}.docx`);
 }
 
 export async function apiDownloadZipBundle(payload: {

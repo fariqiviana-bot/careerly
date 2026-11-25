@@ -56,6 +56,21 @@ export async function PATCH(
     });
 
     const d = parsed.data;
+    if (existing && d.expectedUpdatedAt) {
+      const expectedMs = Date.parse(d.expectedUpdatedAt);
+      const actualMs = existing.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+      if (Number.isFinite(expectedMs) && actualMs > expectedMs + 50) {
+        return NextResponse.json(
+          {
+            error: "Document was updated in another session or tab",
+            code: "CONFLICT",
+            serverUpdatedAt: existing.updatedAt,
+            document: serializeDocument(existing),
+          },
+          { status: 409 }
+        );
+      }
+    }
     const data: Record<string, any> = {};
     if (d.type !== undefined) data.type = d.type;
     if (d.slug !== undefined) data.slug = d.slug ? d.slug.toLowerCase() : null;
@@ -79,8 +94,41 @@ export async function PATCH(
     if (d.headerFooter !== undefined) data.headerFooterJson = JSON.stringify(d.headerFooter);
 
     let saved;
-    if (!existing && req.nextUrl.searchParams.get("upsert") !== "1") {
-      return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    if (!existing) {
+      if (req.nextUrl.searchParams.get("upsert") !== "1") {
+        return NextResponse.json({ error: "Document not found" }, { status: 404 });
+      }
+      const SEEDED_DOC_IDS = new Set(["doc-executive","doc-ivy-league","doc-elegant","doc-photo-column","doc-modern","doc-contemporary","doc-minimal","doc-single-column"]);
+      const existingAny = await prisma.document.findUnique({ where: { id }, select: { userId: true } });
+      if (existingAny && existingAny.userId !== user.id) {
+        if (SEEDED_DOC_IDS.has(id)) {
+          saved = await prisma.document.update({ where: { id }, data: { ...data, userId: user.id } });
+        } else {
+          return NextResponse.json({ error: "Document not found" }, { status: 404 });
+        }
+      } else {
+        saved = await prisma.document.create({
+          data: {
+            id,
+            userId: user.id,
+            type: d.type ?? "resume",
+            title: d.title ?? "Untitled Resume",
+            seriesId: d.seriesId ?? "11",
+            activeTab: d.activeTab ?? "resume",
+            language: d.language ?? "English",
+            accent: d.accent ?? "#202124",
+            font: d.font ?? "Merriweather",
+            score: d.score ?? 0,
+            pinned: d.pinned ?? false,
+            contentJson: JSON.stringify(d.content ?? {}),
+            settingsJson: JSON.stringify(d.settings ?? {}),
+            visibilityJson: JSON.stringify(d.visibility ?? {}),
+            sectionOrderJson: JSON.stringify(d.sectionOrder ?? []),
+            customLabelsJson: JSON.stringify(d.customLabels ?? {}),
+            headerFooterJson: JSON.stringify(d.headerFooter ?? { headerText: "", footerText: "", pageNumbering: "none" }),
+          },
+        });
+      }
     } else {
       saved = await prisma.document.update({
         where: { id },

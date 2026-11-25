@@ -56,3 +56,5 @@ audit-report.json
 audit-static.json
 repo-snapshot.txt
 *.bak
+benchmarks/
+scripts/bench-part*.js
