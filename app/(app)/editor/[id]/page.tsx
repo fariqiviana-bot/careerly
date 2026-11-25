@@ -392,21 +392,114 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         if (remoteDoc && !opts?.keepalive) {
           try {
             const base = lastSyncedSnapshotRef.current || {};
-            const mergeObj = (b: any, r: any, l: any) => {
-              const out: Record<string, any> = { ...(r || {}) };
-              const bObj = b || {};
-              const lObj = l || {};
-              for (const k of Object.keys(lObj)) {
-                if (JSON.stringify(lObj[k]) !== JSON.stringify(bObj[k])) {
-                  out[k] = lObj[k];
+            const isPlainObject = (v: any): v is Record<string, any> =>
+              Boolean(v) && typeof v === "object" && !Array.isArray(v);
+            const eqJson = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
+
+            const mergeArray = (bArr: any[], rArr: any[], lArr: any[]): any[] => {
+              const isObjWithId = (arr: any[]) =>
+                arr.length > 0 &&
+                arr.every((x) => isPlainObject(x) && typeof x.id === "string" && x.id.length > 0);
+
+              if (
+                (bArr.length === 0 || isObjWithId(bArr)) &&
+                (rArr.length === 0 || isObjWithId(rArr)) &&
+                (lArr.length === 0 || isObjWithId(lArr)) &&
+                (isObjWithId(rArr) || isObjWithId(lArr))
+              ) {
+                const bMap = new Map<string, any>(bArr.map((x) => [x.id, x]));
+                const lMap = new Map<string, any>(lArr.map((x) => [x.id, x]));
+                const merged: any[] = [];
+                const seen = new Set<string>();
+
+                for (const rItem of rArr) {
+                  const id = rItem.id;
+                  seen.add(id);
+                  const bItem = bMap.get(id);
+                  const lItem = lMap.get(id);
+                  if (lItem !== undefined) {
+                    merged.push(merge3Way(bItem, rItem, lItem));
+                  } else if (bItem !== undefined) {
+                    if (!eqJson(rItem, bItem)) merged.push(rItem);
+                  } else {
+                    merged.push(rItem);
+                  }
+                }
+
+                for (const lItem of lArr) {
+                  const id = lItem.id;
+                  if (seen.has(id)) continue;
+                  const bItem = bMap.get(id);
+                  if (bItem === undefined) {
+                    merged.push(lItem);
+                  } else if (!eqJson(lItem, bItem)) {
+                    merged.push(lItem);
+                  }
+                }
+                return merged;
+              }
+
+              const isPrimArr = (arr: any[]) =>
+                arr.every((x) => x === null || (typeof x !== "object" && typeof x !== "function"));
+              if (isPrimArr(bArr) && isPrimArr(rArr) && isPrimArr(lArr)) {
+                if (bArr.length === rArr.length && rArr.length === lArr.length) {
+                  return rArr.map((rVal, idx) => (!eqJson(lArr[idx], bArr[idx]) ? lArr[idx] : rVal));
+                }
+                const lSet = new Set(lArr);
+                const bSet = new Set(bArr);
+                const removedByLocal = new Set(bArr.filter((x) => !lSet.has(x)));
+                const addedByLocal = lArr.filter((x) => !bSet.has(x));
+                const out = rArr.filter((x) => !removedByLocal.has(x));
+                for (const item of addedByLocal) {
+                  if (!out.includes(item)) out.push(item);
+                }
+                return out;
+              }
+
+              const maxLen = Math.max(rArr.length, lArr.length);
+              const out: any[] = [];
+              for (let i = 0; i < maxLen; i++) {
+                const hasR = i < rArr.length;
+                const hasL = i < lArr.length;
+                const hasB = i < bArr.length;
+                if (hasR && hasL) {
+                  out.push(merge3Way(hasB ? bArr[i] : undefined, rArr[i], lArr[i]));
+                } else if (hasR && !hasL) {
+                  if (!hasB) out.push(rArr[i]);
+                } else if (!hasR && hasL) {
+                  if (!hasB) out.push(lArr[i]);
                 }
               }
               return out;
             };
 
-            const mergedContent = mergeObj(base.content, remoteDoc.content, pending.payload.content);
-            const mergedSettings = mergeObj(base.settings, remoteDoc.settings, pending.payload.settings);
-            const mergedVisibility = mergeObj(base.visibility, remoteDoc.visibility, pending.payload.visibility);
+            const merge3Way = (b: any, r: any, l: any): any => {
+              if (eqJson(l, b)) return r;
+              if (eqJson(r, b)) return l;
+              if (Array.isArray(r) && Array.isArray(l)) {
+                return mergeArray(Array.isArray(b) ? b : [], r, l);
+              }
+              if (isPlainObject(r) && isPlainObject(l)) {
+                const bObj = isPlainObject(b) ? b : {};
+                const out: Record<string, any> = {};
+                const keys = new Set([...Object.keys(r), ...Object.keys(l)]);
+                for (const k of keys) {
+                  if (!(k in l)) {
+                    if (!(k in bObj)) out[k] = r[k];
+                  } else if (!(k in r)) {
+                    if (!(k in bObj) || !eqJson(l[k], bObj[k])) out[k] = l[k];
+                  } else {
+                    out[k] = merge3Way(bObj[k], r[k], l[k]);
+                  }
+                }
+                return out;
+              }
+              return l;
+            };
+
+            const mergedContent = merge3Way(base.content || {}, remoteDoc.content || {}, pending.payload.content || {});
+            const mergedSettings = merge3Way(base.settings || {}, remoteDoc.settings || {}, pending.payload.settings || {});
+            const mergedVisibility = merge3Way(base.visibility || {}, remoteDoc.visibility || {}, pending.payload.visibility || {});
             const mergedTitle =
               pending.payload.title !== base.title ? pending.payload.title : remoteDoc.title ?? pending.payload.title;
             const mergedSeries =

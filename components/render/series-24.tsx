@@ -1104,7 +1104,7 @@ export function Series24Exact({
             <div
               key={aw.id || idx}
               style={{
-                marginTop: idx === 0 ? "0pt" : pt(8.4, fontScale),
+                marginTop: idx === 0 ? "0pt" : pt(showSkillsBelowCertsOnPage1 ? 5.5 : 8.4, fontScale),
                 fontFamily: F_INTER,
                 fontSize: fs,
                 lineHeight: lh,
@@ -1403,6 +1403,12 @@ export function Series24Exact({
       ? (c as any).skills
       : [];
   const showSkillsOnPage1 = !hasUserCerts && page1SkillsList.length > 0;
+  const isUntouchedS24Sample =
+    (c.fullName || "").trim().toLowerCase() === "florence nightingale" &&
+    page1SkillsList.length === 8 &&
+    page1SkillsList[0] === "Clinical Judgment";
+  const showSkillsBelowCertsOnPage1 =
+    !is2P && !is3P && hasUserCerts && page1SkillsList.length > 0 && !isUntouchedS24Sample;
 
   const certsList: any[] =
     Array.isArray(c.certifications) && c.certifications.length > 0
@@ -1607,6 +1613,38 @@ export function Series24Exact({
                 </div>
               );
             })}
+          {showSkillsBelowCertsOnPage1 && isVisible("skills") && (
+              <div style={{ marginTop: pt(12, fontScale) }}>
+                <S24Heading lines={["SKILLS"]} fontScale={fontScale} />
+                <div
+                  style={{
+                    marginTop: pt(4, fontScale),
+                    marginBottom: pt(7, fontScale),
+                    marginLeft: "-2.7pt",
+                    width: "147pt",
+                    borderTop: `0.75pt solid ${S24_COLORS.ink}`,
+                  }}
+                />
+                {page1SkillsList.map((sk, idx) => (
+                  <InlineEd
+                    key={idx}
+                    value={sk}
+                    editable={editable}
+                    onCommit={(v) => {
+                      const next = page1SkillsList.map((it, i) => (i === idx ? v : it));
+                      patch({ professionalSkills: next });
+                    }}
+                    style={{
+                      fontFamily: F_INTER,
+                      fontSize: fs,
+                      lineHeight: lh,
+                      color: S24_COLORS.ink,
+                      marginTop: idx === 0 ? "0pt" : pt(3.5, fontScale),
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

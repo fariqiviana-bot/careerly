@@ -389,4 +389,203 @@ test.describe("Data Integrity, Persistence, Concurrency & Duplicate Isolation", 
 
     await ctx.close();
   });
+
+  test("5. Same-Array Concurrent Two-Tab Merge: Tab 1 edits Exp #1 + adds Skill A, Tab 2 edits Exp #2 + adds Skill B -> ALL 4 edits survive", async ({
+    browser,
+  }) => {
+    const ts = Date.now();
+    const email = `arr_merge_${ts}@farnavi.test`;
+    const pass = "FarnaviPass123!";
+    const docId = `arr-merge-doc-${ts}`;
+    const tab1Exp1Role = `Tab1 Principal Scientist ${ts}`;
+    const tab2Exp2Role = `Tab2 Staff Engineer ${ts}`;
+    const tab1Skill = "CRISPR-Cas9";
+    const tab2Skill = "PyTorch";
+
+    const ctx = await browser.newContext();
+    const tab1 = await ctx.newPage();
+    const server500s: string[] = [];
+    const crashes: string[] = [];
+    const attach = (p: Page, label: string) => {
+      p.on("pageerror", (e) => crashes.push(`${label}: ${e.message}`));
+      p.on("response", (r) => {
+        if (r.status() >= 500) server500s.push(`${label}: ${r.status()} ${r.url()}`);
+      });
+    };
+    attach(tab1, "Tab1");
+
+    await registerViaUi(tab1, "Array Merge Tester", email, pass);
+
+    const createRes = await tab1.request.post("/api/documents", {
+      data: {
+        id: docId,
+        title: "Same-Array Merge CV",
+        seriesId: "14",
+        content: {
+          name: "Array Merge Tester",
+          firstName: "Array",
+          lastName: "Merge Tester",
+          role: "Bioinformatics Lead",
+          email,
+          phone: "(555) 777-8888",
+          skills: ["Python", "Genomics"],
+          experience: [
+            {
+              id: "exp-1",
+              role: "Initial Role One",
+              company: "Alpha Bio",
+              period: "2023 - Present",
+              bullets: ["Built pipeline A."],
+            },
+            {
+              id: "exp-2",
+              role: "Initial Role Two",
+              company: "Beta Genomics",
+              period: "2020 - 2023",
+              bullets: ["Built pipeline B."],
+            },
+          ],
+        },
+      },
+    });
+    expect(createRes.ok()).toBeTruthy();
+
+    await tab1.goto(`/editor/${docId}`, { waitUntil: "networkidle" });
+    await waitForSaved(tab1);
+
+    const tab2 = await ctx.newPage();
+    attach(tab2, "Tab2");
+    await tab2.goto(`/editor/${docId}`, { waitUntil: "networkidle" });
+    await tab2.waitForTimeout(400);
+
+    const ensureExpVisible = async (p: Page) => {
+      const inputs = p.getByPlaceholder("e.g. Senior Product Designer");
+      if ((await inputs.count()) < 2 || !(await inputs.first().isVisible().catch(() => false))) {
+        await p.getByRole("button", { name: /Professional Experience/i }).first().click();
+        await p.waitForTimeout(250);
+      }
+      return p.getByPlaceholder("e.g. Senior Product Designer");
+    };
+
+    const ensureSkillInput = async (p: Page) => {
+      const skInput = p.getByPlaceholder("Type a skill and press Enter (e.g. Strategic Leadership)...");
+      if (!(await skInput.isVisible().catch(() => false))) {
+        await p.getByRole("button", { name: /Skills/i }).first().click();
+        await p.waitForTimeout(250);
+      }
+      return skInput;
+    };
+
+    // Tab 1 edits Experience #1 and adds Skill A
+    const expInputs1 = await ensureExpVisible(tab1);
+    await expInputs1.nth(0).fill(tab1Exp1Role);
+    const skInput1 = await ensureSkillInput(tab1);
+    await skInput1.fill(tab1Skill);
+    await skInput1.press("Enter");
+
+    // Tab 2 simultaneously edits Experience #2 and adds Skill B
+    const expInputs2 = await ensureExpVisible(tab2);
+    await expInputs2.nth(1).fill(tab2Exp2Role);
+    const skInput2 = await ensureSkillInput(tab2);
+    await skInput2.fill(tab2Skill);
+    await skInput2.press("Enter");
+
+    await Promise.all([waitForSaved(tab1), waitForSaved(tab2)]);
+
+    await Promise.all([
+      tab1.reload({ waitUntil: "networkidle" }),
+      tab2.reload({ waitUntil: "networkidle" }),
+    ]);
+
+    const t1Text = await tab1.locator("body").innerText();
+    const t2Text = await tab2.locator("body").innerText();
+
+    expect(server500s).toEqual([]);
+    expect(crashes).toEqual([]);
+
+    for (const [label, txt] of [
+      ["Tab1", t1Text],
+      ["Tab2", t2Text],
+    ] as const) {
+      expect(txt, `[${label}] Missing Tab 1 Exp #1 edit`).toContain(tab1Exp1Role);
+      expect(txt, `[${label}] Missing Tab 2 Exp #2 edit`).toContain(tab2Exp2Role);
+      expect(txt, `[${label}] Missing Tab 1 added skill`).toContain(tab1Skill);
+      expect(txt, `[${label}] Missing Tab 2 added skill`).toContain(tab2Skill);
+    }
+
+    console.log("[Same-Array Merge Result] exp1Kept=true | exp2Kept=true | skillA=true | skillB=true");
+    await ctx.close();
+  });
+
+  test("6. Series 24 (1P) Combined Display: User with BOTH Certifications and Skills sees both on Page 1 after F5", async ({
+    browser,
+  }) => {
+    const ts = Date.now();
+    const email = `s24_both_${ts}@farnavi.test`;
+    const pass = "FarnaviPass123!";
+    const docId = `s24-both-doc-${ts}`;
+
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    await registerViaUi(page, "S24 Both Tester", email, pass);
+
+    const createRes = await page.request.post("/api/documents", {
+      data: {
+        id: docId,
+        title: "Certs And Skills CV",
+        seriesId: "24",
+        settings: { pageCount: 1, pageSize: "A4" },
+        content: {
+          name: "Viana Fariqi",
+          firstName: "Viana",
+          lastName: "Fariqi",
+          role: "Clinical Bioinformatics Manager",
+          email,
+          phone: "+1 (415) 555-0199",
+          location: "San Francisco, CA",
+          summary: "Led regulated clinical genomics operations and multi-omics pipelines.",
+          certifications: [
+            { id: "uc-1", name: "PMP ? Project Management Professional", issuer: "PMI", date: "Valid 2029" },
+            { id: "uc-2", name: "CLIA ? Clinical Lab Compliance", issuer: "CMS", date: "Valid 2028" },
+          ],
+          skills: [
+            "Genomic Annotation",
+            "CRISPR Primer Design",
+            "FastAPI Architecture",
+            "Biostatistics",
+            "Regulatory Audits",
+          ],
+          experience: [
+            {
+              id: "uexp-1",
+              role: "Bioinformatics Manager",
+              company: "Niyaman BioLabs",
+              period: "2023 - Present",
+              bullets: ["Directed 14-person clinical sequencing engineering group."],
+            },
+          ],
+          education: [
+            { id: "uedu-1", degree: "B.S. in Molecular Biology", school: "State University", period: "2020" },
+          ],
+        },
+      },
+    });
+    expect(createRes.ok()).toBeTruthy();
+
+    await page.goto(`/editor/${docId}`, { waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "networkidle" });
+
+    const bodyText = await page.locator("body").innerText();
+    expect(bodyText).toContain("PMP");
+    expect(bodyText).toContain("Project Management Professional");
+    expect(bodyText).toContain("CLIA");
+    expect(bodyText).toContain("Genomic Annotation");
+    expect(bodyText).toContain("CRISPR Primer Design");
+    expect(bodyText).toContain("FastAPI Architecture");
+    expect(bodyText).toContain("Biostatistics");
+    expect(bodyText).toContain("Regulatory Audits");
+
+    await ctx.close();
+  });
+
 });
