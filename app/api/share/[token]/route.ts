@@ -49,16 +49,7 @@ export async function GET(
       });
     }
 
-    // Fallback: direct document ID lookup (for existing /s/[id] links)
-    const directDoc = await prisma.document.findUnique({ where: { id: token } });
-    if (!directDoc) {
-      return NextResponse.json({ error: "Shared resume not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      document: serializeDocument(directDoc),
-      share: { token, viewCount: 1, showContact: true },
-    });
+    return NextResponse.json({ error: "Shared resume not found" }, { status: 404 });
   } catch (err: any) {
     return NextResponse.json(
       { error: "Failed to load shared resume", detail: err?.message },

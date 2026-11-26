@@ -23,21 +23,17 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ slug: 
 
     let doc = await prisma.document.findFirst({
       where: {
+        type: "website",
         OR: [{ slug: cleanSlug }, { id: cleanSlug }],
       },
     });
 
     if (!doc && cleanSlug === "viana-fariqi") {
-      doc =
-        (await prisma.document.findFirst({
-          where: { type: "website" },
-          orderBy: { updatedAt: "desc" },
-        })) ||
-        (await prisma.document.findFirst({
-          orderBy: { updatedAt: "desc" },
-        }));
+      doc = await prisma.document.findFirst({
+        where: { type: "website" },
+        orderBy: { updatedAt: "desc" },
+      });
     }
-
     if (!doc) {
       return NextResponse.json({ error: "Personal website not found" }, { status: 404 });
     }

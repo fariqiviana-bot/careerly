@@ -328,15 +328,33 @@ function extractParagraphsFromWordXml(xml: string): ExtractedLine[] {
   return extractParasFromXmlFragment(cleaned);
 }
 
+const MAX_DOCX_ENTRIES = 200;
+const MAX_DOCX_XML_BYTES = 5 * 1024 * 1024; // 5 MB inflated XML cap (Zip Bomb guard)
+
 export async function extractLinesFromDocxBuffer(buffer: Buffer): Promise<ExtractedLine[]> {
   const zip = await JSZip.loadAsync(buffer);
+  const entryNames = Object.keys(zip.files);
+  if (entryNames.length > MAX_DOCX_ENTRIES) {
+    throw new Error("DOCX archive contains too many entries.");
+  }
+  const readSafeXml = async (entry: JSZip.JSZipObject): Promise<string> => {
+    const declaredSize = Number((entry as any)?._data?.uncompressedSize || 0);
+    if (declaredSize > MAX_DOCX_XML_BYTES) {
+      throw new Error("DOCX content exceeds maximum allowed uncompressed size.");
+    }
+    const xml = await entry.async("string");
+    if (Buffer.byteLength(xml, "utf8") > MAX_DOCX_XML_BYTES) {
+      throw new Error("DOCX content exceeds maximum allowed uncompressed size.");
+    }
+    return xml;
+  };
   const parts: ExtractedLine[] = [];
 
-  const headerNames = Object.keys(zip.files)
+  const headerNames = entryNames
     .filter((n) => /^word\/header\d*\.xml$/i.test(n))
     .sort();
   for (const h of headerNames) {
-    const xml = await zip.files[h].async("string");
+    const xml = await readSafeXml(zip.files[h]);
     parts.push(...extractParagraphsFromWordXml(xml));
   }
 
@@ -344,7 +362,7 @@ export async function extractLinesFromDocxBuffer(buffer: Buffer): Promise<Extrac
   if (!docFile) {
     throw new Error("Invalid .docx file: word/document.xml not found");
   }
-  const docXml = await docFile.async("string");
+  const docXml = await readSafeXml(docFile);
   parts.push(...extractParagraphsFromWordXml(docXml));
 
   return parts.map((p, idx) => ({

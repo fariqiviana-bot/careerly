@@ -41,7 +41,22 @@ export async function POST(req: NextRequest) {
       let rawText = "";
 
       if (ext === "pdf" || file.type === "application/pdf") {
-        const lines = await extractLinesFromPdfBuffer(buffer);
+        const headLatin = buffer.subarray(0, 1024).toString("latin1");
+        if (!headLatin.includes("%PDF-")) {
+          return NextResponse.json(
+            { error: "Invalid PDF file. Please upload a valid PDF document." },
+            { status: 400 }
+          );
+        }
+        let lines;
+        try {
+          lines = await extractLinesFromPdfBuffer(buffer);
+        } catch (pdfErr: any) {
+          return NextResponse.json(
+            { error: "Could not read this PDF file. It may be corrupted or password-protected.", detail: pdfErr?.message },
+            { status: 422 }
+          );
+        }
         rawText = lines.map((l) => l.text).join("\n");
         if (rawText.trim().length < 15) {
           return NextResponse.json(
@@ -58,7 +73,21 @@ export async function POST(req: NextRequest) {
         file.type ===
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ) {
-        const lines = await extractLinesFromDocxBuffer(buffer);
+        const isZipMagic = buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b;
+        if (!isZipMagic) {
+          return NextResponse.json(
+            { error: "Invalid DOCX file. Please upload a valid Word (.docx) document." },
+            { status: 400 }
+          );
+        }
+        let lines;
+        try {
+          lines = await extractLinesFromDocxBuffer(buffer);
+        } catch (docxErr: any) {
+          const msg = String(docxErr?.message || "Invalid or unsupported DOCX file.");
+          const status = /maximum allowed|too many entries/i.test(msg) ? 413 : 422;
+          return NextResponse.json({ error: msg }, { status });
+        }
         rawText = lines.map((l) => l.text).join("\n");
         if (rawText.trim().length < 15) {
           return NextResponse.json(

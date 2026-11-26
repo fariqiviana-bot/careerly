@@ -51,6 +51,7 @@ const KNOWN_TECH_SKILL_PLACEHOLDERS = new Set([
 
 function xmlEscape(text: string): string {
   return String(text || "")
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

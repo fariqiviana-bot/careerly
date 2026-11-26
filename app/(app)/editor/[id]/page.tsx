@@ -759,6 +759,16 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
 
   const handleRestoreSnapshot = async (versionId: string) => {
     try {
+      // Cancel queued autosave before restoring so stale edits never overwrite the restored version
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+      pendingSaveRef.current = null;
       const restored = await apiRestoreVersion(doc.id, versionId);
       if ((restored as any)?.updatedAt) serverUpdatedAtRef.current = (restored as any).updatedAt;
       lastSavedSigRef.current = JSON.stringify({
@@ -780,6 +790,15 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         setDbVersions(restored.versions);
       }
       setHistoryOpen(false);
+      lastSyncedSnapshotRef.current = {
+        title: restored.title,
+        seriesId: restored.seriesId,
+        activeTab: restored.activeTab,
+        content: restored.content,
+        settings: restored.settings,
+        visibility: restored.visibility,
+      };
+      setSaveState("saved");
       toast.success("Version restored (previous state auto-backed up)");
     } catch {
       toast.error("Failed to restore version");
