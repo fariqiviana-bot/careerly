@@ -2656,7 +2656,11 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     } catch (err) { console.warn("[store]", err); }
   }, []);
 
+  const signingOutRef = React.useRef(false);
+
   useEffect(() => {
+    if (signingOutRef.current) return;
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/login")) return;
     try {
       localStorage.setItem(
         STORAGE_KEY,
@@ -3180,8 +3184,19 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   }, [upsertDocFromRemote]);
 
   const signOut = React.useCallback(async () => {
+    signingOutRef.current = true;
     try { await apiLogout(); } catch (err) { console.warn("[store] signOut error:", err); }
-    try { localStorage.removeItem(STORAGE_KEY); } catch (err) { console.warn("[store] clear error:", err); }
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("farnavi_")) localStorage.removeItem(k);
+      }
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith("farnavi_")) sessionStorage.removeItem(k);
+      }
+    } catch (err) { console.warn("[store] clear error:", err); }
     setAuthenticated(false);
     window.location.assign("/login");
   }, []);

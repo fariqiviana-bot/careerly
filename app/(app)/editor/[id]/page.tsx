@@ -567,6 +567,28 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         });
         return;
       }
+      const errStatus = Number((err as any)?.status || 0);
+      if (errStatus === 401 || errStatus === 403 || errStatus === 404) {
+        try {
+          const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+          const meData = await meRes.json().catch(() => null);
+          if (!meData?.user) {
+            setSaveState("offline");
+            toast.error("Your session expired. Sign in again to save your latest edits.", {
+              id: "session-expired",
+              duration: 10000,
+            });
+            return;
+          }
+        } catch {}
+      }
+      if (errStatus === 400 || errStatus === 413) {
+        setSaveState("offline");
+        toast.error((err as any)?.message || "Could not save: content limit exceeded.", {
+          id: "doc-validation-error",
+        });
+        return;
+      }
       setSaveState("offline");
       const delay = Math.min(15000, 2000 * Math.pow(2, retryAttemptRef.current++));
       retryTimerRef.current = setTimeout(() => {

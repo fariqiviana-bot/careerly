@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/server/prisma";
-import { UpdateDocumentSchema } from "@/lib/server/schemas";
+import { UpdateDocumentSchema, MAX_DOCUMENT_PAYLOAD_BYTES } from "@/lib/server/schemas";
 import { getWorkspaceUser, serializeDocument } from "@/lib/server/workspace";
 
 export const runtime = "nodejs";
@@ -41,7 +41,20 @@ export async function PATCH(
   try {
     const { id } = await context.params;
     const user = await getWorkspaceUser();
-    const raw = await req.json();
+    const declaredLen = Number(req.headers.get("content-length") || 0);
+    if (declaredLen > MAX_DOCUMENT_PAYLOAD_BYTES) {
+      return NextResponse.json({ error: "Document payload exceeds the 4 MB limit." }, { status: 413 });
+    }
+    const rawText = await req.text();
+    if (Buffer.byteLength(rawText, "utf8") > MAX_DOCUMENT_PAYLOAD_BYTES) {
+      return NextResponse.json({ error: "Document payload exceeds the 4 MB limit." }, { status: 413 });
+    }
+    let raw: any;
+    try {
+      raw = JSON.parse(rawText);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
     const parsed = UpdateDocumentSchema.safeParse(raw);
 
     if (!parsed.success) {
@@ -141,6 +154,12 @@ export async function PATCH(
       savedAt: saved.updatedAt.toISOString(),
     });
   } catch (err: any) {
+    if (err?.code === "P2002") {
+      return NextResponse.json(
+        { error: "This public URL slug is already taken. Please choose another one." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to update document", detail: err?.message },
       { status: 500 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/server/prisma";
-import { CreateDocumentSchema } from "@/lib/server/schemas";
+import { CreateDocumentSchema, MAX_DOCUMENT_PAYLOAD_BYTES } from "@/lib/server/schemas";
 import { getWorkspaceUser, serializeDocument } from "@/lib/server/workspace";
 
 export const runtime = "nodejs";
@@ -36,7 +36,20 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await getWorkspaceUser();
-    const raw = await req.json();
+    const declaredLen = Number(req.headers.get("content-length") || 0);
+    if (declaredLen > MAX_DOCUMENT_PAYLOAD_BYTES) {
+      return NextResponse.json({ error: "Document payload exceeds the 4 MB limit." }, { status: 413 });
+    }
+    const rawText = await req.text();
+    if (Buffer.byteLength(rawText, "utf8") > MAX_DOCUMENT_PAYLOAD_BYTES) {
+      return NextResponse.json({ error: "Document payload exceeds the 4 MB limit." }, { status: 413 });
+    }
+    let raw: any;
+    try {
+      raw = JSON.parse(rawText);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
     const parsed = CreateDocumentSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
@@ -136,6 +149,12 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err: any) {
+    if (err?.code === "P2002") {
+      return NextResponse.json(
+        { error: "This public URL slug is already taken. Please choose another one." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to save document", detail: err?.message },
       { status: 500 }

@@ -159,7 +159,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </DropdownMenu>
               <Button asChild size="sm" className="hidden rounded-full md:flex"><Link href="/pricing"><Crown className="mr-1 h-3.5 w-3.5" />Upgrade</Link></Button>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full"><Avatar className="h-8 w-8 border border-sage-line"><AvatarFallback className="bg-peach text-accent-foreground text-xs">VF</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full" aria-label="Account menu"><Avatar className="h-8 w-8 border border-sage-line"><AvatarFallback className="bg-peach text-accent-foreground text-xs">VF</AvatarFallback></Avatar></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel><div className="text-sm">{user.name}</div><div className="text-xs font-normal text-muted-foreground">{user.email}</div></DropdownMenuLabel>
                   <DropdownMenuSeparator />

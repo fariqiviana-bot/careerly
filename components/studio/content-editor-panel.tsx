@@ -124,10 +124,26 @@ export function ContentEditorPanel({
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+    const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+    const lowerName = (file.name || "").toLowerCase();
+    if (!ALLOWED_IMAGE_TYPES.has(file.type) || lowerName.endsWith(".svg")) {
+      toast.error("Only PNG, JPG, or WebP images are allowed (SVG is blocked for security).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Please select an image under 2 MB.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
-      patchContent({ photo: String(reader.result), emblemType: "photo" });
+      const dataUrl = String(reader.result || "");
+      if (!/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(dataUrl)) {
+        toast.error("Invalid image file format.");
+        return;
+      }
+      patchContent({ photo: dataUrl, emblemType: "photo" });
       toast.success("Profile photo updated on template");
     };
     reader.readAsDataURL(file);
@@ -292,7 +308,7 @@ export function ContentEditorPanel({
                 <div className="flex items-center gap-2">
                   <label className="cursor-pointer rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
                     Upload Photo
-                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                    <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handlePhotoUpload} />
                   </label>
                   {c.photo && (
                     <Button
@@ -340,7 +356,7 @@ export function ContentEditorPanel({
                   <div className="pt-1">
                     <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium hover:bg-muted">
                       <Camera className="h-3.5 w-3.5" /> Choose image file
-                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                      <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handlePhotoUpload} />
                     </label>
                   </div>
                 )}

@@ -14,12 +14,26 @@ const DocxExportSchema = z.object({
   mode: z.enum(["visual", "ats"]).optional().default("visual"),
   accent: z.string().optional(),
   font: z.string().optional(),
-  content: z.record(z.any()).refine((c) => Object.keys(c).length > 0, { message: "Resume content is required" }),
+  content: z
+    .record(z.any())
+    .refine((c) => Object.keys(c).length > 0, { message: "Resume content is required" })
+    .refine((c) => !Array.isArray(c.experience) || c.experience.length <= 60, { message: "Maximum 60 experience entries allowed" })
+    .refine((c) => typeof c.summary !== "string" || c.summary.length <= 50000, { message: "Summary exceeds maximum allowed length" }),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const raw = await req.json();
+    const MAX_EXPORT_BYTES = 4 * 1024 * 1024;
+    const declaredLen = Number(req.headers.get("content-length") || 0);
+    if (declaredLen > MAX_EXPORT_BYTES) {
+      return NextResponse.json({ error: "Export payload exceeds 4 MB limit" }, { status: 413 });
+    }
+    const rawText = await req.text();
+    if (Buffer.byteLength(rawText, "utf8") > MAX_EXPORT_BYTES) {
+      return NextResponse.json({ error: "Export payload exceeds 4 MB limit" }, { status: 413 });
+    }
+    let raw: any;
+    try { raw = JSON.parse(rawText); } catch { return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 }); }
     const parsed = DocxExportSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

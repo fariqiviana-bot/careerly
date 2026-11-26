@@ -267,13 +267,23 @@ export function DesignerPanel({
     file: File,
     onDataUrl: (url: string) => void
   ) => {
-    if (file.size > 3 * 1024 * 1024) {
-      toast.error("Please select an image under 3 MB.");
+    const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+    const lowerName = (file.name || "").toLowerCase();
+    if (!ALLOWED_IMAGE_TYPES.has(file.type) || lowerName.endsWith(".svg")) {
+      toast.error("Only PNG, JPG, or WebP images are allowed (SVG is blocked for security).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Please select an image under 2 MB.");
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === "string") onDataUrl(reader.result);
+      if (typeof reader.result === "string" && /^data:image\/(png|jpeg|jpg|webp);base64,/i.test(reader.result)) {
+        onDataUrl(reader.result);
+      } else {
+        toast.error("Invalid image file format.");
+      }
     };
     reader.readAsDataURL(file);
   };

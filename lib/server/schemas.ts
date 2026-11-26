@@ -1,5 +1,34 @@
 import { z } from "zod";
 
+export const RESERVED_SLUGS = new Set([
+  "admin", "api", "auth", "login", "logout", "register", "signup",
+  "editor", "dashboard", "documents", "templates", "print", "cv",
+  "share", "s", "settings", "account", "tracker", "interviews",
+  "pricing", "about", "help", "support", "master-profile",
+]);
+
+export const MAX_DOCUMENT_PAYLOAD_BYTES = 4 * 1024 * 1024; // 4 MB raw JSON cap
+
+export function isSafeImageRef(val: unknown): boolean {
+  if (val === undefined || val === null || val === "") return true;
+  if (typeof val !== "string") return false;
+  const v = val.trim();
+  if (!v) return true;
+  if (v.length > 3_500_000) return false;
+  if (/^(javascript|vbscript):/i.test(v)) return false;
+  if (/^data:/i.test(v)) {
+    return /^data:image\/(png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(v);
+  }
+  return true;
+}
+
+export const SafeSlugSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(120)
+  .regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,118}[a-zA-Z0-9]?$/, "Slug may only contain letters, numbers, hyphens, and underscores")
+  .refine((v) => !RESERVED_SLUGS.has(v.toLowerCase()), "This URL slug is reserved and cannot be used");
 export const SERIES_ID_ENUM = z.enum(["2", "3", "4", "11", "12", "14", "22", "24"]);
 
 export const HeaderFooterSchema = z
@@ -16,7 +45,7 @@ export const HeaderFooterSchema = z
 export const ExperienceItemSchema = z
   .object({
     id: z.string().min(1),
-    role: z.string().optional().default(""),
+    role: z.string().max(300).optional().default(""),
     title: z.string().optional(),
     company: z.string().optional().default(""),
     location: z.string().optional().default(""),
@@ -90,31 +119,31 @@ export const CustomSectionSchema = z
 
 export const DocumentContentSchema = z
   .object({
-    name: z.string().optional().default(""),
+    name: z.string().max(300).optional().default(""),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     titleBefore: z.string().optional(),
     titleAfter: z.string().optional(),
     pronouns: z.string().optional(),
     role: z.string().optional().default(""),
-    email: z.string().optional().default(""),
-    phone: z.string().optional().default(""),
+    email: z.string().max(300).optional().default(""),
+    phone: z.string().max(120).optional().default(""),
     location: z.string().optional().default(""),
     linkedin: z.string().optional().default(""),
     website: z.string().optional().default(""),
-    photoUrl: z.string().optional(),
-    photo: z.string().optional(),
+    photoUrl: z.string().refine(isSafeImageRef, "Invalid or unsafe image format (SVG is not allowed)").optional(),
+    photo: z.string().refine(isSafeImageRef, "Invalid or unsafe image format (SVG is not allowed)").optional(),
     nationality: z.string().optional(),
     dob: z.string().optional(),
     drivingLicense: z.string().optional(),
     postalCode: z.string().optional(),
     country: z.string().optional(),
-    summary: z.string().optional().default(""),
+    summary: z.string().max(20000).optional().default(""),
     powerStatement: z.string().optional(),
     accomplishments: z.string().optional(),
-    experience: z.array(ExperienceItemSchema).optional().default([]),
-    education: z.array(EducationItemSchema).optional().default([]),
-    skills: z.array(z.string()).optional().default([]),
+    experience: z.array(ExperienceItemSchema).max(60, "Maximum 60 experience entries allowed").optional().default([]),
+    education: z.array(EducationItemSchema).max(30, "Maximum 30 education entries allowed").optional().default([]),
+    skills: z.array(z.string().max(200)).max(150, "Maximum 150 skills allowed").optional().default([]),
     areasOfExpertise: z.array(z.string()).optional(),
     technicalSkills: z.array(z.string()).optional(),
     skillCategories: z.array(z.any()).optional(),
@@ -129,7 +158,7 @@ export const DocumentContentSchema = z
     interests: z.array(z.string()).optional(),
     references: z.array(z.any()).optional(),
     customSections: z.array(CustomSectionSchema).optional(),
-    coverLetter: z.record(z.any()).optional(),
+    coverLetter: z.record(z.any()).refine((cl) => !cl || isSafeImageRef(cl.signatureImage), "Invalid or unsafe signature image format").optional(),
     letter: z.record(z.any()).optional(),
     sectionOrder: z.array(z.string()).optional(),
     extras: z.array(z.string()).optional(),
@@ -140,7 +169,7 @@ export const DocumentContentSchema = z
 export const CreateDocumentSchema = z.object({
   id: z.string().min(1).max(120).optional(),
   type: z.enum(["resume", "cover", "resignation", "website", "tailored"]).optional().default("resume"),
-  slug: z.string().trim().min(1).max(120).nullable().optional(),
+  slug: SafeSlugSchema.nullable().optional(),
   expectedUpdatedAt: z.string().nullable().optional(),
   title: z.string().min(1).max(180).optional().default("Untitled Resume"),
   seriesId: z.string().min(1).max(20).optional().default("11"),

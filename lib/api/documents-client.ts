@@ -71,7 +71,12 @@ export async function apiPatchDocument(
     err.serverDocument = conflictData.document;
     throw err;
   }
-  if (!res.ok) throw new Error(`PATCH /api/documents/${id} failed (${res.status})`);
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const err: any = new Error(errData.error || `PATCH /api/documents/${id} failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
   const data = await res.json();
   return data.document;
 }
