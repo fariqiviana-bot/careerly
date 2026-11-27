@@ -265,61 +265,164 @@ test.describe("Competitor Parity Audit (Rezi / Teal / FlowCV / SaaS Production S
     await Promise.all([ctxA.close(), ctxB.close()]);
   });
 
-  test("4. Analyzer Honesty & Auto-Fit Numerical Safety (Rezi / Enhancv Parity)", async ({ request }) => {
-    const weakRes = await request.post("/api/analyze", {
+  test("4. Analyzer Honesty & Auto-Fit Numerical Safety (Rezi / Resume Worded / Enhancv Parity)", async ({ request }) => {
+    // Tier 1: Empty / stub resume MUST score <= 30 ("Needs Work") and low parseRate
+    const emptyRes = await request.post("/api/analyze", {
       data: { content: { name: "Test", experience: [], skills: [] } },
     });
-    expect(weakRes.status()).toBe(200);
-    const weakJson = await weakRes.json();
-    const weakScore = Number(weakJson.score ?? weakJson.overallScore ?? weakJson.totalScore ?? -1);
+    expect(emptyRes.status()).toBe(200);
+    const emptyJson = await emptyRes.json();
+    const emptyScore = Number(emptyJson.overallScore ?? -1);
+    expect(emptyScore, `Empty resume scored too high (${emptyScore})`).toBeLessThanOrEqual(30);
+    expect(emptyJson.grade).toBe("Needs Work");
+    expect(Number(emptyJson?.atsView?.parseRate ?? 100)).toBeLessThanOrEqual(55);
 
-    const strongRes = await request.post("/api/analyze", {
+    // Tier 2: Placeholder-filled template MUST score <= 55
+    const placeholderRes = await request.post("/api/analyze", {
       data: {
         content: {
-          name: "Dr. Aria Rostami",
-          role: "Senior Computational Biologist",
-          email: "aria.rostami@biotech.io",
-          phone: "+1 (617) 555-3910",
-          location: "Boston, MA",
-          linkedin: "linkedin.com/in/ariarostami",
-          summary:
-            "Computational biologist with 8+ years leading multi-omics pipelines, reducing variant-calling turnaround by 62% and authoring 11 peer-reviewed papers.",
+          name: "Your Name",
+          role: "Your Profession",
+          email: "youremail@gmail.com",
+          phone: "555-555-5555",
+          location: "City, State",
+          summary: "Write 3 sentences summarizing your background and experience.",
           experience: [
             {
-              id: "1",
-              role: "Senior Computational Biologist",
-              company: "Helix Labs",
-              period: "2021 - Present",
-              bullets: [
-                "Architected RNA-seq pipeline processing 12,000+ samples with 99.4% concordance.",
-                "Reduced cloud compute costs by $180K/year through Nextflow spot orchestration.",
-                "Mentored 6 bioinformatics engineers across 3 FDA regulatory submissions.",
-              ],
+              id: "p1",
+              role: "Job Title",
+              company: "Company Name",
+              period: "2022 - Present",
+              bullets: ["Responsible for daily tasks", "Worked on team goals"],
             },
+          ],
+          skills: ["Communication", "Leadership"],
+        },
+      },
+    });
+    expect(placeholderRes.status()).toBe(200);
+    const placeholderScore = Number((await placeholderRes.json()).overallScore ?? -1);
+    expect(placeholderScore, `Unedited placeholder resume scored too high (${placeholderScore})`).toBeLessThanOrEqual(55);
+
+    // Tier 3: Mediocre resume (0% metrics, weak duty verbs, pronouns, passive voice) -> 45..72
+    const mediocreRes = await request.post("/api/analyze", {
+      data: {
+        content: {
+          name: "Alex Mercer",
+          role: "Operations Coordinator",
+          email: "alex.mercer@example.org",
+          phone: "+1 (312) 555-8412",
+          location: "Chicago, IL",
+          summary: "Hardworking team player looking for growth opportunities in operations.",
+          experience: [
             {
-              id: "2",
-              role: "Bioinformatics Scientist",
-              company: "Genoma Research",
-              period: "2018 - 2021",
+              id: "m1",
+              role: "Operations Coordinator",
+              company: "Midwest Logistics",
+              period: "Jan 2022 - Present",
               bullets: [
-                "Developed ML biomarker classifier achieving 0.94 AUC across 4 independent cohorts.",
-                "Automated QC reporting for 450+ clinical exomes per quarter.",
+                "I was responsible for handling daily office tasks and updating internal folders.",
+                "Helped with incoming customer emails and worked on weekly spreadsheets.",
+                "Assisted team members with general scheduling and routine administrative duties.",
               ],
             },
           ],
-          education: [{ degree: "Ph.D. Bioinformatics", school: "MIT", period: "2014 - 2018" }],
-          skills: ["Python", "R", "Nextflow", "PyTorch", "Genomics", "RNA-seq", "Biostatistics", "AWS"],
+          education: [{ degree: "B.A. Business", school: "DePaul University", period: "2017 - 2021" }],
+          skills: ["Scheduling", "Spreadsheets", "Email"],
         },
+      },
+    });
+    expect(mediocreRes.status()).toBe(200);
+    const mediocreScore = Number((await mediocreRes.json()).overallScore ?? -1);
+    expect(mediocreScore, `Mediocre resume scored outside realistic 45-72 band (${mediocreScore})`).toBeGreaterThanOrEqual(45);
+    expect(mediocreScore, `Mediocre resume scored too generously (${mediocreScore})`).toBeLessThanOrEqual(72);
+
+    // Tier 4: Strong quantified resume -> >= 85 + Job Description Match honesty
+    const strongContent = {
+      name: "Dr. Aria Rostami",
+      role: "Senior Computational Biologist",
+      email: "aria.rostami@biotech.io",
+      phone: "+1 (617) 555-3910",
+      location: "Boston, MA",
+      linkedin: "linkedin.com/in/ariarostami",
+      summary:
+        "Computational biologist with 8+ years leading multi-omics pipelines and cloud bioinformatics platforms, reducing variant-calling turnaround by 62%, saving $180K annually in compute spend, and authoring 11 peer-reviewed genomics publications.",
+      experience: [
+        {
+          id: "1",
+          role: "Senior Computational Biologist",
+          company: "Helix Labs",
+          period: "Jan 2021 - Present",
+          bullets: [
+            "Architected RNA-seq pipeline processing 12,000+ samples with 99.4% clinical concordance.",
+            "Reduced AWS cloud compute costs by $180K/year through Nextflow spot orchestration.",
+            "Mentored 6 bioinformatics engineers across 3 FDA regulatory submissions.",
+          ],
+        },
+        {
+          id: "2",
+          role: "Bioinformatics Scientist",
+          company: "Genoma Research",
+          period: "May 2018 - Dec 2020",
+          bullets: [
+            "Developed Python and PyTorch biomarker classifier achieving 0.94 AUC across 4 cohorts.",
+            "Automated QC reporting for 450+ clinical exomes per quarter, cutting manual review by 70%.",
+          ],
+        },
+      ],
+      education: [{ degree: "Ph.D. Bioinformatics", school: "MIT", period: "2014 - 2018" }],
+      skills: ["Python", "R", "Nextflow", "PyTorch", "Genomics", "RNA-seq", "Biostatistics", "AWS"],
+    };
+
+    const strongRes = await request.post("/api/analyze", {
+      data: {
+        content: strongContent,
+        jobTitle: "Senior Bioinformatics Scientist",
+        jobDescription: "Seeking Senior Bioinformatics Scientist with Python, AWS, PyTorch, Nextflow, RNA-seq, and Biostatistics for clinical genomics pipelines.",
       },
     });
     expect(strongRes.status()).toBe(200);
     const strongJson = await strongRes.json();
-    const strongScore = Number(strongJson.score ?? strongJson.overallScore ?? strongJson.totalScore ?? -1);
+    const strongScore = Number(strongJson.overallScore ?? -1);
+    const matchedJdScore = Number(strongJson?.jobMatch?.matchScore ?? -1);
 
-    console.log(`[Analyzer Honesty] weakScore=${weakScore} | strongScore=${strongScore}`);
-    expect(weakScore).toBeGreaterThanOrEqual(0);
-    expect(strongScore).toBeLessThanOrEqual(100);
-    expect(strongScore, "Strong quantified resume did not outscore empty weak resume!").toBeGreaterThan(weakScore + 15);
+    const unrelatedJdRes = await request.post("/api/analyze", {
+      data: {
+        content: strongContent,
+        jobTitle: "Senior Tax Accountant",
+        jobDescription: "Looking for CPA with GAAP, QuickBooks, SAP, Payroll, Excel, SQL, and Corporate Tax Audit experience.",
+      },
+    });
+    expect(unrelatedJdRes.status()).toBe(200);
+    const unrelatedJdScore = Number((await unrelatedJdRes.json())?.jobMatch?.matchScore ?? 100);
+
+    console.log(`[Analyzer Calibration] empty=${emptyScore} | placeholder=${placeholderScore} | mediocre=${mediocreScore} | strong=${strongScore} | jdMatch=${matchedJdScore}% | jdMismatch=${unrelatedJdScore}%`);
+    expect(strongScore, `Strong resume scored too low (${strongScore})`).toBeGreaterThanOrEqual(85);
+    expect(strongScore).toBeGreaterThan(mediocreScore + 15);
+    expect(mediocreScore).toBeGreaterThan(emptyScore + 15);
+    expect(matchedJdScore, "Matching JD score too low").toBeGreaterThanOrEqual(75);
+    expect(unrelatedJdScore, "Unrelated JD score too high").toBeLessThanOrEqual(35);
+
+    // False-positive boundary check: substrings 'r', 'go', 'ai' inside normal words must NOT match R / Go / AI
+    const boundaryRes = await request.post("/api/analyze", {
+      data: {
+        content: {
+          name: "Jordan Lee",
+          role: "Retail Store Manager",
+          summary: "Focused on product goals, daily details, and retail customer care.",
+          skills: ["Retail Operations", "Store Scheduling"],
+        },
+        jobTitle: "Backend AI Systems Engineer",
+        jobDescription: "Must have hands-on production experience in R, Go, AI, Kubernetes, and Terraform.",
+      },
+    });
+    expect(boundaryRes.status()).toBe(200);
+    const boundaryJson = await boundaryRes.json();
+    const matchedBoundaryHard: string[] = boundaryJson?.jobMatch?.matchedHard || [];
+    expect(matchedBoundaryHard, `False-positive substring match detected: ${matchedBoundaryHard.join(", ")}`).not.toContain("R");
+    expect(matchedBoundaryHard, `False-positive substring match detected: ${matchedBoundaryHard.join(", ")}`).not.toContain("Go");
+    expect(matchedBoundaryHard, `False-positive substring match detected: ${matchedBoundaryHard.join(", ")}`).not.toContain("AI");
+    expect(Number(boundaryJson?.jobMatch?.matchScore ?? 100)).toBeLessThanOrEqual(15);
 
     // Malformed JSON -> 400 (never 500)
     const badJson = await request.post("/api/analyze", {
@@ -347,7 +450,6 @@ test.describe("Competitor Parity Audit (Rezi / Teal / FlowCV / SaaS Production S
       expect(fitRes.status(), `Auto-fit failed on ${label}`).toBe(200);
       const fitJson = await fitRes.json();
 
-      // Recursively assert all numeric outputs are finite & non-negative
       const checkNums = (obj: any, path = "") => {
         if (typeof obj === "number") {
           expect(Number.isFinite(obj), `Non-finite auto-fit value at ${path}`).toBe(true);

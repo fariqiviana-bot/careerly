@@ -155,38 +155,45 @@ const TYPO_MAP: Array<[RegExp, string]> = [
 ];
 
 const PLACEHOLDER_SIGNATURES = [
-  /write 3[\u2013\-]5 sentences/i,
+  /write 3(?:\s*[\u2013\-]\s*5)? sentences/i,
+  /\byour\s+name\b/i,
+  /\byour\s+profession\b/i,
   /enter your job title here/i,
   /position title here/i,
-  /company name\s*\/\s*location/i,
+  /^job\s+title\b|\|\s*job\s+title\b/im,
+  /\bcompany\s+name\b/i,
   /company\/hospital,\s*city,\s*state/i,
-  /city,\s*state\/province/i,
-  /youremail@mail\.com/i,
-  /\(555\)\s*555-5555/,
+  /\bcity,\s*state(?:\/province)?\b/i,
+  /youremail@(?:g?mail|email|example)\.com/i,
+  /(?:\(555\)|\b555)[\s.\-]?555[\s.\-]?5555/,
+  /\b(?:123[\s.\-]?456[\s.\-]?7890|000[\s.\-]?000[\s.\-]?0000)\b/,
   /linkedin\.com\/name\b/i,
-  /your profession/i,
   /describe a key achievement using numbers/i,
   /highlight clinical expertise, leadership/i,
-  /degree title/i,
-  /university name/i,
+  /\bdegree\s+title\b/i,
+  /\buniversity\s+name\b/i,
   /graduation (?:date|year)/i,
   /date\s*[\u2013\-]\s*date/i,
+  /\blorem\s+ipsum\b/i,
+  /\b(?:john|jane)\s+doe\b/i,
 ];
 
 const HARD_SKILL_LEXICON = [
-  "Python", "R", "SQL", "TypeScript", "JavaScript", "React", "Next.js", "Node.js",
-  "AWS", "GCP", "Azure", "Docker", "Kubernetes", "Git", "CI/CD", "GraphQL", "REST API",
+  "Python", "R", "Go", "C++", "C#", "Java", "Rust", "SQL", "TypeScript", "JavaScript", "React", "Next.js", "Node.js",
+  "AWS", "GCP", "Azure", "Docker", "Kubernetes", "Terraform", "Linux", "Git", "CI/CD", "GraphQL", "REST API",
+  "PostgreSQL", "MongoDB", "Redis", "Kafka", "Snowflake", "Spark", "Prisma", "Tailwind CSS", "HTML", "CSS",
   "Figma", "Design Systems", "UI Design", "UX Design", "Prototyping", "User Research",
   "Usability Testing", "Wireframing", "A/B Testing", "Product Strategy", "Roadmapping",
-  "Agile", "Scrum", "Jira", "Tableau", "Power BI", "Excel", "Google Analytics",
+  "Agile", "Scrum", "Jira", "Tableau", "Power BI", "Looker", "Excel", "Google Analytics",
   "Salesforce", "HubSpot", "SEO", "SEM", "CRM", "Financial Modeling", "Forecasting",
-  "P&L Management", "Budgeting", "Supply Chain", "Six Sigma", "Lean", "Project Management",
+  "P&L Management", "Budgeting", "GAAP", "IFRS", "CPA", "QuickBooks", "SAP", "Payroll", "Corporate Tax", "Tax Audit",
+  "KYC", "AML", "Supply Chain", "Six Sigma", "Lean", "Project Management",
   "Stakeholder Management", "Data Analysis", "Data Visualization", "Machine Learning",
-  "Deep Learning", "NLP", "Bioinformatics", "Genomics", "NGS", "RNA-seq", "Biostatistics",
+  "Deep Learning", "NLP", "AI", "ML", "TensorFlow", "PyTorch", "MATLAB", "SPSS",
+  "Bioinformatics", "Genomics", "NGS", "RNA-seq", "Nextflow", "Biostatistics", "CRISPR", "PCR", "HPLC",
   "Epic EHR", "Cerner", "HIPAA", "BLS", "ACLS", "CCRN", "Triage", "Acute Care",
   "Clinical Trials", "Wound Care", "Medication Administration", "Patient Advocacy",
-  "Adobe Photoshop", "Adobe Illustrator", "Canva", "WordPress", "HTML", "CSS",
-  "Tailwind CSS", "PostgreSQL", "MongoDB", "Prisma", "TensorFlow", "PyTorch",
+  "AutoCAD", "SolidWorks", "Adobe Photoshop", "Adobe Illustrator", "Canva", "WordPress",
 ];
 
 const SOFT_SKILL_LEXICON = [
@@ -257,6 +264,16 @@ function toMonthIndex(d: { year: number; month: number }): number {
   return d.year * 12 + d.month;
 }
 
+const CASE_SENSITIVE_SHORT_SKILLS = new Set(["R", "C", "Go", "AI", "ML", "QA", "BI", "UI", "UX", "HR", "PR", "IT"]);
+
+function hasWholeKeyword(text: string, kw: string): boolean {
+  const clean = String(kw || "").trim();
+  if (!clean) return false;
+  const escaped = escapeRegExp(clean);
+  const caseSensitive = CASE_SENSITIVE_SHORT_SKILLS.has(clean);
+  const re = new RegExp(`(?:^|[^A-Za-z0-9_+#&])${escaped}(?:$|[^A-Za-z0-9_+#&])`, caseSensitive ? "" : "i");
+  return re.test(text);
+}
 function escapeRegExp(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -272,11 +289,10 @@ function extractKeywordsFromJobDescription(jd: string, jobTitle: string): {
   const soft: string[] = [];
 
   for (const kw of HARD_SKILL_LEXICON) {
-    const re = new RegExp(`(?:^|[^a-z0-9+])${escapeRegExp(kw.toLowerCase())}(?:$|[^a-z0-9+])`, "i");
-    if (re.test(lower)) hard.push(kw);
+    if (hasWholeKeyword(combined, kw)) hard.push(kw);
   }
   for (const kw of SOFT_SKILL_LEXICON) {
-    if (lower.includes(kw.toLowerCase())) soft.push(kw);
+    if (hasWholeKeyword(combined, kw)) soft.push(kw);
   }
 
   // Also mine frequent domain bigrams or technical acronyms (e.g., HIPAA, EHR, KPI, SaaS, B2B)
@@ -442,7 +458,7 @@ export function analyzeResume(params: {
       : missingCoreSections[0]?.toLowerCase().includes("skill")
       ? "skills"
       : "summary",
-    impactPoints: missingCoreSections.length * 6,
+    impactPoints: missingCoreSections.length * 7,
   });
 
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -460,12 +476,18 @@ export function analyzeResume(params: {
         ? "Missing or invalid email address — recruiters cannot contact you."
         : "Add a valid phone number so recruiters can reach you directly.",
     section: "personal",
-    impactPoints: !validEmail ? 10 : !validPhone ? 4 : 0,
+    impactPoints: !validEmail && !validPhone ? 16 : !validEmail ? 12 : !validPhone ? 5 : 0,
   });
 
   const dateStyles = new Set<string>();
+  let missingDateRoles = 0;
   for (const exp of experience) {
-    const r = parsePeriodRange(exp.period || "");
+    const rawPeriod = String(exp.period || exp.date || exp.dates || [exp.start, exp.end].filter(Boolean).join(" - ")).trim();
+    if (!rawPeriod) {
+      missingDateRoles++;
+      continue;
+    }
+    const r = parsePeriodRange(rawPeriod);
     if (r.start && r.start.style !== "present") dateStyles.add(r.start.style);
     if (r.end && r.end.style !== "present") dateStyles.add(r.end.style);
   }
@@ -474,13 +496,15 @@ export function analyzeResume(params: {
     code: "ATS-04",
     category: "ats",
     title: "Date Format Consistency",
-    severity: dateStyles.size <= 1 ? "pass" : "warning",
+    severity: missingDateRoles > 0 || dateStyles.size > 1 ? "warning" : "pass",
     message:
-      dateStyles.size <= 1
+      missingDateRoles > 0
+        ? `${missingDateRoles} role(s) are missing employment dates. ATS platforms like Workday require dates to compute years of experience.`
+        : dateStyles.size <= 1
         ? "Employment dates follow a consistent format across roles."
         : "Mixed date formats detected (e.g. 'Jan 2021' mixed with '01/2021' or year-only). Standardize them for ATS timeline parsing.",
     section: "experience",
-    impactPoints: dateStyles.size > 1 ? 4 : 0,
+    impactPoints: (missingDateRoles > 0 ? 5 : 0) + (dateStyles.size > 1 ? 4 : 0),
   });
 
   const placeholderHits: string[] = [];
@@ -504,7 +528,7 @@ export function analyzeResume(params: {
       : /city|555|youremail|linkedin\.com\/name|profession/i.test(placeholderHits[0] || "")
       ? "personal"
       : "experience",
-    impactPoints: Math.min(20, placeholderHits.length * 7),
+    impactPoints: Math.min(28, placeholderHits.length * 9),
   });
 
   const minW = pageCount === 1 ? 260 : pageCount === 2 ? 520 : 850;
@@ -522,7 +546,7 @@ export function analyzeResume(params: {
       ? `${wordCount} words is light for ${pageCount} page(s) (target ${minW}\u2013${maxW} words). Expand impact bullets.`
       : `${wordCount} words may crowd ${pageCount} page(s) (target ${minW}\u2013${maxW} words). Tighten wordy bullets or switch to ${Math.min(3, pageCount + 1)}P.`,
     section: "experience",
-    impactPoints: wordOk ? 0 : 5,
+    impactPoints: wordOk ? 0 : wordCount < minW * 0.65 ? 12 : 6,
   });
 
   const hasRawTechUrl = /lovableproject\.com|localhost:\d+|127\.0\.0\.1|about:blank/i.test(plainText);
@@ -567,7 +591,7 @@ export function analyzeResume(params: {
         ? `${quantifiedBullets.length}/${allBullets.length} bullets (${quantifiedRatio}%) include concrete numbers or measurable impact.`
         : `Only ${quantifiedBullets.length}/${allBullets.length} bullets (${quantifiedRatio}%) contain metrics. Aim for 40%+ using the XYZ formula (Accomplished X, measured by Y, by doing Z).`,
     section: "experience",
-    impactPoints: quantifiedRatio >= 40 ? 0 : quantifiedRatio >= 20 ? 6 : 12,
+    impactPoints: allBullets.length === 0 ? 24 : quantifiedRatio >= 40 ? 0 : quantifiedRatio >= 20 ? 8 : quantifiedRatio > 0 ? 16 : 24,
   });
 
   const thinRoles = experience.filter((e) => extractBullets(e).length < 2);
@@ -590,7 +614,7 @@ export function analyzeResume(params: {
         ? `${bloatedRoles.length} role(s) have more than 7 bullets. Trim to the strongest 4\u20136 outcomes.`
         : "Every work experience entry has a balanced number of bullet points.",
     section: "experience",
-    impactPoints: thinRoles.length > 0 || bloatedRoles.length > 0 ? 5 : 0,
+    impactPoints: experience.length === 0 ? 10 : thinRoles.length > 0 || bloatedRoles.length > 0 ? 5 : 0,
   });
 
   const wordyBullets = allBullets.filter((b) => b.text.length > 205);
@@ -600,7 +624,7 @@ export function analyzeResume(params: {
     code: "IMP-03",
     category: "impact",
     title: "Bullet Conciseness & Readability",
-    severity: wordyBullets.length === 0 && shortBullets.length === 0 ? "pass" : "warning",
+    severity: allBullets.length === 0 ? "warning" : wordyBullets.length === 0 && shortBullets.length === 0 ? "pass" : "warning",
     message:
       wordyBullets.length > 0
         ? `${wordyBullets.length} bullet(s) exceed 200 characters and read like dense paragraphs. Keep bullets to 1\u20132 crisp lines.`
@@ -609,7 +633,7 @@ export function analyzeResume(params: {
         : "All bullet points are concise and easy for recruiters to scan in 6 seconds.",
     detail: wordyBullets[0]?.text.slice(0, 120) || shortBullets[0]?.text,
     section: "experience",
-    impactPoints: wordyBullets.length > 0 || shortBullets.length > 0 ? 4 : 0,
+    impactPoints: allBullets.length === 0 ? 6 : wordyBullets.length > 0 || shortBullets.length > 0 ? 4 : 0,
   });
 
   const sumLen = summary.length;
@@ -634,7 +658,7 @@ export function analyzeResume(params: {
         ? `Summary is ${sumLen} chars. Trim under 600 chars so recruiters read it immediately.`
         : `Summary length is ${sumLen} characters \u2014 right in the recruiter sweet spot.`,
     section: "summary",
-    impactPoints: !summary || sumPlaceholder ? 10 : sumLen < 220 || sumLen > 650 ? 4 : 0,
+    impactPoints: !summary || sumPlaceholder ? 14 : sumLen < 120 ? 7 : sumLen < 220 || sumLen > 650 ? 4 : 0,
   });
 
   checks.push({
@@ -650,7 +674,7 @@ export function analyzeResume(params: {
         ? "Only 1 work experience listed. Add prior roles, internships, or projects if relevant."
         : "No work experience entries found.",
     section: "experience",
-    impactPoints: experience.length === 0 ? 15 : experience.length === 1 ? 3 : 0,
+    impactPoints: experience.length === 0 ? 20 : experience.length === 1 ? 5 : 0,
   });
 
   checks.push({
@@ -673,7 +697,7 @@ export function analyzeResume(params: {
         ? `${allSkills.length} skills listed. Consider focusing on the top 12\u201318 most relevant to your target role.`
         : `${allSkills.length} focused skills listed.`,
     section: "skills",
-    impactPoints: allSkills.length === 0 ? 10 : allSkills.length < 6 || allSkills.length > 22 ? 4 : 0,
+    impactPoints: allSkills.length === 0 ? 14 : allSkills.length < 6 || allSkills.length > 22 ? 6 : 0,
   });
 
   const incompleteEdu = education.filter((ed) => !ed.degree || !ed.school);
@@ -695,7 +719,7 @@ export function analyzeResume(params: {
         ? `${incompleteEdu.length} education item(s) missing degree or institution name.`
         : `${education.length} complete education record(s) included.`,
     section: "education",
-    impactPoints: education.length === 0 || incompleteEdu.length > 0 ? 4 : 0,
+    impactPoints: education.length === 0 ? 6 : incompleteEdu.length > 0 ? 4 : 0,
   });
 
   // =========================================================================
@@ -728,13 +752,13 @@ export function analyzeResume(params: {
   }
 
   const strongRatio =
-    allBullets.length > 0 ? Math.round((strongStartCount / allBullets.length) * 100) : 100;
+    allBullets.length > 0 ? Math.round((strongStartCount / allBullets.length) * 100) : 0;
   checks.push({
     id: "lang-action-verbs",
     code: "LNG-01",
     category: "language",
     title: "Strong Action Verb Openings",
-    severity: strongRatio >= 65 || allBullets.length === 0 ? "pass" : "warning",
+    severity: allBullets.length === 0 ? "error" : strongRatio >= 65 ? "pass" : "warning",
     message:
       allBullets.length === 0
         ? "No bullets to evaluate yet."
@@ -742,7 +766,7 @@ export function analyzeResume(params: {
         ? `${strongStartCount}/${allBullets.length} bullets (${strongRatio}%) open with strong action verbs.`
         : `Only ${strongStartCount}/${allBullets.length} bullets (${strongRatio}%) start with high-impact action verbs (e.g. Led, Built, Reduced, Architected).`,
     section: "experience",
-    impactPoints: strongRatio >= 65 ? 0 : 5,
+    impactPoints: allBullets.length === 0 ? 18 : strongRatio >= 65 ? 0 : strongRatio < 35 ? 15 : 8,
   });
 
   checks.push({
@@ -757,7 +781,7 @@ export function analyzeResume(params: {
         : `Found ${weakCount} bullet(s) starting with weak phrases like "${weakBulletHit?.verb}". Replace with active ownership verbs.`,
     detail: weakBulletHit ? `"${weakBulletHit.bullet.text.slice(0, 95)}"` : undefined,
     section: "experience",
-    impactPoints: Math.min(10, weakCount * 4),
+    impactPoints: Math.min(20, weakCount * 6),
     quickFix: weakBulletHit
       ? {
           kind: "replace-bullet",
@@ -803,7 +827,7 @@ export function analyzeResume(params: {
         : `Found personal pronouns in ${pronounCount} place(s). Standard resumes use implied first-person without "I/My/We".`,
     detail: pronounBullet?.text.slice(0, 100) || (summaryHasPronoun ? summary.slice(0, 100) : undefined),
     section: pronounBullet ? "experience" : "summary",
-    impactPoints: Math.min(8, pronounCount * 3),
+    impactPoints: Math.min(12, pronounCount * 4),
     quickFix: pronounBullet
       ? {
           kind: "replace-bullet",
@@ -848,7 +872,7 @@ export function analyzeResume(params: {
         : `${passiveBullets.length} bullet(s) use passive phrasing (e.g. "was responsible/managed"). Convert to direct active voice.`,
     detail: passiveBullets[0]?.text.slice(0, 100),
     section: "experience",
-    impactPoints: Math.min(8, passiveBullets.length * 3),
+    impactPoints: Math.min(12, passiveBullets.length * 4),
   });
 
   const foundFillers = FILLER_WORDS.filter((fw) =>
@@ -931,7 +955,7 @@ export function analyzeResume(params: {
     code: "REC-01",
     category: "recruiter",
     title: "Credibility & Date Logic",
-    severity: impossibleDates.length === 0 && missingCompanies.length === 0 ? "pass" : "error",
+    severity: experience.length === 0 || impossibleDates.length > 0 || missingCompanies.length > 0 ? "error" : "pass",
     message:
       impossibleDates.length > 0
         ? `${impossibleDates.length} role(s) have a start date after the end date. Correct timeline dates.`
@@ -939,7 +963,7 @@ export function analyzeResume(params: {
         ? `${missingCompanies.length} role(s) are missing a company or organization name.`
         : "Dates, titles, and employer names pass credibility screening.",
     section: "experience",
-    impactPoints: impossibleDates.length > 0 || missingCompanies.length > 0 ? 8 : 0,
+    impactPoints: experience.length === 0 ? 20 : impossibleDates.length > 0 || missingCompanies.length > 0 ? 8 : 0,
   });
 
   const shortStints = parsedRanges.filter((r) => {
@@ -1030,7 +1054,7 @@ export function analyzeResume(params: {
     code: "REC-05",
     category: "recruiter",
     title: "Scope & Ownership Alignment",
-    severity: !isSeniorRole || leadershipCount >= 2 ? "pass" : "warning",
+    severity: (isSeniorRole && leadershipCount < 2) || (allBullets.length > 0 && strongRatio < 35 && quantifiedRatio === 0) ? "warning" : "pass",
     message:
       !isSeniorRole
         ? "Ownership language matches your target seniority level."
@@ -1038,7 +1062,7 @@ export function analyzeResume(params: {
         ? `${leadershipCount} bullets clearly demonstrate senior ownership and leadership.`
         : `Target title indicates Senior/Lead scope, but only ${leadershipCount} bullet(s) lead with ownership verbs (Led, Architected, Directed, Mentored).`,
     section: "experience",
-    impactPoints: isSeniorRole && leadershipCount < 2 ? 5 : 0,
+    impactPoints: isSeniorRole && leadershipCount < 2 ? 6 : allBullets.length > 0 && strongRatio < 35 && quantifiedRatio === 0 ? 8 : 0,
   });
 
   const hasLinkedIn = /linkedin\.com/i.test(linkedin);
@@ -1055,30 +1079,52 @@ export function analyzeResume(params: {
         ? "Add your LinkedIn URL \u2014 over 85% of recruiters cross-check LinkedIn profiles."
         : "Add your City & Country/State so location filters match your resume.",
     section: "personal",
-    impactPoints: !hasLinkedIn ? 3 : !location ? 2 : 0,
+    impactPoints: (!hasLinkedIn ? 5 : 0) + (!location ? 3 : 0),
   });
 
-  // Compute category subscores (0..100)
+  // Compute category subscores (0..100) with honest evidence caps (Rezi / Resume Worded calibration)
   const calcSub = (cat: CheckCategory) => {
     const penalty = checks
       .filter((ch) => ch.category === cat)
       .reduce((acc, ch) => acc + ch.impactPoints, 0);
-    return Math.max(15, Math.min(100, 100 - penalty));
+    return Math.max(0, Math.min(100, 100 - penalty));
   };
+
+  let atsSub = calcSub("ats");
+  let impactSub = calcSub("impact");
+  let languageSub = calcSub("language");
+  let recruiterSub = calcSub("recruiter");
+
+  // Prevent empty/stub resumes from getting free high subscores on unevaluated categories
+  if (wordCount < 40) atsSub = Math.min(atsSub, 35);
+  if (allBullets.length === 0 && summary.length < 40) {
+    languageSub = Math.min(languageSub, 15);
+  } else if (allBullets.length === 0) {
+    languageSub = Math.min(languageSub, 45);
+  }
+  if (experience.length === 0) {
+    recruiterSub = Math.min(recruiterSub, 20);
+    impactSub = Math.min(impactSub, 20);
+  }
 
   const subscores = {
-    ats: calcSub("ats"),
-    impact: calcSub("impact"),
-    language: calcSub("language"),
-    recruiter: calcSub("recruiter"),
+    ats: atsSub,
+    impact: impactSub,
+    language: languageSub,
+    recruiter: recruiterSub,
   };
 
-  const overallScore = Math.round(
+  let overallScore = Math.round(
     subscores.ats * 0.25 +
-      subscores.impact * 0.3 +
+      subscores.impact * 0.35 +
       subscores.language * 0.25 +
-      subscores.recruiter * 0.2
+      subscores.recruiter * 0.15
   );
+
+  if (wordCount < 40) overallScore = Math.min(overallScore, 28);
+  else if (experience.length === 0) overallScore = Math.min(overallScore, 38);
+  if (placeholderHits.length >= 4) overallScore = Math.min(overallScore, 38);
+  else if (placeholderHits.length >= 2) overallScore = Math.min(overallScore, 48);
 
   const grade: ResumeAnalysisReport["grade"] =
     overallScore >= 88
@@ -1163,11 +1209,10 @@ export function analyzeResume(params: {
   const jdTitle = String(params.jobTitle || "").trim();
   if (jdText.length >= 20 || jdTitle.length >= 3) {
     const { hard, soft } = extractKeywordsFromJobDescription(jdText, jdTitle);
-    const resumeLower = plainText.toLowerCase();
-    const matchedHard = hard.filter((k) => resumeLower.includes(k.toLowerCase()));
-    const missingHard = hard.filter((k) => !resumeLower.includes(k.toLowerCase()));
-    const matchedSoft = soft.filter((k) => resumeLower.includes(k.toLowerCase()));
-    const missingSoft = soft.filter((k) => !resumeLower.includes(k.toLowerCase()));
+    const matchedHard = hard.filter((k) => hasWholeKeyword(plainText, k));
+    const missingHard = hard.filter((k) => !hasWholeKeyword(plainText, k));
+    const matchedSoft = soft.filter((k) => hasWholeKeyword(plainText, k));
+    const missingSoft = soft.filter((k) => !hasWholeKeyword(plainText, k));
     const denom = Math.max(1, hard.length + soft.length * 0.5);
     const matchScore = Math.round(((matchedHard.length + matchedSoft.length * 0.5) / denom) * 100);
 
@@ -1212,7 +1257,7 @@ export function analyzeResume(params: {
     checks,
     sectionAnalysis,
     atsView: {
-      parseRate: Math.max(70, Math.min(100, subscores.ats)),
+      parseRate: Math.max(15, Math.min(100, subscores.ats)),
       layoutKind: isSingleCol ? "1-column-ats" : "2-column-visual",
       wordCount,
       estimatedPages: Math.max(1, Math.min(3, Math.ceil(wordCount / 560))),
