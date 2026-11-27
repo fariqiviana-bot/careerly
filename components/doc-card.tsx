@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { apiDownloadTxt } from "@/lib/api/export-client";
 import { useStore, type Doc } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +49,7 @@ export function DocCard({ doc }: { doc: Doc }) {
   const publicUrl = doc.type === "website" ? `/cv/${doc.slug || "viana-fariqi"}` : `/s/${doc.id}`;
   const cleanTitle = doc.title.replace(/^Series\s+\d+\s*[—\-·]\s*/i, "");
 
-  const download = (fmt: "PDF" | "DOCX" | "TXT") => {
+  const download = async (fmt: "PDF" | "DOCX" | "TXT") => {
     if (fmt === "PDF") {
       router.push(`/editor/${doc.id}?download=pdf`);
       return;
@@ -57,13 +58,18 @@ export function DocCard({ doc }: { doc: Doc }) {
       router.push(`/editor/${doc.id}?download=docx`);
       return;
     }
-    const c = doc.content;
-    const txt = `${c.name} — ${c.role}\n${c.email} · ${c.phone} · ${c.location}\n\nSUMMARY\n${c.summary}`;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain;charset=utf-8" }));
-    a.download = `${cleanTitle.replace(/\s+/g, "_")}.txt`;
-    a.click();
-    toast.success("Plain-text file downloaded");
+    try {
+      await apiDownloadTxt({
+        fileName: doc.content?.name || cleanTitle,
+        content: doc.content || {},
+        visibility: (doc as any).visibility || {},
+        sectionOrder: (doc as any).sectionOrder || [],
+        customLabels: (doc as any).customLabels || {},
+      });
+      toast.success("ATS Plain-Text (.txt) downloaded");
+    } catch {
+      toast.error("Plain-text export failed");
+    }
   };
 
   return (

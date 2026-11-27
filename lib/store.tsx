@@ -57,6 +57,9 @@ export type Content = {
   dob?: string;
   drivingLicense?: string;
   summary: string;
+  languages?: any[];
+  projects?: any[];
+  publications?: any[];
   accomplishments?: string;
   powerStatement?: string;
   experience: Exp[];
@@ -477,6 +480,7 @@ export interface ResumeDocument {
   activeTab: "resume" | "cover" | "references";
   style: DocumentStyleSettings;
   sectionOrder: SectionLayoutItem[];
+  visibility?: Record<string, boolean>;
   content: ResumeContent;
 }
 
@@ -2396,6 +2400,50 @@ const TRANSLATION_DICTIONARY: Record<string, {
   },
 };
 
+function normalizeSectionOrder(
+  rawOrder: any,
+  visibility?: Record<string, boolean>
+): SectionLayoutItem[] {
+  const defaults = cloneSections();
+  const byId = new Map<string, SectionLayoutItem>(defaults.map((item) => [item.id, item]));
+  const out: SectionLayoutItem[] = [];
+  const seen = new Set<string>();
+
+  if (Array.isArray(rawOrder) && rawOrder.length > 0) {
+    for (const entry of rawOrder) {
+      const id = typeof entry === "string" ? entry : String(entry?.id || entry?.key || "");
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      const def = byId.get(id);
+      const explicitVis =
+        visibility && id in visibility
+          ? Boolean(visibility[id])
+          : typeof entry === "object" && entry && typeof entry.visible === "boolean"
+          ? entry.visible
+          : typeof entry === "object" && entry && entry.hidden === true
+          ? false
+          : def?.visible ?? true;
+      out.push({
+        id,
+        label: (typeof entry === "object" && entry?.label) || def?.label || id,
+        visible: explicitVis,
+        column: (typeof entry === "object" && entry?.column) || def?.column || "right",
+      });
+    }
+  }
+
+  for (const def of defaults) {
+    if (!seen.has(def.id)) {
+      seen.add(def.id);
+      out.push({
+        ...def,
+        visible: visibility && def.id in visibility ? Boolean(visibility[def.id]) : def.visible,
+      });
+    }
+  }
+
+  return out;
+}
 function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
   const tpl = SERIES_CATALOG.find((s) => s.id === d?.seriesId) || SERIES_CATALOG[0];
   const baseSettings = defaultSettings(tpl.columns === 2);
@@ -2414,10 +2462,13 @@ function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
     score: d.atsScore,
     pinned: d.id === "d1",
     sectionOrder: d.sectionOrder,
-    visibility: (d.sectionOrder || []).reduce((acc, s) => {
-      acc[s.id] = s.visible;
-      return acc;
-    }, {} as Record<string, boolean>),
+    visibility: {
+      ...(d.sectionOrder || []).reduce((acc, s: any) => {
+        if (s && typeof s === "object" && s.id) acc[s.id] = Boolean(s.visible);
+        return acc;
+      }, {} as Record<string, boolean>),
+      ...(d.visibility || {}),
+    },
     settings: {
       ...baseSettings,
       pageSize: d.style?.pageSize || "A4",
@@ -2438,11 +2489,11 @@ function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
       phone: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).phone || "",
       location: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).location,
       linkedin: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).linkedin,
-      website: "farnavi.com",
+      website: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).website || "",
       summary: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).summary,
       skills: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).professionalSkills || [],
       technicalSkills: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).technicalSkills || [],
-      sectionOrder: (d.sectionOrder || []).map((s) => s.id),
+      sectionOrder: (d.sectionOrder || []).map((s: any) => (typeof s === "string" ? s : s?.id)).filter(Boolean),
       experience: ((d.content || SAMPLE_CONTENT_BY_SERIES["2"]).experience || []).map((e) => ({
         id: e.id,
         role: e.title,
@@ -2468,6 +2519,9 @@ function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
       memberships: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).memberships || [],
       interests: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).interests || [],
       references: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).references || [],
+      languages: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).languages || [],
+      projects: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).projects || [],
+      publications: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).publications || [],
       extras: ["Certifications", "Courses", "Awards", "Volunteering"],
       extraDetails: {},
       letter: {
@@ -2916,47 +2970,66 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       pageMarginMm: rSettings.pageMargin ? +(Number(rSettings.pageMargin) * 25.4).toFixed(1) : baseStyle.pageMarginMm,
     };
     const c = remote.content || {};
+    const hasRemoteContent = Boolean(c && typeof c === "object" && Object.keys(c).length > 0);
     const baseContent = cloneContent(matchedSeries);
-    const nextContent: ResumeContent = {
-      ...baseContent,
-      fullName: c.name ?? c.fullName ?? baseContent.fullName,
-      firstName: c.firstName !== undefined ? c.firstName : baseContent.firstName,
-      lastName: c.lastName !== undefined ? c.lastName : baseContent.lastName,
-      profession: c.role ?? c.profession ?? baseContent.profession,
-      email: c.email ?? baseContent.email,
-      phone: c.phone ?? baseContent.phone,
-      location: c.location ?? baseContent.location,
-      linkedin: c.linkedin ?? baseContent.linkedin,
-      summary: c.summary ?? baseContent.summary,
-      professionalSkills: Array.isArray(c.skills) ? c.skills : baseContent.professionalSkills,
-      technicalSkills: Array.isArray(c.technicalSkills) ? c.technicalSkills : baseContent.technicalSkills,
-      experience: Array.isArray(c.experience) ? c.experience.map((e: any) => ({
-        id: e.id || 'exp-' + Math.random().toString(36).slice(2, 7),
-        title: e.role || e.title || '',
-        company: e.company || '',
-        location: e.location || '',
-        period: e.period || '',
-        summaryParagraph: e.showOverview ? e.overview : undefined,
-        bullets: Array.isArray(e.bullets) ? e.bullets : String(e.description || '').split(/\r?\n/).map((x: string) => x.trim()).filter(Boolean),
-      })) : baseContent.experience,
-      education: Array.isArray(c.education) ? c.education.map((ed: any) => ({
-        id: ed.id || 'edu-' + Math.random().toString(36).slice(2, 7),
-        degree: ed.degree || '',
-        school: ed.school || '',
-        location: ed.location || '',
-        date: ed.period || ed.date || '',
-      })) : baseContent.education,
-      certifications: Array.isArray(c.certifications) ? c.certifications : baseContent.certifications,
-      courses: Array.isArray(c.courses) ? c.courses : baseContent.courses,
-      awards: Array.isArray(c.awards) ? c.awards : baseContent.awards,
-      volunteering: Array.isArray(c.volunteering) ? c.volunteering : baseContent.volunteering,
-      memberships: Array.isArray(c.memberships) ? c.memberships : baseContent.memberships,
-      interests: Array.isArray(c.interests) ? c.interests : baseContent.interests,
-      areasOfExpertise: Array.isArray(c.areasOfExpertise) ? c.areasOfExpertise : baseContent.areasOfExpertise,
-      photoUrl: c.photoUrl ?? c.photo ?? baseContent.photoUrl,
-      coverLetter: c.coverLetter ? { ...baseContent.coverLetter, ...c.coverLetter } : baseContent.coverLetter,
-      references: Array.isArray(c.references) ? c.references : baseContent.references,
-    };
+    const remoteVis: Record<string, boolean> =
+      remote.visibility && typeof remote.visibility === "object" ? { ...remote.visibility } : {};
+    const nextContent: ResumeContent = hasRemoteContent
+      ? {
+          ...baseContent,
+          fullName: c.name ?? c.fullName ?? "",
+          firstName: c.firstName !== undefined ? c.firstName : "",
+          lastName: c.lastName !== undefined ? c.lastName : "",
+          profession: c.role ?? c.profession ?? "",
+          email: c.email ?? "",
+          phone: c.phone ?? "",
+          location: c.location ?? "",
+          linkedin: c.linkedin ?? "",
+          website: c.website ?? "",
+          summary: c.summary ?? "",
+          professionalSkills: Array.isArray(c.skills)
+            ? c.skills
+            : Array.isArray(c.professionalSkills)
+            ? c.professionalSkills
+            : [],
+          technicalSkills: Array.isArray(c.technicalSkills) ? c.technicalSkills : [],
+          areasOfExpertise: Array.isArray(c.areasOfExpertise) ? c.areasOfExpertise : [],
+          experience: Array.isArray(c.experience)
+            ? c.experience.map((e: any) => ({
+                id: e.id || 'exp-' + Math.random().toString(36).slice(2, 7),
+                title: e.role || e.title || '',
+                company: e.company || '',
+                location: e.location || '',
+                period: e.period || e.date || '',
+                summaryParagraph: e.showOverview ? e.overview : undefined,
+                bullets: Array.isArray(e.bullets)
+                  ? e.bullets
+                  : String(e.description || '').split(/\r?\n/).map((x: string) => x.trim()).filter(Boolean),
+              }))
+            : [],
+          education: Array.isArray(c.education)
+            ? c.education.map((ed: any) => ({
+                id: ed.id || 'edu-' + Math.random().toString(36).slice(2, 7),
+                degree: ed.degree || '',
+                school: ed.school || '',
+                location: ed.location || '',
+                date: ed.period || ed.date || '',
+              }))
+            : [],
+          certifications: Array.isArray(c.certifications) ? c.certifications : [],
+          courses: Array.isArray(c.courses) ? c.courses : [],
+          awards: Array.isArray(c.awards) ? c.awards : [],
+          volunteering: Array.isArray(c.volunteering) ? c.volunteering : [],
+          memberships: Array.isArray(c.memberships) ? c.memberships : [],
+          interests: Array.isArray(c.interests) ? c.interests : [],
+          languages: Array.isArray(c.languages) ? c.languages : [],
+          projects: Array.isArray(c.projects) ? c.projects : [],
+          publications: Array.isArray(c.publications) ? c.publications : [],
+          photoUrl: c.photoUrl ?? c.photo ?? "",
+          coverLetter: c.coverLetter ? { ...baseContent.coverLetter, ...c.coverLetter } : baseContent.coverLetter,
+          references: Array.isArray(c.references) ? c.references : [],
+        }
+      : baseContent;
     const nextDoc: ResumeDocument = {
       id: String(remote.id),
       title: remote.title || 'Untitled Resume',
@@ -2967,7 +3040,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       atsScore: Number(remote.score) || 95,
       activeTab: (remote.activeTab === 'cover' || remote.activeTab === 'references' ? remote.activeTab : 'resume'),
       style: nextStyle,
-      sectionOrder: Array.isArray(remote.sectionOrder) && remote.sectionOrder.length > 0 ? remote.sectionOrder : cloneSections(),
+      sectionOrder: normalizeSectionOrder(remote.sectionOrder, remoteVis),
+      visibility: remoteVis,
       content: nextContent,
     };
     setDocuments((prev) => {
@@ -3026,24 +3100,24 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           if (patch.settings.pageMargin) nextStyle.pageMarginMm = +(patch.settings.pageMargin * 25.4).toFixed(1);
         }
 
-        let nextSectionOrder = [...(d.sectionOrder || cloneSections())];
-        if (patch.content?.sectionOrder && Array.isArray(patch.content.sectionOrder)) {
-          const orderIds = patch.content.sectionOrder;
-          nextSectionOrder.sort((a, b) => {
-            const ia = orderIds.indexOf(a.id);
-            const ib = orderIds.indexOf(b.id);
-            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-          });
-        }
-        if (patch.visibility) {
-          nextSectionOrder = nextSectionOrder.map((s) =>
-            patch.visibility && s.id in patch.visibility
-              ? { ...s, visible: Boolean(patch.visibility[s.id]) }
-              : s
-          );
-        }
+        const nextVisibility: Record<string, boolean> = {
+          ...(d.visibility || {}),
+          ...(patch.visibility || {}),
+        };
+        const rawIncomingOrder = Array.isArray(patch.sectionOrder) && patch.sectionOrder.length > 0
+          ? patch.sectionOrder
+          : Array.isArray(patch.content?.sectionOrder) && patch.content.sectionOrder.length > 0
+          ? patch.content.sectionOrder
+          : d.sectionOrder;
+        const nextSectionOrder = normalizeSectionOrder(rawIncomingOrder, nextVisibility);
 
         let nextContent: ResumeContent = { ...d.content };
+        if (patch.content) {
+          if (patch.content.website !== undefined) nextContent.website = patch.content.website;
+          if (Array.isArray(patch.content.languages)) nextContent.languages = patch.content.languages;
+          if (Array.isArray(patch.content.projects)) nextContent.projects = patch.content.projects;
+          if (Array.isArray(patch.content.publications)) nextContent.publications = patch.content.publications;
+        }
 
         if (patch.content) {
           const c = patch.content;
@@ -3126,6 +3200,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           activeTab: nextTab,
           style: nextStyle,
           sectionOrder: nextSectionOrder,
+          visibility: nextVisibility,
           content: nextContent,
           updatedAt: new Date().toISOString(),
         };

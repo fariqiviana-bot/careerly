@@ -1,3 +1,4 @@
+import fs from "fs";
 ﻿import { test, expect, type Page } from "@playwright/test";
 import JSZip from "jszip";
 
@@ -538,5 +539,129 @@ test.describe("Competitor Parity Audit (Rezi / Teal / FlowCV / SaaS Production S
     expect(innocentLogin.status(), "Rate limiter locked out an unrelated user!").toBe(200);
 
     await Promise.all([ctx.close(), ctx2.close()]);
+  });
+
+  test("7. UI-to-API Export Telemetry: Clicking Export Modal buttons transmits visibility, sectionOrder & customLabels to downloaded ATS DOCX, Visual DOCX, ZIP & TXT", async ({
+    browser,
+  }) => {
+    const ts = Date.now();
+    const docId = `ui-export-parity-${ts}`;
+    const hiddenCert = "UI_HIDDEN_CERT_SECRET_5544";
+    const hiddenLang = "UI_HIDDEN_LANG_SECRET_5566";
+    const customEdu = "Academic Honors";
+    const customExp = "Career Milestones";
+
+    const ctx = await browser.newContext({ acceptDownloads: true });
+    const page = await ctx.newPage();
+    await registerViaUi(page, "Export Telemetry User", `exp_ui_${ts}@farnavi.test`, "FarnaviPass123!");
+
+    const createRes = await page.request.post("/api/documents", {
+      data: {
+        id: docId,
+        title: "UI Export Parity Resume",
+        seriesId: "24",
+        content: {
+          name: "Clara Lindholm",
+          role: "Principal Product Engineer",
+          email: "clara.lindholm@farnavi.test",
+          phone: "+1 (206) 555-7171",
+          location: "Seattle, WA",
+          summary: "Led end-to-end cloud architecture across 5 global regions with 99.99% uptime.",
+          experience: [
+            {
+              id: "exp-1",
+              role: "Principal Engineer",
+              company: "Nordic Cloud",
+              period: "Jan 2022 - Present",
+              bullets: ["Cut P95 checkout latency by 51% across 3.4M weekly sessions."],
+            },
+          ],
+          education: [
+            { id: "edu-1", degree: "M.S. Distributed Systems", school: "KTH Stockholm", period: "2015 - 2017" },
+          ],
+          skills: ["Distributed Systems", "TypeScript", "PostgreSQL"],
+          certifications: [{ name: hiddenCert, issuer: "Private Board", date: "2025" }],
+          languages: [hiddenLang],
+        },
+        visibility: { certifications: false, languages: false },
+        sectionOrder: ["education", "skills", "experience", "summary"],
+        customLabels: { education: customEdu, experience: customExp },
+      },
+    });
+    expect(createRes.status()).toBe(201);
+
+    await page.goto(`/editor/${docId}`, { waitUntil: "networkidle" });
+    const openExportBtn = page.getByRole("button", { name: /Download \/ Export/i });
+    await expect(openExportBtn).toBeVisible({ timeout: 15_000 });
+    await openExportBtn.click();
+
+    // 1. Download ATS-Safe Word (.docx) via UI button
+    const [atsDl] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: /Download ATS-Safe Word/i }).click(),
+    ]);
+    expect(atsDl.suggestedFilename()).toContain("_ATS.docx");
+    expect(atsDl.suggestedFilename()).not.toContain("__ATS");
+    const atsPath = await atsDl.path();
+    expect(atsPath).toBeTruthy();
+    const atsZip = await JSZip.loadAsync(fs.readFileSync(atsPath!));
+    const atsXml = await atsZip.file("word/document.xml")!.async("string");
+    expect(atsXml, "ATS DOCX from UI contained table markup!").not.toContain("<w:tbl");
+    expect(atsXml, "ATS DOCX from UI leaked hidden certifications!").not.toContain(hiddenCert);
+    expect(atsXml, "ATS DOCX from UI leaked hidden languages!").not.toContain(hiddenLang);
+    expect(atsXml, "Sample nursing technicalSkills leaked into user resume!").not.toContain("Epic &amp; Cerner");
+    expect(atsXml, "Hardcoded farnavi.com leaked into user resume!").not.toContain("farnavi.com");
+    expect((atsXml.match(/Cut P95 checkout latency/g) || []).length, "Experience bullet duplicated in ATS DOCX!").toBe(1);
+    const iEdu = atsXml.indexOf(customEdu.toUpperCase());
+    const iSkills = atsXml.indexOf("SKILLS");
+    const iExp = atsXml.indexOf(customExp.toUpperCase());
+    const iSum = atsXml.indexOf("PROFESSIONAL SUMMARY");
+    expect(iEdu, "Custom Education label missing from UI ATS DOCX").toBeGreaterThan(-1);
+    expect(iSkills).toBeGreaterThan(iEdu);
+    expect(iExp, "Custom Experience label missing from UI ATS DOCX").toBeGreaterThan(iSkills);
+    expect(iSum).toBeGreaterThan(iExp);
+
+    // 2. Download True Word (.docx) via UI button
+    const [visDl] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: /Download True Word/i }).click(),
+    ]);
+    const visPath = await visDl.path();
+    expect(visPath).toBeTruthy();
+    const visZip = await JSZip.loadAsync(fs.readFileSync(visPath!));
+    const visXml = await visZip.file("word/document.xml")!.async("string");
+    expect(visXml, "True Word DOCX from UI leaked hidden certifications!").not.toContain(hiddenCert);
+    expect(visXml, "True Word DOCX from UI leaked hidden languages!").not.toContain(hiddenLang);
+
+    // 3. Download Complete Application Bundle (.zip) via UI button
+    const [zipDl] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: /Full Application Bundle/i }).click(),
+    ]);
+    const zipPath = await zipDl.path();
+    expect(zipPath).toBeTruthy();
+    const bundleZip = await JSZip.loadAsync(fs.readFileSync(zipPath!));
+    const txtFile = Object.keys(bundleZip.files).find((k) => k.endsWith("_ATS_Plain_Text.txt"));
+    expect(txtFile).toBeTruthy();
+    const bundleTxt = await bundleZip.file(txtFile!)!.async("string");
+    expect(bundleTxt, "ZIP Bundle from UI leaked hidden certifications!").not.toContain(hiddenCert);
+    expect(bundleTxt, "ZIP Bundle from UI leaked hidden languages!").not.toContain(hiddenLang);
+    expect(bundleTxt.indexOf(customEdu.toUpperCase())).toBeGreaterThan(-1);
+    expect(bundleTxt.indexOf(customExp.toUpperCase())).toBeGreaterThan(bundleTxt.indexOf(customEdu.toUpperCase()));
+
+    // 4. Download Plain Text (.txt) via UI button
+    const [txtDl] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: /Download Plain Text/i }).click(),
+    ]);
+    const txtPath = await txtDl.path();
+    expect(txtPath).toBeTruthy();
+    const txtContent = fs.readFileSync(txtPath!, "utf8");
+    expect(txtContent, "TXT from UI leaked hidden certifications!").not.toContain(hiddenCert);
+    expect(txtContent, "TXT from UI leaked hidden languages!").not.toContain(hiddenLang);
+    expect(txtContent.indexOf(customEdu.toUpperCase())).toBeGreaterThan(-1);
+    expect(txtContent.indexOf(customExp.toUpperCase())).toBeGreaterThan(txtContent.indexOf(customEdu.toUpperCase()));
+
+    await ctx.close();
   });
 });

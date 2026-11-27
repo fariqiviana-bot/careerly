@@ -276,7 +276,13 @@ export async function generateAtsSafeDocxBuffer(options: AtsDocxOptions): Promis
               );
             }
 
-            const jobSummary = String(item.summary || item.description || "").trim();
+            const bullets = Array.isArray(item.bullets)
+              ? item.bullets.map((b: any) => String(b || "").trim()).filter(Boolean)
+              : [];
+
+            const jobSummary = String(
+              item.summary || (item.showOverview ? item.overview : "") || (bullets.length === 0 ? item.description : "") || ""
+            ).trim();
             if (jobSummary) {
               blocks.push(
                 paraXml(runXml(jobSummary, { size: 20, color: darkText, font }), {
@@ -286,10 +292,6 @@ export async function generateAtsSafeDocxBuffer(options: AtsDocxOptions): Promis
                 })
               );
             }
-
-            const bullets = Array.isArray(item.bullets)
-              ? item.bullets.map((b: any) => String(b || "").trim()).filter(Boolean)
-              : [];
             for (const b of bullets) {
               blocks.push(
                 paraXml(

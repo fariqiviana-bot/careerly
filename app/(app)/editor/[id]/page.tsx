@@ -277,6 +277,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
               content: remote.content,
               settings: remote.settings,
               visibility: remote.visibility,
+              sectionOrder: remote.sectionOrder,
             });
           }
           setSaveState("saved");
@@ -981,7 +982,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
     try {
       localStorage.setItem(
         `farnavi_print_snapshot_${doc.id}`,
-        JSON.stringify({ ...doc, series: sId, seriesId: sId, template: sId, _snapAt: Date.now() })
+        JSON.stringify({ ...doc, customLabels, headerFooter, series: sId, seriesId: sId, template: sId, _snapAt: Date.now() })
       );
     } catch {}
     const printUrl = `/print/${encodeURIComponent(doc.id)}?mode=${mode}&series=${encodeURIComponent(sId)}&autoprint=1`;
@@ -1018,10 +1019,13 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         pageCount: (Math.min(3, Math.max(1, Number(doc.settings?.pageCount) || 1))) as 1 | 2 | 3,
         fileName: doc.content.name || doc.title,
         content: doc.content,
+        visibility: doc.visibility || {},
+        sectionOrder: doc.sectionOrder || [],
+        customLabels,
       });
       toast.success(
         mode === "ats"
-          ? "ATS-Safe Word (.docx) downloaded ? 0 TextBoxes, 100% machine-readable"
+          ? "ATS-Safe Word (.docx) downloaded \u2014 0 Tables, 0 TextBoxes, 100% machine-readable"
           : `Live-injected Word (.docx) downloaded using original ${tplMeta.name} template`
       );
     } catch (err: any) {
@@ -1040,6 +1044,9 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         pageCount: (Math.min(3, Math.max(1, Number(doc.settings?.pageCount) || 1))) as 1 | 2 | 3,
         fileName: doc.content.name || doc.title,
         content: doc.content,
+        visibility: doc.visibility || {},
+        sectionOrder: doc.sectionOrder || [],
+        customLabels,
       });
       toast.success("Complete Application Package (.zip) downloaded");
     } catch (err: any) {
@@ -1055,6 +1062,9 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
       await apiDownloadTxt({
         fileName: doc.content.name || doc.title,
         content: doc.content,
+        visibility: doc.visibility || {},
+        sectionOrder: doc.sectionOrder || [],
+        customLabels,
       });
       toast.success("ATS Plain-Text (.txt) downloaded");
     } catch {
@@ -1463,7 +1473,23 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
                   )}
                   Download True Word (.docx)
                 </span>
-                <Badge className="bg-[#e6f0e8] text-[10px] text-[#33613d] hover:bg-[#e6f0e8]">{["11", "12", "14"].includes(sId) ? "100% ATS-Native" : "1:1 Visual ? Word"}</Badge>
+                <Badge className="bg-[#e6f0e8] text-[10px] text-[#33613d] hover:bg-[#e6f0e8]">{["11", "12", "14"].includes(sId) ? "100% ATS-Native" : "1:1 Visual \u2192 Word"}</Badge>
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-between rounded-xl border-emerald-700/25 bg-emerald-50/40 text-foreground hover:bg-emerald-50"
+                disabled={Boolean(exportBusy)}
+                onClick={() => handleExportLiveDocx(doc.activeTab === "cover" ? "cover" : doc.activeTab === "references" ? "references" : "resume", "ats")}
+              >
+                <span className="flex items-center gap-2">
+                  {exportBusy?.startsWith("docx-ats") ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
+                  Download ATS-Safe Word (.docx)
+                </span>
+                <Badge variant="secondary" className="text-[10px]">Workday / Greenhouse</Badge>
               </Button>
               {!["11", "12", "14"].includes(sId) && (
                 <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">

@@ -1,5 +1,22 @@
 import type { ExportDocKind } from "@/lib/server/docx-injector";
 
+export interface ClientExportLayoutOptions {
+  visibility?: Record<string, boolean>;
+  sectionOrder?: any[];
+  customLabels?: Record<string, string>;
+}
+
+function sanitizeFileBase(raw: string, fallback = "Farnavi"): string {
+  return (
+    String(raw || "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_\-\s]/g, "")
+      .trim()
+      .replace(/\s+/g, "_") || fallback
+  );
+}
+
 function triggerBlobDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -11,17 +28,19 @@ function triggerBlobDownload(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 15000);
 }
 
-export async function apiDownloadInjectedDocx(payload: {
-  seriesId: string;
-  kind: ExportDocKind;
-  pageSize: "A4" | "Letter";
-  pageCount: 1 | 2 | 3;
-  fileName: string;
-  mode?: "visual" | "ats";
-  accent?: string;
-  font?: string;
-  content: Record<string, any>;
-}) {
+export async function apiDownloadInjectedDocx(
+  payload: {
+    seriesId: string;
+    kind: ExportDocKind;
+    pageSize: "A4" | "Letter";
+    pageCount: 1 | 2 | 3;
+    fileName: string;
+    mode?: "visual" | "ats";
+    accent?: string;
+    font?: string;
+    content: Record<string, any>;
+  } & ClientExportLayoutOptions
+) {
   const res = await fetch("/api/export/docx", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,20 +48,23 @@ export async function apiDownloadInjectedDocx(payload: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.detail || err?.detail || err?.error || `DOCX export failed (${res.status})`);
+    throw new Error(err?.detail || err?.error || `DOCX export failed (${res.status})`);
   }
   const blob = await res.blob();
-  const safe = payload.fileName.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_") || "Farnavi";
-  triggerBlobDownload(blob, `${safe}_${payload.kind}_${payload.mode === "ats" ? "_ATS" : ""}${payload.pageSize}.docx`);
+  const safe = sanitizeFileBase(payload.fileName);
+  const atsTag = payload.mode === "ats" ? "_ATS" : "";
+  triggerBlobDownload(blob, `${safe}_${payload.kind}_${payload.pageSize}${atsTag}.docx`);
 }
 
-export async function apiDownloadZipBundle(payload: {
-  seriesId: string;
-  pageSize: "A4" | "Letter";
-  pageCount: 1 | 2 | 3;
-  fileName: string;
-  content: Record<string, any>;
-}) {
+export async function apiDownloadZipBundle(
+  payload: {
+    seriesId: string;
+    pageSize: "A4" | "Letter";
+    pageCount: 1 | 2 | 3;
+    fileName: string;
+    content: Record<string, any>;
+  } & ClientExportLayoutOptions
+) {
   const res = await fetch("/api/export/bundle", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -50,17 +72,19 @@ export async function apiDownloadZipBundle(payload: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.detail || err?.detail || err?.error || `ZIP export failed (${res.status})`);
+    throw new Error(err?.detail || err?.error || `ZIP export failed (${res.status})`);
   }
   const blob = await res.blob();
-  const safe = payload.fileName.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_") || "Farnavi";
+  const safe = sanitizeFileBase(payload.fileName);
   triggerBlobDownload(blob, `${safe}_Complete_Package.zip`);
 }
 
-export async function apiDownloadTxt(payload: {
-  fileName: string;
-  content: Record<string, any>;
-}) {
+export async function apiDownloadTxt(
+  payload: {
+    fileName: string;
+    content: Record<string, any>;
+  } & ClientExportLayoutOptions
+) {
   const res = await fetch("/api/export/txt", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -68,10 +92,9 @@ export async function apiDownloadTxt(payload: {
   });
   if (!res.ok) throw new Error(`TXT export failed (${res.status})`);
   const blob = await res.blob();
-  const safe = payload.fileName.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_") || "Farnavi";
+  const safe = sanitizeFileBase(payload.fileName);
   triggerBlobDownload(blob, `${safe}_ATS.txt`);
 }
-
 export interface ShareLinkRecord {
   id: string;
   token: string;
