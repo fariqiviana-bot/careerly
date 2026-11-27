@@ -1,6 +1,13 @@
 import fs from "fs";
 import path from "path";
 import JSZip from "jszip";
+import {
+  type ExportLayoutOptions,
+  applyVisibilityToContent,
+  isSectionVisible,
+  resolveSectionLabel,
+  resolveSectionOrder,
+} from "@/lib/server/export-options";
 
 export type ExportDocKind = "resume" | "cover" | "references";
 
@@ -830,7 +837,7 @@ export async function generateInjectedDocxBuffer(input: DocxInjectInput): Promis
   };
 }
 
-export function buildPlainTextExport(content: Record<string, any>): string {
+export function buildPlainTextExport(content: Record<string, any>, opts?: ExportLayoutOptions): string {
   const c = content || {};
   const lines: string[] = [];
   if (c.name) lines.push(String(c.name).toUpperCase());
@@ -838,36 +845,70 @@ export function buildPlainTextExport(content: Record<string, any>): string {
   const contact = [c.phone, c.email, c.linkedin, c.website, c.location].filter(Boolean).join(" | ");
   if (contact) lines.push(contact);
 
-  if (c.summary) {
-    lines.push("", "PROFESSIONAL SUMMARY", "====================", String(c.summary));
-  }
+  const ordered = resolveSectionOrder(opts?.sectionOrder);
+  const heading = (key: string, def: string) => {
+    const title = resolveSectionLabel(key, def, opts?.customLabels, opts?.sectionOrder).toUpperCase();
+    lines.push("", title, "=".repeat(Math.max(6, title.length)));
+  };
 
-  const exp: any[] = Array.isArray(c.experience) ? c.experience.filter((e) => !e?.hidden) : [];
-  if (exp.length > 0) {
-    lines.push("", "PROFESSIONAL EXPERIENCE", "=======================");
-    for (const e of exp) {
-      lines.push(`${e.role || e.title || ""} | ${[e.company, e.location].filter(Boolean).join(", ")} | ${e.period || ""}`);
-      if (e.showOverview && e.overview) lines.push(e.overview);
-      for (const b of getBullets(e)) lines.push(`- ${b}`);
-      lines.push("");
+  for (const sec of ordered) {
+    if (!isSectionVisible(sec, opts?.visibility, opts?.sectionOrder)) continue;
+    if (sec === "summary" && c.summary) {
+      heading("summary", "Professional Summary");
+      lines.push(String(c.summary));
+    } else if (sec === "experience") {
+      const exp: any[] = Array.isArray(c.experience) ? c.experience.filter((e) => !e?.hidden) : [];
+      if (exp.length > 0) {
+        heading("experience", "Professional Experience");
+        for (const e of exp) {
+          lines.push(`${e.role || e.title || ""} | ${[e.company, e.location].filter(Boolean).join(", ")} | ${e.period || e.date || ""}`);
+          if (e.showOverview && e.overview) lines.push(e.overview);
+          for (const b of getBullets(e)) lines.push(`- ${b}`);
+          lines.push("");
+        }
+      }
+    } else if (sec === "education") {
+      const edu: any[] = Array.isArray(c.education) ? c.education : [];
+      if (edu.length > 0) {
+        heading("education", "Education");
+        for (const ed of edu) {
+          lines.push(`${ed.degree || ""} | ${ed.school || ""} | ${ed.period || ed.date || ""}`);
+        }
+      }
+    } else if (sec === "skills") {
+      const skills = Array.isArray(c.skills) ? c.skills.filter(Boolean) : [];
+      const tech = Array.isArray(c.technicalSkills) ? c.technicalSkills.filter(Boolean) : [];
+      if (skills.length > 0 || tech.length > 0) {
+        heading("skills", "Skills");
+        if (skills.length > 0) lines.push(`Professional: ${skills.join(", ")}`);
+        if (tech.length > 0) lines.push(`Technical: ${tech.join(", ")}`);
+      }
+    } else if (sec === "certifications") {
+      const certs: any[] = Array.isArray(c.certifications) ? c.certifications : [];
+      if (certs.length > 0) {
+        heading("certifications", "Certifications");
+        for (const item of certs) {
+          const txt = typeof item === "string" ? item : [item.name || item.title, item.issuer, item.date].filter(Boolean).join(" \u2014 ");
+          if (txt.trim()) lines.push(`- ${txt.trim()}`);
+        }
+      }
+    } else if (sec === "projects") {
+      const projs: any[] = Array.isArray(c.projects) ? c.projects : [];
+      if (projs.length > 0) {
+        heading("projects", "Projects");
+        for (const pr of projs) {
+          const txt = [pr.name || pr.title, pr.description || pr.summary].filter(Boolean).join(": ");
+          if (txt.trim()) lines.push(`- ${txt.trim()}`);
+        }
+      }
+    } else if (sec === "languages") {
+      const langs: any[] = Array.isArray(c.languages) ? c.languages : [];
+      const clean = langs.map((l) => (typeof l === "string" ? l : [l?.name || l?.language, l?.level].filter(Boolean).join(" \u2014 "))).filter(Boolean);
+      if (clean.length > 0) {
+        heading("languages", "Languages");
+        lines.push(clean.join(", "));
+      }
     }
-  }
-
-  const edu: any[] = Array.isArray(c.education) ? c.education : [];
-  if (edu.length > 0) {
-    lines.push("EDUCATION", "=========");
-    for (const ed of edu) {
-      lines.push(`${ed.degree || ""} | ${ed.school || ""} | ${ed.period || ed.date || ""}`);
-    }
-    lines.push("");
-  }
-
-  const skills = Array.isArray(c.skills) ? c.skills.filter(Boolean) : [];
-  const tech = Array.isArray(c.technicalSkills) ? c.technicalSkills.filter(Boolean) : [];
-  if (skills.length > 0 || tech.length > 0) {
-    lines.push("SKILLS", "======");
-    if (skills.length > 0) lines.push(`Professional: ${skills.join(", ")}`);
-    if (tech.length > 0) lines.push(`Technical: ${tech.join(", ")}`);
   }
 
   return lines.join("\n").trim() + "\n";
@@ -879,7 +920,11 @@ export async function generateBundleZipBuffer(input: {
   pageCount: 1 | 2 | 3;
   baseFileName: string;
   content: Record<string, any>;
+  visibility?: ExportLayoutOptions["visibility"];
+  sectionOrder?: ExportLayoutOptions["sectionOrder"];
+  customLabels?: ExportLayoutOptions["customLabels"];
 }): Promise<Buffer> {
+  const filteredContent = applyVisibilityToContent(input.content, input.visibility, input.sectionOrder);
   const safeBase = input.baseFileName.replace(/[^a-zA-Z0-9_\-]/g, "_") || "Farnavi_Resume";
   const szTag = input.pageSize === "Letter" ? "US_Letter" : "A4";
   const bundle = new JSZip();
@@ -890,7 +935,7 @@ export async function generateBundleZipBuffer(input: {
       kind: "resume",
       pageSize: input.pageSize,
       pageCount: input.pageCount,
-      content: input.content,
+      content: filteredContent,
     }),
     generateInjectedDocxBuffer({
       seriesId: input.seriesId,
@@ -911,7 +956,7 @@ export async function generateBundleZipBuffer(input: {
   bundle.file(`${safeBase}_Resume_${input.pageCount}P_${szTag}.docx`, resumeDocx.buffer);
   bundle.file(`${safeBase}_Cover_Letter_${szTag}.docx`, coverDocx.buffer);
   bundle.file(`${safeBase}_References_${szTag}.docx`, refsDocx.buffer);
-  bundle.file(`${safeBase}_ATS_Plain_Text.txt`, buildPlainTextExport(input.content));
+  bundle.file(`${safeBase}_ATS_Plain_Text.txt`, buildPlainTextExport(input.content, { visibility: input.visibility, sectionOrder: input.sectionOrder, customLabels: input.customLabels }));
   bundle.file(
     "README.txt",
     [

@@ -59,6 +59,12 @@ export async function POST(req: NextRequest) {
     }
 
     const d = parsed.data;
+    if (d.resumeId) {
+      const refDoc = await prisma.document.findUnique({ where: { id: d.resumeId }, select: { userId: true } });
+      if (refDoc && refDoc.userId !== user.id) {
+        return NextResponse.json({ error: "Cannot link a document owned by another user" }, { status: 403 });
+      }
+    }
     const row = await prisma.interviewSession.create({
       data: {
         ...(d.id ? { id: d.id } : {}),

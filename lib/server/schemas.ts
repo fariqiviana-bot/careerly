@@ -206,19 +206,22 @@ export const CreateVersionSchema = z.object({
 });
 
 export const UpdateMasterProfileSchema = z.object({
-  contact: z.record(z.any()).optional(),
-  summary: z.string().optional(),
-  experience: z.array(z.any()).optional(),
-  education: z.array(z.any()).optional(),
-  skills: z.array(z.any()).optional(),
-  technicalSkills: z.array(z.any()).optional(),
-  certifications: z.array(z.any()).optional(),
-  courses: z.array(z.any()).optional(),
-  awards: z.array(z.any()).optional(),
-  volunteering: z.array(z.any()).optional(),
-  memberships: z.array(z.any()).optional(),
-  languages: z.array(z.any()).optional(),
-  projects: z.array(z.any()).optional(),
-  publications: z.array(z.any()).optional(),
-  references: z.array(z.any()).optional(),
+  contact: z
+    .record(z.any())
+    .refine((c) => !c || (isSafeImageRef(c.photo) && isSafeImageRef(c.photoUrl)), "Invalid or unsafe contact photo (SVG blocked)")
+    .optional(),
+  summary: z.string().max(20000).optional(),
+  experience: z.array(z.any()).max(60, "Maximum 60 master experience entries allowed").optional(),
+  education: z.array(z.any()).max(30).optional(),
+  skills: z.array(z.any()).max(150).optional(),
+  technicalSkills: z.array(z.any()).max(150).optional(),
+  certifications: z.array(z.any()).max(60).optional(),
+  courses: z.array(z.any()).max(60).optional(),
+  awards: z.array(z.any()).max(60).optional(),
+  volunteering: z.array(z.any()).max(60).optional(),
+  memberships: z.array(z.any()).max(60).optional(),
+  languages: z.array(z.any()).max(40).optional(),
+  projects: z.array(z.any()).max(60).optional(),
+  publications: z.array(z.any()).max(60).optional(),
+  references: z.array(z.any()).max(40).optional(),
 });

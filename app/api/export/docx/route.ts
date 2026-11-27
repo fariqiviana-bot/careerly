@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateInjectedDocxBuffer } from "@/lib/server/docx-injector";
 import { generateAtsSafeDocxBuffer } from "@/lib/server/ats-docx-builder";
+import { applyVisibilityToContent, buildSafeContentDisposition } from "@/lib/server/export-options";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,9 @@ const DocxExportSchema = z.object({
   mode: z.enum(["visual", "ats"]).optional().default("visual"),
   accent: z.string().optional(),
   font: z.string().optional(),
+  visibility: z.record(z.boolean()).optional(),
+  sectionOrder: z.array(z.any()).optional(),
+  customLabels: z.record(z.string()).optional(),
   content: z
     .record(z.any())
     .refine((c) => Object.keys(c).length > 0, { message: "Resume content is required" })
@@ -51,13 +55,16 @@ export async function POST(req: NextRequest) {
           accent: d.accent,
           font: d.font,
           content: d.content,
+          visibility: d.visibility,
+          sectionOrder: d.sectionOrder,
+          customLabels: d.customLabels,
         })
       : await generateInjectedDocxBuffer({
           seriesId: d.seriesId,
           kind: d.kind,
           pageSize: d.pageSize,
           pageCount: d.pageCount,
-          content: d.content,
+          content: applyVisibilityToContent(d.content, d.visibility, d.sectionOrder),
         });
 
     const baseName = (d.fileName || String(d.content?.name || "Farnavi_Document"))
@@ -71,7 +78,7 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="${downloadName}"`,
+        "Content-Disposition": buildSafeContentDisposition(d.fileName || String(d.content?.name || "Farnavi_Document"), `_${d.kind}_${d.pageSize}${d.mode === "ats" ? "_ATS" : ""}.docx`),
         "Cache-Control": "no-store",
       },
     });

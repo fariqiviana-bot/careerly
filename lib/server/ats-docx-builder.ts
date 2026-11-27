@@ -1,6 +1,12 @@
 import JSZip from "jszip";
+import {
+  type ExportLayoutOptions,
+  isSectionVisible,
+  resolveSectionLabel,
+  resolveSectionOrder,
+} from "@/lib/server/export-options";
 
-export interface AtsDocxOptions {
+export interface AtsDocxOptions extends ExportLayoutOptions {
   seriesId?: string;
   kind?: "resume" | "cover" | "references";
   pageSize?: "A4" | "Letter";
@@ -220,184 +226,190 @@ export async function generateAtsSafeDocxBuffer(options: AtsDocxOptions): Promis
       }
     }
   } else {
-    // 1. Professional Summary
-    const summary = String(c.summary || "").trim();
-    if (summary) {
-      blocks.push(sectionHeading("Professional Summary", accent, font));
-      blocks.push(
-        paraXml(runXml(summary, { size: 20, color: darkText, font }), {
-          spaceBefore: 20,
-          spaceAfter: 100,
-          line: 264,
-        })
-      );
-    }
+    const orderedSections = resolveSectionOrder(options.sectionOrder);
+    const lbl = (key: string, def: string) =>
+      resolveSectionLabel(key, def, options.customLabels, options.sectionOrder);
+    const vis = (key: string) =>
+      isSectionVisible(key, options.visibility, options.sectionOrder);
 
-    // 2. Professional Experience (linear & contiguous — zero interleaving)
-    const exp = Array.isArray(c.experience) ? c.experience : [];
-    if (exp.length) {
-      blocks.push(sectionHeading("Professional Experience", accent, font));
-      for (const item of exp) {
-        const jobRole = String(item.role || item.title || "").trim();
-        const company = String(item.company || "").trim();
-        const location = String(item.location || "").trim();
-        const dates = String(item.date || item.dates || [item.start, item.end].filter(Boolean).join(" - ")).trim();
+    for (const secKey of orderedSections) {
+      if (!vis(secKey)) continue;
 
-        const titleRuns = [
-          jobRole ? runXml(jobRole, { bold: true, size: 21, color: darkText, font }) : "",
-          company ? runXml(jobRole ? ` — ${company}` : company, { bold: true, size: 21, color: accent, font }) : "",
-        ].join("");
-        if (titleRuns) {
-          blocks.push(paraXml(titleRuns, { spaceBefore: 100, spaceAfter: 20, keepNext: true }));
-        }
-
-        const subLine = [location, dates].filter(Boolean).join("  |  ");
-        if (subLine) {
+      if (secKey === "summary") {
+        const summary = String(c.summary || "").trim();
+        if (summary) {
+          blocks.push(sectionHeading(lbl("summary", "Professional Summary"), accent, font));
           blocks.push(
-            paraXml(runXml(subLine, { italic: true, size: 19, color: mutedText, font }), {
-              spaceBefore: 0,
-              spaceAfter: 40,
-              keepNext: true,
+            paraXml(runXml(summary, { size: 20, color: darkText, font }), {
+              spaceBefore: 20,
+              spaceAfter: 100,
+              line: 264,
             })
           );
         }
+      } else if (secKey === "experience") {
+        const exp = Array.isArray(c.experience) ? c.experience.filter((e: any) => !e?.hidden) : [];
+        if (exp.length) {
+          blocks.push(sectionHeading(lbl("experience", "Professional Experience"), accent, font));
+          for (const item of exp) {
+            const jobRole = String(item.role || item.title || "").trim();
+            const company = String(item.company || "").trim();
+            const location = String(item.location || "").trim();
+            const dates = String(item.period || item.date || item.dates || [item.start, item.end].filter(Boolean).join(" - ")).trim();
 
-        const jobSummary = String(item.summary || item.description || "").trim();
-        if (jobSummary) {
-          blocks.push(
-            paraXml(runXml(jobSummary, { size: 20, color: darkText, font }), {
-              spaceBefore: 0,
-              spaceAfter: 40,
-              line: 252,
-            })
-          );
-        }
+            const titleRuns = [
+              jobRole ? runXml(jobRole, { bold: true, size: 21, color: darkText, font }) : "",
+              company ? runXml(jobRole ? ` \u2014 ${company}` : company, { bold: true, size: 21, color: accent, font }) : "",
+            ].join("");
+            if (titleRuns) {
+              blocks.push(paraXml(titleRuns, { spaceBefore: 100, spaceAfter: 20, keepNext: true }));
+            }
 
-        const bullets = Array.isArray(item.bullets)
-          ? item.bullets.map((b: any) => String(b || "").trim()).filter(Boolean)
-          : [];
-        for (const b of bullets) {
-          blocks.push(
-            paraXml(
-              runXml("•  ", { bold: true, size: 20, color: accent, font }) +
-                runXml(b, { size: 20, color: darkText, font }),
-              { spaceBefore: 10, spaceAfter: 35, line: 252, indentLeft: 280, hanging: 160 }
-            )
-          );
-        }
-      }
-    }
+            const subLine = [location, dates].filter(Boolean).join("  |  ");
+            if (subLine) {
+              blocks.push(
+                paraXml(runXml(subLine, { italic: true, size: 19, color: mutedText, font }), {
+                  spaceBefore: 0,
+                  spaceAfter: 40,
+                  keepNext: true,
+                })
+              );
+            }
 
-    // 3. Education
-    const edu = Array.isArray(c.education) ? c.education : [];
-    if (edu.length) {
-      blocks.push(sectionHeading("Education", accent, font));
-      for (const item of edu) {
-        const degree = String(item.degree || item.title || "").trim();
-        const school = String(item.school || item.institution || "").trim();
-        const meta = [item.location, item.date || item.dates].filter(Boolean).join("  |  ");
-        const details = String(item.details || item.gpa || "").trim();
+            const jobSummary = String(item.summary || item.description || "").trim();
+            if (jobSummary) {
+              blocks.push(
+                paraXml(runXml(jobSummary, { size: 20, color: darkText, font }), {
+                  spaceBefore: 0,
+                  spaceAfter: 40,
+                  line: 252,
+                })
+              );
+            }
 
-        const headRuns = [
-          degree ? runXml(degree, { bold: true, size: 21, color: darkText, font }) : "",
-          school ? runXml(degree ? ` — ${school}` : school, { size: 21, color: darkText, font }) : "",
-        ].join("");
-        if (headRuns) {
-          blocks.push(paraXml(headRuns, { spaceBefore: 80, spaceAfter: 20, keepNext: true }));
+            const bullets = Array.isArray(item.bullets)
+              ? item.bullets.map((b: any) => String(b || "").trim()).filter(Boolean)
+              : [];
+            for (const b of bullets) {
+              blocks.push(
+                paraXml(
+                  runXml("\u2022  ", { bold: true, size: 20, color: accent, font }) +
+                    runXml(b, { size: 20, color: darkText, font }),
+                  { spaceBefore: 10, spaceAfter: 35, line: 252, indentLeft: 280, hanging: 160 }
+                )
+              );
+            }
+          }
         }
-        if (meta) {
-          blocks.push(
-            paraXml(runXml(meta, { italic: true, size: 19, color: mutedText, font }), {
-              spaceBefore: 0,
-              spaceAfter: details ? 20 : 60,
-            })
-          );
+      } else if (secKey === "education") {
+        const edu = Array.isArray(c.education) ? c.education : [];
+        if (edu.length) {
+          blocks.push(sectionHeading(lbl("education", "Education"), accent, font));
+          for (const item of edu) {
+            const degree = String(item.degree || item.title || "").trim();
+            const school = String(item.school || item.institution || "").trim();
+            const meta = [item.location, item.period || item.date || item.dates].filter(Boolean).join("  |  ");
+            const details = String(item.details || item.gpa || "").trim();
+
+            const headRuns = [
+              degree ? runXml(degree, { bold: true, size: 21, color: darkText, font }) : "",
+              school ? runXml(degree ? ` \u2014 ${school}` : school, { size: 21, color: darkText, font }) : "",
+            ].join("");
+            if (headRuns) {
+              blocks.push(paraXml(headRuns, { spaceBefore: 80, spaceAfter: 20, keepNext: true }));
+            }
+            if (meta) {
+              blocks.push(
+                paraXml(runXml(meta, { italic: true, size: 19, color: mutedText, font }), {
+                  spaceBefore: 0,
+                  spaceAfter: details ? 20 : 60,
+                })
+              );
+            }
+            if (details) {
+              blocks.push(
+                paraXml(runXml(details, { size: 19, color: darkText, font }), {
+                  spaceBefore: 0,
+                  spaceAfter: 60,
+                })
+              );
+            }
+          }
         }
-        if (details) {
+      } else if (secKey === "skills") {
+        const coreSkills = toStringList(c.skills || c.professionalSkills || c.areasOfExpertise);
+        const techSkills = toStringList(c.technicalSkills);
+        if (coreSkills.length || techSkills.length) {
+          blocks.push(sectionHeading(lbl("skills", "Skills"), accent, font));
+          if (coreSkills.length) {
+            blocks.push(
+              paraXml(
+                runXml("Core Competencies: ", { bold: true, size: 20, color: darkText, font }) +
+                  runXml(coreSkills.join(" \u00B7 "), { size: 20, color: darkText, font }),
+                { spaceBefore: 20, spaceAfter: 50, line: 252 }
+              )
+            );
+          }
+          if (techSkills.length) {
+            blocks.push(
+              paraXml(
+                runXml("Technical Skills: ", { bold: true, size: 20, color: darkText, font }) +
+                  runXml(techSkills.join(" \u00B7 "), { size: 20, color: darkText, font }),
+                { spaceBefore: 20, spaceAfter: 60, line: 252 }
+              )
+            );
+          }
+        }
+      } else if (secKey === "certifications") {
+        const certs = Array.isArray(c.certifications) ? c.certifications : [];
+        if (certs.length) {
+          blocks.push(sectionHeading(lbl("certifications", "Certifications"), accent, font));
+          for (const item of certs) {
+            const line =
+              typeof item === "string"
+                ? item
+                : [item.name || item.title, item.issuer, item.date].filter(Boolean).join(" \u2014 ");
+            if (line.trim()) {
+              blocks.push(
+                paraXml(
+                  runXml("\u2022  ", { bold: true, size: 20, color: accent, font }) +
+                    runXml(line.trim(), { size: 20, color: darkText, font }),
+                  { spaceBefore: 10, spaceAfter: 35, indentLeft: 280, hanging: 160 }
+                )
+              );
+            }
+          }
+        }
+      } else if (secKey === "projects") {
+        const projects = Array.isArray(c.projects) ? c.projects : [];
+        if (projects.length) {
+          blocks.push(sectionHeading(lbl("projects", "Projects"), accent, font));
+          for (const p of projects) {
+            const pName = String(p.name || p.title || "").trim();
+            const pDesc = String(p.description || p.summary || "").trim();
+            if (pName || pDesc) {
+              blocks.push(
+                paraXml(
+                  (pName ? runXml(pName + (pDesc ? ": " : ""), { bold: true, size: 20, color: darkText, font }) : "") +
+                    (pDesc ? runXml(pDesc, { size: 20, color: darkText, font }) : ""),
+                  { spaceBefore: 30, spaceAfter: 50, line: 252 }
+                )
+              );
+            }
+          }
+        }
+      } else if (secKey === "languages") {
+        const langs = toStringList(c.languages);
+        if (langs.length) {
+          blocks.push(sectionHeading(lbl("languages", "Languages"), accent, font));
           blocks.push(
-            paraXml(runXml(details, { size: 19, color: darkText, font }), {
-              spaceBefore: 0,
+            paraXml(runXml(langs.join(" \u00B7 "), { size: 20, color: darkText, font }), {
+              spaceBefore: 20,
               spaceAfter: 60,
             })
           );
         }
       }
-    }
-
-    // 4. Skills (Core + Technical cleanly labeled)
-    const coreSkills = toStringList(c.skills || c.professionalSkills || c.areasOfExpertise);
-    const techSkills = toStringList(c.technicalSkills);
-    if (coreSkills.length || techSkills.length) {
-      blocks.push(sectionHeading("Skills", accent, font));
-      if (coreSkills.length) {
-        blocks.push(
-          paraXml(
-            runXml("Core Competencies: ", { bold: true, size: 20, color: darkText, font }) +
-              runXml(coreSkills.join(" · "), { size: 20, color: darkText, font }),
-            { spaceBefore: 20, spaceAfter: 50, line: 252 }
-          )
-        );
-      }
-      if (techSkills.length) {
-        blocks.push(
-          paraXml(
-            runXml("Technical Skills: ", { bold: true, size: 20, color: darkText, font }) +
-              runXml(techSkills.join(" · "), { size: 20, color: darkText, font }),
-            { spaceBefore: 20, spaceAfter: 60, line: 252 }
-          )
-        );
-      }
-    }
-
-    // 5. Certifications
-    const certs = Array.isArray(c.certifications) ? c.certifications : [];
-    if (certs.length) {
-      blocks.push(sectionHeading("Certifications", accent, font));
-      for (const item of certs) {
-        const line =
-          typeof item === "string"
-            ? item
-            : [item.name || item.title, item.issuer, item.date].filter(Boolean).join(" — ");
-        if (line.trim()) {
-          blocks.push(
-            paraXml(
-              runXml("•  ", { bold: true, size: 20, color: accent, font }) +
-                runXml(line.trim(), { size: 20, color: darkText, font }),
-              { spaceBefore: 10, spaceAfter: 35, indentLeft: 280, hanging: 160 }
-            )
-          );
-        }
-      }
-    }
-
-    // 6. Optional Projects / Awards / Languages
-    const projects = Array.isArray(c.projects) ? c.projects : [];
-    if (projects.length) {
-      blocks.push(sectionHeading("Projects", accent, font));
-      for (const p of projects) {
-        const pName = String(p.name || p.title || "").trim();
-        const pDesc = String(p.description || p.summary || "").trim();
-        if (pName || pDesc) {
-          blocks.push(
-            paraXml(
-              (pName ? runXml(pName + (pDesc ? ": " : ""), { bold: true, size: 20, color: darkText, font }) : "") +
-                (pDesc ? runXml(pDesc, { size: 20, color: darkText, font }) : ""),
-              { spaceBefore: 30, spaceAfter: 50, line: 252 }
-            )
-          );
-        }
-      }
-    }
-
-    const langs = toStringList(c.languages);
-    if (langs.length) {
-      blocks.push(sectionHeading("Languages", accent, font));
-      blocks.push(
-        paraXml(runXml(langs.join(" · "), { size: 20, color: darkText, font }), {
-          spaceBefore: 20,
-          spaceAfter: 60,
-        })
-      );
     }
   }
 

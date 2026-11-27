@@ -46,6 +46,14 @@ export async function POST(req: NextRequest) {
     }
 
     const d = parsed.data;
+    for (const refId of [d.resumeId, d.coverId]) {
+      if (refId) {
+        const refDoc = await prisma.document.findUnique({ where: { id: refId }, select: { userId: true } });
+        if (refDoc && refDoc.userId !== user.id) {
+          return NextResponse.json({ error: "Cannot link a document owned by another user" }, { status: 403 });
+        }
+      }
+    }
     const item = await prisma.jobApplication.create({
       data: {
         ...(d.id ? { id: d.id } : {}),

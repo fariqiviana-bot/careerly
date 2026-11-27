@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/server/prisma";
-import { UpdateMasterProfileSchema } from "@/lib/server/schemas";
+import { UpdateMasterProfileSchema, MAX_DOCUMENT_PAYLOAD_BYTES } from "@/lib/server/schemas";
 import {
   getWorkspaceUser,
   safeJsonParse,
@@ -33,7 +33,16 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   try {
     const user = await getWorkspaceUser();
-    const raw = await req.json();
+    const declaredLen = Number(req.headers.get("content-length") || 0);
+    if (declaredLen > MAX_DOCUMENT_PAYLOAD_BYTES) {
+      return NextResponse.json({ error: "Master profile payload exceeds 4 MB limit" }, { status: 413 });
+    }
+    const rawText = await req.text();
+    if (Buffer.byteLength(rawText, "utf8") > MAX_DOCUMENT_PAYLOAD_BYTES) {
+      return NextResponse.json({ error: "Master profile payload exceeds 4 MB limit" }, { status: 413 });
+    }
+    let raw: any;
+    try { raw = JSON.parse(rawText); } catch { return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 }); }
     const parsed = UpdateMasterProfileSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(

@@ -182,7 +182,12 @@ export async function DELETE(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    await prisma.document.delete({ where: { id } });
+    await prisma.$transaction([
+      prisma.jobApplication.updateMany({ where: { userId: user.id, resumeId: id }, data: { resumeId: null } }),
+      prisma.jobApplication.updateMany({ where: { userId: user.id, coverId: id }, data: { coverId: null } }),
+      prisma.interviewSession.updateMany({ where: { userId: user.id, resumeId: id }, data: { resumeId: null } }),
+      prisma.document.delete({ where: { id } }),
+    ]);
     return NextResponse.json({ ok: true, deletedId: id });
   } catch (err: any) {
     return NextResponse.json(
