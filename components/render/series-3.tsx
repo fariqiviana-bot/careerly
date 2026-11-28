@@ -346,12 +346,12 @@ function S3Header({
           width: `${(rightEdge - 30).toFixed(2)}pt`,
           textAlign: "center",
           fontFamily: F_PLAYFAIR,
-          fontSize: pt(27.96, fontScale),
+          fontSize: pt(fullName.length > 18 ? +(27.96 * Math.max(0.46, Math.min(1, 17 / fullName.length))).toFixed(2) : 27.96, fontScale),
           fontWeight: 400,
           lineHeight: pt(35.0, fontScale),
-          letterSpacing: pt(7.0, fontScale),
+          letterSpacing: pt(fullName.length > 18 ? +(Math.max(0.8, 7.0 * Math.pow(Math.max(0.46, Math.min(1, 17 / fullName.length)), 2))).toFixed(2) : 7.0, fontScale),
           textTransform: "uppercase",
-          whiteSpace: "nowrap",
+          whiteSpace: fullName.length > 44 ? "normal" : "nowrap",
         }}
       >
         <span style={{ color: S3_COLORS.rule }}>|</span>
@@ -383,11 +383,11 @@ function S3Header({
           onCommit={(v) => onPatch?.({ profession: v })}
           style={{
             fontFamily: F_LATO,
-            fontSize: pt(12.0, fontScale),
+            fontSize: pt(profession.length > 42 ? 9.5 : 12.0, fontScale),
             fontWeight: 400,
-            lineHeight: pt(15.0, fontScale),
-            letterSpacing: pt(2.3, fontScale),
-            paddingLeft: pt(2.3, fontScale),
+            lineHeight: pt(profession.length > 42 ? 12.5 : 15.0, fontScale),
+            letterSpacing: pt(profession.length > 42 ? 1.0 : 2.3, fontScale),
+            paddingLeft: pt(profession.length > 42 ? 1.0 : 2.3, fontScale),
             color: S3_COLORS.profession,
             textTransform: "uppercase",
             textAlign: "center",
@@ -725,6 +725,17 @@ function S3CoursesBlock({
   );
 }
 
+function s3EstimateExpLines(exps: any[]): number {
+  return exps.reduce((sum, e) => {
+    const bs = Array.isArray(e?.bullets) ? e.bullets : [];
+    const bulletLines = bs.reduce((acc: number, b: any) => {
+      const len = String(b || "").trim().length;
+      return acc + Math.max(1, Math.ceil(len / 64)) + 0.32;
+    }, 0);
+    return sum + 2.8 + bulletLines;
+  }, 0);
+}
+
 export function Series3Exact({
   content,
   style,
@@ -792,10 +803,15 @@ export function Series3Exact({
   // =========================================================================
   // PAGE 3 (3P: References left | Jobs 7-8 & Prof Dev right)
   // =========================================================================
+  const p1LineBudget = isLetter ? 31 : 36;
+  const p1ThreeLines = s3EstimateExpLines(effectiveExp.slice(0, 3));
+  const hasNextPage = is3P || (style?.pageCount ?? 1) >= 2;
+  const p1Count = hasNextPage && effectiveExp.length >= 3 && p1ThreeLines > p1LineBudget ? 2 : 3;
+  const p2End = p1Count + (is3P ? 3 : 2);
   if (pageIndex >= 2) {
     const devRuleY = isLetter ? 579.45 : 616.8;
     const devHeadY = isLetter ? 592.61 : 629.81;
-    const p3Exp = effectiveExp.slice(6, 8);
+    const p3Exp = effectiveExp.slice(p2End, p2End + 2);
 
     const refsList: any[] =
       Array.isArray(c.references) && c.references.length > 0
@@ -877,7 +893,7 @@ export function Series3Exact({
                 fontScale={fontScale}
                 marginBottomPt={idx === p3Exp.length - 1 ? 0 : 19.2}
                 editable={editable}
-                onUpdateExp={(nextExp) => updateExperienceAt(idx + 6, nextExp)}
+                onUpdateExp={(nextExp) => updateExperienceAt(idx + p2End, nextExp)}
               />
             ))}
           </div>
@@ -907,7 +923,7 @@ export function Series3Exact({
     const commHeadY = isLetter ? 457.22 : 465.62;
     const devRuleY = isLetter ? 580.22 : 616.96;
     const devHeadY = isLetter ? 592.97 : 629.81;
-    const p2Exp = is3P ? effectiveExp.slice(3, 6) : effectiveExp.slice(3, 5);
+    const p2Exp = effectiveExp.slice(p1Count, p2End);
 
     const awardsList: any[] =
       Array.isArray(c.awards) && c.awards.length > 0
@@ -1038,7 +1054,7 @@ export function Series3Exact({
                 fontScale={fontScale}
                 marginBottomPt={idx === p2Exp.length - 1 ? 0 : 19.2}
                 editable={editable}
-                onUpdateExp={(nextExp) => updateExperienceAt(idx + 3, nextExp)}
+                onUpdateExp={(nextExp) => updateExperienceAt(idx + p1Count, nextExp)}
               />
             ))}
           </div>
@@ -1067,7 +1083,11 @@ export function Series3Exact({
   // =========================================================================
   const eduRuleY = isLetter ? 581.17 : 600.64;
   const eduHeadY = isLetter ? 592.73 : 613.01;
-  const page1Exp = effectiveExp.slice(0, 3);
+  const page1Exp = effectiveExp.slice(0, p1Count);
+  const p1ActualLines = s3EstimateExpLines(page1Exp);
+  const p1CompactRatio = p1ActualLines > p1LineBudget ? Math.max(0.72, Math.min(1, p1LineBudget / p1ActualLines)) : 1;
+  const p1ExpFontScale = +(fontScale * p1CompactRatio).toFixed(4);
+  const p1ExpGapPt = p1CompactRatio < 1 ? +(19.2 * p1CompactRatio * 0.55).toFixed(2) : 19.2;
 
   const summaryText =
     (c.summary || "").trim() ||
@@ -1219,8 +1239,8 @@ export function Series3Exact({
               <S3ExperienceItem
                 key={exp.id || `p1-exp-${idx}`}
                 exp={exp}
-                fontScale={fontScale}
-                marginBottomPt={idx === page1Exp.length - 1 ? 0 : 19.2}
+                fontScale={p1ExpFontScale}
+                marginBottomPt={idx === page1Exp.length - 1 ? 0 : p1ExpGapPt}
                 editable={editable}
                 onUpdateExp={(nextExp) => updateExperienceAt(idx, nextExp)}
               />

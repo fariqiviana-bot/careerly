@@ -404,13 +404,13 @@ function S4Header({
           width: `${(rightEdge - 30).toFixed(2)}pt`,
           textAlign: "center",
           fontFamily: F_RUBIK,
-          fontSize: pt(27.96, fontScale),
+          fontSize: pt(fullName.length > 18 ? +(27.96 * Math.max(0.46, Math.min(1, 17 / fullName.length))).toFixed(2) : 27.96, fontScale),
           fontWeight: 400,
           lineHeight: pt(34.0, fontScale),
-          letterSpacing: pt(7.0, fontScale),
-          paddingLeft: pt(7.0, fontScale),
+          letterSpacing: pt(fullName.length > 18 ? +(Math.max(0.8, 7.0 * Math.pow(Math.max(0.46, Math.min(1, 17 / fullName.length)), 2))).toFixed(2) : 7.0, fontScale),
+          paddingLeft: pt(fullName.length > 18 ? +(Math.max(0.8, 7.0 * Math.pow(Math.max(0.46, Math.min(1, 17 / fullName.length)), 2))).toFixed(2) : 7.0, fontScale),
           textTransform: "uppercase",
-          whiteSpace: "nowrap",
+          whiteSpace: fullName.length > 44 ? "normal" : "nowrap",
         }}
       >
         <InlineEd
@@ -451,11 +451,11 @@ function S4Header({
           onCommit={(v) => onPatch?.({ profession: v })}
           style={{
             fontFamily: F_NUNITO,
-            fontSize: pt(12.0, fontScale),
+            fontSize: pt(profession.length > 42 ? 9.5 : 12.0, fontScale),
             fontWeight: 500,
-            lineHeight: pt(16.0, fontScale),
-            letterSpacing: pt(3.0, fontScale),
-            paddingLeft: pt(3.0, fontScale),
+            lineHeight: pt(profession.length > 42 ? 12.5 : 16.0, fontScale),
+            letterSpacing: pt(profession.length > 42 ? 1.1 : 3.0, fontScale),
+            paddingLeft: pt(profession.length > 42 ? 1.1 : 3.0, fontScale),
             color: S4_COLORS.profession,
             textTransform: "uppercase",
             textAlign: "center",

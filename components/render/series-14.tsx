@@ -482,28 +482,35 @@ function S14MainHeader({
   ];
   const contactItems = rawContactItems.filter((x) => editable || Boolean(x.val));
 
-  const nameLs = pt(5.35, fontScale);
+  const stackHeader = fullName.length > 22 || profession.length > 32 || fullName.length + profession.length > 44;
+  const nameRatio = fullName.length > 22 ? Math.max(0.60, Math.min(1, 22 / fullName.length)) : 1;
+  const nameFs = fullName.length > 22 ? +(20.04 * nameRatio).toFixed(2) : 20.04;
+  const nameLs = pt(fullName.length > 22 ? +(Math.max(1.0, 5.35 * nameRatio * nameRatio)).toFixed(2) : 5.35, fontScale);
 
   return (
     <header style={{ width: "100%" }}>
       <div
         style={{
           display: "flex",
+          flexDirection: stackHeader ? "column" : "row",
           justifyContent: "space-between",
-          alignItems: "baseline",
+          alignItems: stackHeader ? "flex-start" : "baseline",
+          gap: stackHeader ? pt(3.0, fontScale) : "8pt",
           paddingTop: pt(2.0, fontScale),
-          marginBottom: pt(17.6, fontScale),
+          marginBottom: pt(stackHeader ? 10.0 : 17.6, fontScale),
         }}
       >
         <div
           style={{
             fontFamily: F_POPPINS,
-            fontSize: pt(20.04, fontScale),
+            fontSize: pt(nameFs, fontScale),
             fontWeight: 400,
-            lineHeight: pt(27.0, fontScale),
+            lineHeight: pt(fullName.length > 22 ? +(nameFs * 1.25).toFixed(2) : 27.0, fontScale),
             letterSpacing: nameLs,
             textTransform: "uppercase",
-            whiteSpace: "nowrap",
+            whiteSpace: fullName.length > 44 ? "normal" : "nowrap",
+            maxWidth: "100%",
+            overflowWrap: "break-word",
           }}
         >
           <InlineEd
@@ -539,13 +546,15 @@ function S14MainHeader({
           onCommit={(v) => onPatch?.({ profession: v })}
           style={{
             fontFamily: F_POPPINS,
-            fontSize: pt(9.96, fontScale),
+            fontSize: pt(profession.length > 44 ? 8.8 : 9.96, fontScale),
             fontWeight: 400,
-            lineHeight: pt(14.0, fontScale),
-            letterSpacing: pt(2.65, fontScale),
+            lineHeight: pt(profession.length > 44 ? 12.0 : 14.0, fontScale),
+            letterSpacing: pt(profession.length > 44 ? 1.2 : 2.65, fontScale),
             color: S14_COLORS.profession,
             textTransform: "uppercase",
-            whiteSpace: "nowrap",
+            whiteSpace: stackHeader ? "normal" : "nowrap",
+            maxWidth: "100%",
+            overflowWrap: "break-word",
           }}
         />
       </div>
@@ -562,6 +571,7 @@ function S14MainHeader({
           color: S14_COLORS.ink,
           paddingTop: pt(6.0, fontScale),
           paddingBottom: pt(5.8, fontScale),
+          overflowWrap: "anywhere",
         }}
       >
         {contactItems.map((item, idx) => (
@@ -583,6 +593,19 @@ function S14MainHeader({
       <S14DoubleRule heightPt={4.7} />
     </header>
   );
+}
+
+function s14EstimateP1Lines(summary: string, exps: any[], hasSkills: boolean, eduCount: number, courseCount: number): number {
+  const sumLines = summary ? Math.max(1, Math.ceil(summary.trim().length / 92)) + 2.5 : 0;
+  const expLines = exps.reduce((sum, e) => {
+    const bs = Array.isArray(e?.bullets) ? e.bullets : [];
+    const bl = bs.reduce((acc: number, b: any) => acc + Math.max(1, Math.ceil(String(b || '').trim().length / 86)) + 0.35, 0);
+    return sum + 2.6 + bl;
+  }, 0);
+  const skillLines = hasSkills ? 5.5 : 0;
+  const eduLines = eduCount > 0 ? 2.5 + eduCount * 2.6 : 0;
+  const courseLines = courseCount > 0 ? 2.5 + courseCount * 2.2 : 0;
+  return sumLines + expLines + skillLines + eduLines + courseLines;
 }
 
 function normalizeBullets(exp: any): string[] {
@@ -1294,6 +1317,24 @@ export function Series14Exact({
 
   // PAGE 1 (1-Page Resume OR Page 1 of 2-Page Resume)
   const page1Exp = effectiveExp.slice(0, 3);
+  const showP1Edu = !is2P && isCustomS14Doc && isVisible("education") && Array.isArray(c.education) && c.education.length > 0;
+  const showP1Courses = !is2P && isVisible("courses") && coursesList.length > 0;
+  const s14P1Lines = !is2P
+    ? s14EstimateP1Lines(
+        isVisible("summary") ? profileText : "",
+        isVisible("experience") ? page1Exp : [],
+        isVisible("skills"),
+        showP1Edu ? c.education.length : 0,
+        showP1Courses ? coursesList.length : 0
+      )
+    : 0;
+  const s14P1Budget = isLetter ? 48 : 52;
+  const s14P1Compact = !is2P && s14P1Lines > s14P1Budget ? Math.max(0.76, Math.min(1, s14P1Budget / s14P1Lines)) : 1;
+  const p1Scale = +(fontScale * s14P1Compact).toFixed(4);
+  const p1Fs = s14P1Compact < 1 ? pt(9.96, p1Scale) : fs;
+  const p1Lh = s14P1Compact < 1 ? pt(13.92, p1Scale) : lh;
+  const p1Gap = (base: number) => pt(s14P1Compact < 1 ? +(base * s14P1Compact * 0.58).toFixed(2) : base, fontScale);
+  const p1Pad = s14P1Compact < 1 ? `${+(marginPt * 0.72).toFixed(2)}pt ${marginPt}pt` : `${marginPt}pt`;
 
   return (
     <div
@@ -1301,7 +1342,7 @@ export function Series14Exact({
       style={{
         width: "100%",
         height: "100%",
-        padding: `${marginPt}pt`,
+        padding: p1Pad,
         fontFamily: F_INTER,
       }}
     >
@@ -1316,11 +1357,11 @@ export function Series14Exact({
 
       {/* PROFESSIONAL PROFILE */}
       {isVisible("summary") && (
-        <section style={{ marginTop: pt(14.8, fontScale) }}>
+        <section style={{ marginTop: p1Gap(14.8) }}>
           <S14SectionHeading
             title="PROFESSIONAL PROFILE"
-            fontScale={fontScale}
-            marginBottomPt={10.0}
+            fontScale={p1Scale}
+            marginBottomPt={s14P1Compact < 1 ? +(10.0 * s14P1Compact * 0.65).toFixed(2) : 10.0}
           />
           <InlineEd
             value={profileText}
@@ -1330,9 +1371,9 @@ export function Series14Exact({
             onCommit={(v) => patch({ summary: v })}
             style={{
               fontFamily: F_INTER,
-              fontSize: fs,
+              fontSize: p1Fs,
               fontWeight: 400,
-              lineHeight: lh,
+              lineHeight: p1Lh,
               color: S14_COLORS.ink,
             }}
           />
@@ -1341,18 +1382,18 @@ export function Series14Exact({
 
       {/* PROFESSIONAL EXPERIENCE */}
       {isVisible("experience") && page1Exp.length > 0 && (
-        <section style={{ marginTop: pt(18.1, fontScale) }}>
+        <section style={{ marginTop: p1Gap(18.1) }}>
           <S14SectionHeading
             title="PROFESSIONAL EXPERIENCE"
-            fontScale={fontScale}
-            marginBottomPt={11.3}
+            fontScale={p1Scale}
+            marginBottomPt={s14P1Compact < 1 ? +(11.3 * s14P1Compact * 0.65).toFixed(2) : 11.3}
           />
           {page1Exp.map((exp, idx) => (
             <S14ExperienceItem
               key={exp.id || `p1-exp-${idx}`}
               exp={exp}
-              fontScale={fontScale}
-              marginBottomPt={idx === page1Exp.length - 1 ? (is2P ? 0 : 18.1) : 19.6}
+              fontScale={p1Scale}
+              marginBottomPt={idx === page1Exp.length - 1 ? (is2P ? 0 : (s14P1Compact < 1 ? +(18.1 * s14P1Compact * 0.55).toFixed(2) : 18.1)) : (s14P1Compact < 1 ? +(19.6 * s14P1Compact * 0.55).toFixed(2) : 19.6)}
               editable={editable}
               onUpdateExp={(nextExp) => updateExperienceAt(idx, nextExp)}
             />
@@ -1367,7 +1408,7 @@ export function Series14Exact({
             is2P={false}
             proText={proSkillsText}
             techText={techSkillsText}
-            fontScale={fontScale}
+            fontScale={p1Scale}
             editable={editable}
             onCommitPro={(v) => {
               const next = v
@@ -1389,20 +1430,20 @@ export function Series14Exact({
 
       {/* 1-Page mode: EDUCATION (for custom user resumes) */}
       {!is2P && isCustomS14Doc && isVisible("education") && Array.isArray(c.education) && c.education.length > 0 && (
-        <section style={{ marginTop: pt(16, fontScale) }}>
+        <section style={{ marginTop: p1Gap(16) }}>
           <S14SectionHeading
         title="EDUCATION"
-        fontScale={fontScale}
-        marginBottomPt={11.3}
+        fontScale={p1Scale}
+        marginBottomPt={s14P1Compact < 1 ? +(11.3 * s14P1Compact * 0.6).toFixed(2) : 11.3}
       />
           <div style={{ marginTop: pt(6, fontScale) }}>
             {c.education.map((ed: any, idx: number) => (
               <div
                 key={ed?.id || idx}
                 style={{
-                  marginTop: idx === 0 ? "0pt" : pt(8, fontScale),
-                  fontSize: pt(10, fontScale),
-                  lineHeight: pt(13.92, fontScale),
+                  marginTop: idx === 0 ? "0pt" : p1Gap(8),
+                  fontSize: pt(10, p1Scale),
+                  lineHeight: pt(13.92, p1Scale),
                   color: S14_COLORS.ink,
                 }}
               >
@@ -1422,10 +1463,10 @@ export function Series14Exact({
       )}
 
       {!is2P && isVisible("courses") && coursesList.length > 0 && (
-        <div style={{ marginTop: pt(18.1, fontScale) }}>
+        <div style={{ marginTop: p1Gap(18.1) }}>
           <S14CoursesSection
             courses={coursesList}
-            fontScale={fontScale}
+            fontScale={p1Scale}
             editable={editable}
             onPatchCourses={(next) => patch({ courses: next })}
           />

@@ -578,13 +578,13 @@ function S24Page1Header({
           onCommit={(v) => onPatch?.({ fullName: v })}
           style={{
             fontFamily: F_RUBIK,
-            fontSize: pt(24, fontScale),
+            fontSize: pt(fullName.length > 20 ? +(24 * Math.max(0.44, Math.min(1, 16.5 / fullName.length))).toFixed(2) : 24, fontScale),
             fontWeight: 400,
             lineHeight: pt(28.5, fontScale),
-            letterSpacing: pt(5.25, fontScale),
+            letterSpacing: pt(fullName.length > 20 ? +(Math.max(0.7, 5.25 * Math.pow(Math.max(0.44, Math.min(1, 16.5 / fullName.length)), 2))).toFixed(2) : 5.25, fontScale),
             color: S24_COLORS.ink,
             textTransform: "uppercase",
-            whiteSpace: "nowrap",
+            whiteSpace: fullName.length > 44 ? "normal" : "nowrap",
           }}
         />
       </div>
@@ -606,10 +606,10 @@ function S24Page1Header({
           onCommit={(v) => onPatch?.({ profession: v })}
           style={{
             fontFamily: F_WORK,
-            fontSize: pt(11.04, fontScale),
+            fontSize: pt(profession.length > 34 ? 9.0 : 11.04, fontScale),
             fontWeight: 400,
-            lineHeight: pt(14.5, fontScale),
-            letterSpacing: pt(3.0, fontScale),
+            lineHeight: pt(profession.length > 34 ? 11.5 : 14.5, fontScale),
+            letterSpacing: pt(profession.length > 34 ? 1.0 : 3.0, fontScale),
             color: S24_COLORS.profession,
             textTransform: "uppercase",
           }}
@@ -951,6 +951,17 @@ function splitCertName(name: string): [string, string] {
   return [s, ""];
 }
 
+function s24EstimateExpLines(exps: any[]): number {
+  return exps.reduce((sum, e) => {
+    const bs = Array.isArray(e?.bullets) ? e.bullets : [];
+    const bulletLines = bs.reduce((acc: number, b: any) => {
+      const len = String(b || "").trim().length;
+      return acc + Math.max(1, Math.ceil(len / 62)) + 0.32;
+    }, 0);
+    return sum + 2.8 + bulletLines;
+  }, 0);
+}
+
 export function Series24Exact({
   content,
   style,
@@ -1062,12 +1073,17 @@ export function Series24Exact({
   // =========================================================================
   // PAGE 3 (3-Page Resume: Achievements & Volunteer left | Jobs 7-8 & Dev right)
   // =========================================================================
+  const p1LineBudget = isLetter ? 31 : 36;
+  const p1ThreeLines = s24EstimateExpLines(effectiveExp.slice(0, 3));
+  const hasNextPage = is3P || (style?.pageCount ?? 1) >= 2;
+  const p1Count = hasNextPage && effectiveExp.length >= 3 && p1ThreeLines > p1LineBudget ? 2 : 3;
+  const p2End = p1Count + (is3P ? 3 : 2);
   if (pageIndex >= 2) {
     const volHeadY = isLetter ? 419.56 : 445.12;
     const volRuleY = isLetter ? 462.5 : 488.15;
     const devHeadY = isLetter ? 564.88 : 614.59;
     const devRuleY = isLetter ? 585.95 : 635.6;
-    const p3Exp = effectiveExp.slice(6, 8);
+    const p3Exp = effectiveExp.slice(p2End, p2End + 2);
 
     const rawAwards: any[] = Array.isArray(c.awards) ? c.awards : [];
     const isLegacyAwards =
@@ -1204,7 +1220,7 @@ export function Series24Exact({
               marginBottomPt={idx === p3Exp.length - 1 ? 0 : 19.4}
               bulletDiamPt={3.35}
               editable={editable}
-              onUpdateExp={(nextExp) => updateExperienceAt(idx + 6, nextExp)}
+              onUpdateExp={(nextExp) => updateExperienceAt(idx + p2End, nextExp)}
             />
           ))}
         </div>
@@ -1236,7 +1252,7 @@ export function Series24Exact({
     const affRuleY = isLetter ? 667.85 : 701.25;
     const devHeadY = isLetter ? 562.0 : 611.95;
     const devRuleY = isLetter ? 583.15 : 632.75;
-    const p2Exp = is3P ? effectiveExp.slice(3, 6) : effectiveExp.slice(3, 5);
+    const p2Exp = effectiveExp.slice(p1Count, p2End);
 
     return (
       <div className="s24-page" style={{ width: "100%", height: "100%", fontFamily: F_INTER }}>
@@ -1352,7 +1368,7 @@ export function Series24Exact({
               marginBottomPt={idx === p2Exp.length - 1 ? 0 : 19.4}
               bulletDiamPt={3.35}
               editable={editable}
-              onUpdateExp={(nextExp) => updateExperienceAt(idx + 3, nextExp)}
+              onUpdateExp={(nextExp) => updateExperienceAt(idx + p1Count, nextExp)}
             />
           ))}
         </div>
@@ -1382,7 +1398,11 @@ export function Series24Exact({
   // =========================================================================
   const certHeadY = isLetter ? 406.72 : 421.7;
   const certRuleY = isLetter ? 448.16 : 463.21;
-  const page1Exp = effectiveExp.slice(0, 3);
+  const page1Exp = effectiveExp.slice(0, p1Count);
+  const p1ActualLines = s24EstimateExpLines(page1Exp);
+  const p1CompactRatio = p1ActualLines > p1LineBudget ? Math.max(0.72, Math.min(1, p1LineBudget / p1ActualLines)) : 1;
+  const p1ExpFontScale = +(fontScale * p1CompactRatio).toFixed(4);
+  const p1ExpGapPt = p1CompactRatio < 1 ? +(19.4 * p1CompactRatio * 0.55).toFixed(2) : 19.4;
 
   const summaryText = (c.summary || "").trim() || S24_SUMMARY_DEFAULT;
 
@@ -1685,8 +1705,8 @@ export function Series24Exact({
               <S24ExperienceItem
                 key={exp.id || `p1-exp-${idx}`}
                 exp={exp}
-                fontScale={fontScale}
-                marginBottomPt={idx === page1Exp.length - 1 ? 0 : 19.4}
+                fontScale={p1ExpFontScale}
+                marginBottomPt={idx === page1Exp.length - 1 ? 0 : p1ExpGapPt}
                 bulletDiamPt={3.35}
                 editable={editable}
                 onUpdateExp={(nextExp) => updateExperienceAt(idx, nextExp)}

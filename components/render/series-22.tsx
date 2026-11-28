@@ -603,12 +603,13 @@ function S22Page1Header({
           onCommit={(v) => onPatch?.({ fullName: v })}
           style={{
             fontFamily: F_MERRI,
-            fontSize: pt(28, fontScale),
+            fontSize: pt(fullName.length > 16 ? +(28 * Math.max(0.44, Math.min(1, 15.5 / fullName.length))).toFixed(2) : 28, fontScale),
             fontWeight: 400,
-            lineHeight: pt(36.0, fontScale),
-            letterSpacing: pt(6.5, fontScale),
+            lineHeight: pt(fullName.length > 16 ? +(28 * Math.max(0.44, Math.min(1, 15.5 / fullName.length)) * 1.25).toFixed(2) : 36.0, fontScale),
+            letterSpacing: pt(fullName.length > 16 ? +(Math.max(0.8, 6.5 * Math.pow(Math.max(0.44, Math.min(1, 15.5 / fullName.length)), 2))).toFixed(2) : 6.5, fontScale),
             color: S22_COLORS.ink,
             textTransform: "uppercase",
+            whiteSpace: fullName.length > 42 ? "normal" : "nowrap",
           }}
         />
       </div>
@@ -1006,6 +1007,17 @@ function S22CoursesBlock({
   );
 }
 
+function s22EstimateExpLines(exps: any[]): number {
+  return exps.reduce((sum, e) => {
+    const bs = Array.isArray(e?.bullets) ? e.bullets : [];
+    const bulletLines = bs.reduce((acc: number, b: any) => {
+      const len = String(b || "").trim().length;
+      return acc + Math.max(1, Math.ceil(len / 62)) + 0.32;
+    }, 0);
+    return sum + 2.8 + bulletLines;
+  }, 0);
+}
+
 export function Series22Exact({
   content,
   style,
@@ -1128,9 +1140,14 @@ export function Series22Exact({
   // =========================================================================
   // PAGE 3 (3-Page Resume: References left + Experience Continued & Dev right)
   // =========================================================================
+  const p1LineBudget = isLetter ? 28.5 : 33.5;
+  const p1ThreeLines = s22EstimateExpLines(effectiveExp.slice(0, 3));
+  const hasNextPage = is3P || (style?.pageCount ?? 1) >= 2;
+  const p1Count = hasNextPage && effectiveExp.length >= 3 && p1ThreeLines > p1LineBudget ? 2 : 3;
+  const p2End = p1Count + (is3P ? 3 : 2);
   if (pageIndex >= 2) {
     const devDividerY = isLetter ? 585.25 : 635.65;
-    const p3Exp = effectiveExp.slice(6, 8);
+    const p3Exp = effectiveExp.slice(p2End, p2End + 2);
 
     return (
       <div className="s22-page" style={{ width: "100%", height: "100%", fontFamily: F_SOURCE }}>
@@ -1213,7 +1230,7 @@ export function Series22Exact({
               fontScale={fontScale}
               marginBottomPt={idx === p3Exp.length - 1 ? 0 : 19.9}
               editable={editable}
-              onUpdateExp={(nextExp) => updateExperienceAt(idx + 6, nextExp)}
+              onUpdateExp={(nextExp) => updateExperienceAt(idx + p2End, nextExp)}
             />
           ))}
         </div>
@@ -1239,7 +1256,7 @@ export function Series22Exact({
     const achDivY = isLetter ? 271.65 : 286.0;
     const volDivY = isLetter ? 547.4 : 572.2;
     const devDivY = isLetter ? 583.25 : 631.3;
-    const p2Exp = is3P ? effectiveExp.slice(3, 6) : effectiveExp.slice(3, 5);
+    const p2Exp = effectiveExp.slice(p1Count, p2End);
 
     return (
       <div className="s22-page" style={{ width: "100%", height: "100%", fontFamily: F_SOURCE }}>
@@ -1390,7 +1407,7 @@ export function Series22Exact({
                 idx === p2Exp.length - 1 ? 0 : is3P ? (isLetter ? 15.0 : 14.6) : 19.9
               }
               editable={editable}
-              onUpdateExp={(nextExp) => updateExperienceAt(idx + 3, nextExp)}
+              onUpdateExp={(nextExp) => updateExperienceAt(idx + p1Count, nextExp)}
             />
           ))}
         </div>
@@ -1414,7 +1431,11 @@ export function Series22Exact({
   // PAGE 1 (Identical across 1P, 2P P1, 3P P1)
   // =========================================================================
   const eduDivY = isLetter ? 560.55 : 583.8;
-  const page1Exp = effectiveExp.slice(0, 3);
+  const page1Exp = effectiveExp.slice(0, p1Count);
+  const p1ActualLines = s22EstimateExpLines(page1Exp);
+  const p1CompactRatio = p1ActualLines > p1LineBudget ? Math.max(0.72, Math.min(1, p1LineBudget / p1ActualLines)) : 1;
+  const p1ExpFontScale = +(fontScale * p1CompactRatio).toFixed(4);
+  const p1ExpGapPt = p1CompactRatio < 1 ? +(19.9 * p1CompactRatio * 0.55).toFixed(2) : 19.9;
 
   const rawSummary = (c.summary || "").trim();
   const defaultSingleLineSummary = S22_SUMMARY_PARAGRAPHS.join(" ");
@@ -1557,8 +1578,8 @@ export function Series22Exact({
             <S22ExperienceItem
               key={exp.id || `p1-exp-${idx}`}
               exp={exp}
-              fontScale={fontScale}
-              marginBottomPt={idx === page1Exp.length - 1 ? 0 : 19.9}
+              fontScale={p1ExpFontScale}
+              marginBottomPt={idx === page1Exp.length - 1 ? 0 : p1ExpGapPt}
               editable={editable}
               onUpdateExp={(nextExp) => updateExperienceAt(idx, nextExp)}
             />

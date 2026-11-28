@@ -404,15 +404,15 @@ function S2Header({
           onCommit={(v) => onPatch?.({ fullName: v })}
           style={{
             fontFamily: F_BASK,
-            fontSize: pt(26.04, fontScale),
+            fontSize: pt(fullName.length > 22 ? +(26.04 * Math.max(0.52, Math.min(1, 21 / fullName.length))).toFixed(2) : 26.04, fontScale),
             fontWeight: 400,
             lineHeight: pt(33.0, fontScale),
-            letterSpacing: pt(fullName.length > 22 ? 3.5 : 6.5, fontScale),
-            paddingLeft: pt(fullName.length > 22 ? 3.5 : 6.5, fontScale),
+            letterSpacing: pt(fullName.length > 22 ? +(Math.max(1.0, 6.5 * Math.pow(Math.max(0.52, Math.min(1, 21 / fullName.length)), 2))).toFixed(2) : 6.5, fontScale),
+            paddingLeft: pt(fullName.length > 22 ? +(Math.max(1.0, 6.5 * Math.pow(Math.max(0.52, Math.min(1, 21 / fullName.length)), 2))).toFixed(2) : 6.5, fontScale),
             color: S2_COLORS.ink,
             textTransform: "uppercase",
             textAlign: "center",
-            whiteSpace: "nowrap",
+            whiteSpace: fullName.length > 44 ? "normal" : "nowrap",
           }}
         />
       </div>
@@ -434,11 +434,11 @@ function S2Header({
           onCommit={(v) => onPatch?.({ profession: v })}
           style={{
             fontFamily: F_MANROPE,
-            fontSize: pt(12.0, fontScale),
+            fontSize: pt(profession.length > 42 ? 9.5 : 12.0, fontScale),
             fontWeight: 400,
-            lineHeight: pt(16.0, fontScale),
-            letterSpacing: pt(3.0, fontScale),
-            paddingLeft: pt(3.0, fontScale),
+            lineHeight: pt(profession.length > 42 ? 12.5 : 16.0, fontScale),
+            letterSpacing: pt(profession.length > 42 ? 1.2 : 3.0, fontScale),
+            paddingLeft: pt(profession.length > 42 ? 1.2 : 3.0, fontScale),
             color: S2_COLORS.profession,
             textTransform: "uppercase",
             textAlign: "center",
@@ -1211,10 +1211,14 @@ export function Series2Exact({
           { id: "ed3", degree: "COURSE OR PROGRAM", school: "Institution or Platform", date: "Completion Year" },
         ];
 
-  const contactMinH = (skillsY - 122.8).toFixed(2);
-  const skillsMinH = (eduY - skillsY).toFixed(2);
+  const totalSkillCount = proSkills.length + techSkills.length;
+  const denseLeft = totalSkillCount > 12;
+  const contactMinH = (skillsY - 122.8 - (isLetter && denseLeft ? 14 : 0)).toFixed(2);
+  const skillsMinH = (eduY - skillsY - (isLetter && denseLeft ? 34 : 0)).toFixed(2);
   const summaryMinH = (skillsY - 126.19).toFixed(2);
-  const compactSkillGap = proSkills.length + techSkills.length > 12 ? 2.6 : 5.6;
+  const compactSkillGap = totalSkillCount > 14 ? (isLetter ? 0.6 : 1.8) : denseLeft ? 2.6 : 5.6;
+  const skillLineH = totalSkillCount > 14 && isLetter ? pt(11.0, fontScale) : lh;
+  const leftBlockPad = isLetter && denseLeft ? "7pt" : "14pt";
 
   return (
     <div className="s2-page" style={{ width: "100%", height: "100%", fontFamily: F_RUBIK, overflow: "hidden" }}>
@@ -1233,12 +1237,12 @@ export function Series2Exact({
           flexDirection: "column",
         }}
       >
-        <div style={{ minHeight: `${contactMinH}pt`, paddingBottom: "14pt" }}>
+        <div style={{ minHeight: `${contactMinH}pt`, paddingBottom: leftBlockPad }}>
           <S2ContactBlock content={c} fontScale={fontScale} editable={editable} inFlow onPatch={patch} />
         </div>
 
         {isVisible("skills") && (
-          <div style={{ paddingLeft: "0.86pt", minHeight: `${skillsMinH}pt`, paddingBottom: "14pt" }}>
+          <div style={{ paddingLeft: "0.86pt", minHeight: `${skillsMinH}pt`, paddingBottom: leftBlockPad }}>
             <S2Heading lines={["SKILLS"]} fontScale={fontScale} />
 
             {/* PROFESSIONAL */}
@@ -1272,7 +1276,7 @@ export function Series2Exact({
                     fontFamily: F_RUBIK,
                     fontSize: fs,
                     fontWeight: 400,
-                    lineHeight: lh,
+                    lineHeight: skillLineH,
                     marginTop: idx === 0 ? "0pt" : pt(compactSkillGap, fontScale),
                     color: S2_COLORS.ink,
                   }}
@@ -1286,7 +1290,7 @@ export function Series2Exact({
                 <ul
                   className="tpl-bullet-list"
                   style={{
-                    marginTop: pt(proSkills.length > 8 ? 14.0 : 25.0, fontScale),
+                    marginTop: pt(isLetter && denseLeft ? 7.0 : proSkills.length > 8 ? 14.0 : 25.0, fontScale),
                     paddingLeft: "12pt",
                     fontFamily: F_RUBIK,
                     fontSize: fs,
@@ -1333,7 +1337,7 @@ export function Series2Exact({
                 <div
                   key={ed.id || idx}
                   style={{
-                    marginTop: idx === 0 ? "0pt" : pt(8.2, fontScale),
+                    marginTop: idx === 0 ? "0pt" : pt(isLetter && denseLeft ? 4.5 : 8.2, fontScale),
                     fontFamily: F_RUBIK,
                     fontSize: fs,
                     lineHeight: lh,

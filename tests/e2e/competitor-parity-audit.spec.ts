@@ -680,12 +680,27 @@ test.describe("Competitor Parity Audit (Rezi / Teal / FlowCV / SaaS Production S
       { id: "doc-modern",        seriesId: "24", label: "Modern",        name: "FLORENCE NIGHTINGALE", sections: ["EDUCATION", "CERTIFICATION", "SUMMARY", "PROFESSIONAL EXPERIENCE"] },
     ];
 
+    const auditCtx = await browser.newContext({ viewport: { width: 1440, height: 1200 } });
+    const auditPage = await auditCtx.newPage();
+    auditPage.on("pageerror", (e) => runtimeErrors.push(e.message));
+    const auditReg = await auditPage.request.post("/api/auth/register", {
+      data: { name: "Template Auditor", email: `audit8_${ts}@farnavi.test`, password: "FarnaviPass123!" },
+    });
+    expect(auditReg.status()).toBe(201);
+    try {
     for (const t of templates) {
-      await page.goto(`/editor/${t.id}`, { waitUntil: "networkidle" });
-      await expect(page.locator("body")).not.toContainText("Application error");
-      await expect(page.getByRole("button", { name: /Download \/ Export/i })).toBeVisible();
+      const docId = `${t.id}-audit-${ts}`;
+      const cr = await auditPage.request.post("/api/documents", {
+        data: { id: docId, title: `${t.label} Resume`, seriesId: t.seriesId, activeTab: "resume", content: {}, settings: { pageSize: "A4", pageCount: 1 } },
+      });
+      expect(cr.ok(), `Failed to seed isolated doc for Series ${t.seriesId}`).toBeTruthy();
+      await auditPage.goto(`/editor/${docId}`, { waitUntil: "domcontentloaded" });
+      await expect(auditPage.locator('div[style*="794px"][style*="1123px"]').first()).toBeVisible({ timeout: 15000 });
+      await auditPage.evaluate(() => document.fonts.ready);
+      await expect(auditPage.locator("body")).not.toContainText("Application error");
+      await expect(auditPage.getByRole("button", { name: /Download \/ Export/i })).toBeVisible();
 
-      const geom = await page.evaluate((expectedName) => {
+      const geom = await auditPage.evaluate((expectedName) => {
         const allDivs = Array.from(document.querySelectorAll("div"));
         const sheet =
           allDivs.find((el) => {
@@ -734,12 +749,15 @@ test.describe("Competitor Parity Audit (Rezi / Teal / FlowCV / SaaS Production S
         expect(geom.text, `Series ${t.seriesId} (${t.label}) missing required section "${sec}"`).toContain(sec);
       }
 
-      await page.getByRole("button", { name: /Download \/ Export/i }).click();
-      await expect(page.getByText(new RegExp(`Export & Download.*${t.label}`, "i"))).toBeVisible();
-      await expect(page.getByRole("button", { name: /Download ATS-Safe Word/i })).toHaveCount(0);
-      await expect(page.getByRole("button", { name: /Download True Word/i })).toBeVisible();
-      await expect(page.getByRole("button", { name: /Download Live Vector PDF/i })).toBeVisible();
-      await page.keyboard.press("Escape");
+      await auditPage.getByRole("button", { name: /Download \/ Export/i }).click();
+      await expect(auditPage.getByText(new RegExp(`Export & Download.*${t.label}`, "i"))).toBeVisible();
+      await expect(auditPage.getByRole("button", { name: /Download ATS-Safe Word/i })).toHaveCount(0);
+      await expect(auditPage.getByRole("button", { name: /Download True Word/i })).toBeVisible();
+      await expect(auditPage.getByRole("button", { name: /Download Live Vector PDF/i })).toBeVisible();
+      await auditPage.keyboard.press("Escape");
+    }
+    } finally {
+      await auditCtx.close();
     }
 
     // B. Isolated user: corrupted legacy DB doc (fontSize: 0, missing coverLetter/areasOfExpertise) + anti-resurrection

@@ -58,3 +58,4 @@ repo-snapshot.txt
 *.bak
 benchmarks/
 scripts/bench-part*.js
+tmp-visual-diff/

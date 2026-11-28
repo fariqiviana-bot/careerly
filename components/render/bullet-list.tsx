@@ -65,7 +65,7 @@ const BULLET_LIST_CSS = `
 .tpl-bullet-add {
   position: absolute;
   left: 13.5pt;
-  bottom: -13pt;
+  bottom: -6pt;
   border: 1px dashed rgba(93, 111, 97, 0.55);
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.96);
