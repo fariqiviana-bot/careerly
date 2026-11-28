@@ -87,14 +87,18 @@ export default function Checker() {
     e.target.value = "";
   };
 
-  const handleDeleteResume = (docId: string) => {
+  const handleDeleteResume = async (docId: string) => {
     const target = resumes.find((r) => r.id === docId);
     const remaining = resumes.filter((r) => r.id !== docId);
-    removeDoc(docId);
+    setConfirmDeleteId(null);
+    const ok = await removeDoc(docId);
+    if (!ok) {
+      toast.error("Failed to delete resume ? restored");
+      return;
+    }
     if (uploadedFile?.docId === docId) setUploadedFile(null);
     setReports((prev) => prev.filter((r) => r.docId !== docId && r.title !== target?.title));
     setSelectedId(remaining[0]?.id ?? "");
-    setConfirmDeleteId(null);
     toast.success(`"${target?.title ?? "Resume"}" permanently deleted`);
   };
 

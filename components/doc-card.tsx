@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { apiDownloadTxt } from "@/lib/api/export-client";
@@ -40,9 +40,11 @@ function formatEditedDate(raw?: string): string {
 
 export function DocCard({ doc }: { doc: Doc }) {
   const router = useRouter();
-  const { updateDoc, removeDoc, duplicateDoc } = useStore();
+  const { removeDoc, duplicateDoc, renameDoc, togglePinDoc } = useStore();
   const [modal, setModal] = useState<"" | "rename" | "delete">("");
   const [title, setTitle] = useState(doc.title);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
+  useEffect(() => { setTitle(doc.title); }, [doc.title]);
 
   const sId = doc.series || doc.template || "11";
   const tplMeta = TEMPLATE_CATALOG.find((t) => t.id === sId) || TEMPLATE_CATALOG[3];
@@ -147,11 +149,38 @@ export function DocCard({ doc }: { doc: Doc }) {
                 <FileText className="mr-2 h-4 w-4" />
                 Rename
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => duplicateDoc(doc.id)}>
+              <DropdownMenuItem
+                disabled={busyAction === "duplicate"}
+                onClick={async () => {
+                  if (busyAction) return;
+                  setBusyAction("duplicate");
+                  try {
+                    const copyId = await duplicateDoc(doc.id);
+                    if (copyId) toast.success("Document duplicated");
+                    else toast.error("Failed to duplicate document");
+                  } finally {
+                    setBusyAction(null);
+                  }
+                }}
+              >
                 <Copy className="mr-2 h-4 w-4" />
                 Duplicate
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => updateDoc(doc.id, { pinned: !doc.pinned })}>
+              <DropdownMenuItem
+                disabled={busyAction === "pin"}
+                onClick={async () => {
+                  if (busyAction) return;
+                  setBusyAction("pin");
+                  try {
+                    const nextPinned = !doc.pinned;
+                    const ok = await togglePinDoc(doc.id, nextPinned);
+                    if (ok) toast.success(nextPinned ? "Document pinned" : "Document unpinned");
+                    else toast.error("Failed to update pin status");
+                  } finally {
+                    setBusyAction(null);
+                  }
+                }}
+              >
                 <Pin className="mr-2 h-4 w-4" />
                 {doc.pinned ? "Unpin" : "Pin"}
               </DropdownMenuItem>
@@ -187,10 +216,22 @@ export function DocCard({ doc }: { doc: Doc }) {
         footer={
           <Button
             className="rounded-full"
-            onClick={() => {
-              updateDoc(doc.id, { title });
-              setModal("");
-              toast.success("Document renamed");
+            disabled={busyAction === "rename" || !title.trim()}
+            onClick={async () => {
+              const trimmed = title.trim();
+              if (!trimmed || busyAction) return;
+              setBusyAction("rename");
+              try {
+                const ok = await renameDoc(doc.id, trimmed);
+                if (ok) {
+                  setModal("");
+                  toast.success("Document renamed");
+                } else {
+                  toast.error("Failed to rename document");
+                }
+              } finally {
+                setBusyAction(null);
+              }
             }}
           >
             Save
@@ -207,9 +248,10 @@ export function DocCard({ doc }: { doc: Doc }) {
         onOpenChange={(b) => !b && setModal("")}
         title="Delete document?"
         desc={`"${cleanTitle}" will be permanently removed.`}
-        onConfirm={() => {
-          removeDoc(doc.id);
-          toast.success("Document deleted");
+        onConfirm={async () => {
+          const ok = await removeDoc(doc.id);
+          if (ok) toast.success("Document deleted");
+          else toast.error("Failed to delete document ? restored");
         }}
       />
     </>

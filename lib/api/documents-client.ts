@@ -81,6 +81,35 @@ export async function apiPatchDocument(
   return data.document;
 }
 
+export async function apiDeleteDocument(id: string): Promise<{ ok: boolean; notFound?: boolean }> {
+  const res = await fetch(`/api/documents/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (res.status === 404) return { ok: true, notFound: true };
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const err: any = new Error(errData.error || `DELETE /api/documents/${id} failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
+  return { ok: true };
+}
+
+export async function apiDuplicateDocument(id: string) {
+  const res = await fetch(`/api/documents/${encodeURIComponent(id)}/duplicate`, {
+    method: "POST",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const err: any = new Error(errData.error || `POST /api/documents/${id}/duplicate failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
+  const data = await res.json();
+  return data.document;
+}
+
 export async function apiListVersions(id: string): Promise<BackendVersion[]> {
   const res = await fetch(`/api/documents/${encodeURIComponent(id)}/versions`, {
     cache: "no-store",

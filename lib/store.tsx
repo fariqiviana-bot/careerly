@@ -1,4 +1,5 @@
 "use client";
+import { apiDeleteDocument, apiDuplicateDocument, apiPatchDocument, apiUpsertDocument } from "@/lib/api/documents-client";
 
 import { apiGetMe, apiLogout, apiListDocuments, apiListTracker, apiCreateTracker, apiUpdateTracker, apiDeleteTracker, apiListInterviews, apiCreateInterview } from "@/lib/api/workspace-client";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -480,6 +481,7 @@ export interface ResumeDocument {
   targetRole: string;
   language: string;
   updatedAt: string;
+  pinned?: boolean;
   atsScore: number;
   activeTab: "resume" | "cover" | "references";
   style: DocumentStyleSettings;
@@ -2470,7 +2472,7 @@ function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
     font: tpl.headingFont,
     secondaryFont: tpl.bodyFont,
     score: d.atsScore,
-    pinned: d.id === "d1",
+    pinned: Boolean(d.pinned),
     sectionOrder: d.sectionOrder,
     visibility: {
       ...(d.sectionOrder || []).reduce((acc, s: any) => {
@@ -2569,8 +2571,8 @@ export interface UnifiedAppStore {
   switchSeries: (seriesId: string, loadSample?: boolean) => void;
   resetToSeriesSample: (seriesId?: string) => void;
   createDocumentFromSeries: (seriesId: string, customTitle?: string, initialContent?: ResumeContent) => string;
-  duplicateDocument: (id: string) => string;
-  deleteDocument: (id: string) => void;
+  duplicateDocument: (id: string) => Promise<string | null>;
+  deleteDocument: (id: string) => Promise<boolean>;
   saveVersionSnapshot: (label: string) => void;
   restoreVersionSnapshot: (snapshotId: string) => void;
   translateActiveDocument: (targetLanguage: string) => void;
@@ -2606,8 +2608,10 @@ export interface UnifiedAppStore {
   toggleSaveJob: (id: string) => void;
   addDoc: (type: DocType, title: string, opts?: Partial<Doc>) => Doc;
   updateDoc: (id: string, patch: Partial<Doc>) => void;
-  removeDoc: (id: string) => void;
-  duplicateDoc: (id: string) => void;
+  removeDoc: (id: string) => Promise<boolean>;
+  renameDoc: (id: string, title: string) => Promise<boolean>;
+  togglePinDoc: (id: string, pinned: boolean) => Promise<boolean>;
+  duplicateDoc: (id: string) => Promise<string | null>;
   addTrack: (t: Omit<TrackItem, "id" | "date">) => void;
   moveTrack: (id: string, s: TrackStatus) => void;
   updateTrack: (id: string, patch: Partial<TrackItem>) => void;
@@ -2726,12 +2730,37 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (signingOutRef.current) return;
     if (typeof window !== "undefined" && window.location.pathname.startsWith("/login")) return;
+    const stripLargeDataUri = (val: any) =>
+      typeof val === "string" && val.startsWith("data:image/") && val.length > 4096 ? "" : val;
+    const lightDocs = documents.map((d) => {
+      const c: any = d.content || {};
+      const cl: any = c.coverLetter;
+      return {
+        ...d,
+        content: {
+          ...c,
+          photoUrl: stripLargeDataUri(c.photoUrl),
+          photo: stripLargeDataUri(c.photo),
+          ...(cl && typeof cl === "object"
+            ? { coverLetter: { ...cl, signatureImage: stripLargeDataUri(cl.signatureImage) } }
+            : {}),
+        },
+      };
+    });
+    const payload = JSON.stringify({ documents: lightDocs, activeDocId, user, tracker, interviews });
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ documents, activeDocId, user, tracker, interviews })
-      );
-    } catch (err) { console.warn("[store]", err); }
+      localStorage.setItem(STORAGE_KEY, payload);
+    } catch {
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith("farnavi_print_snapshot_")) localStorage.removeItem(k);
+        }
+        localStorage.setItem(STORAGE_KEY, payload);
+      } catch (retryErr) {
+        console.warn("[store] localStorage quota exceeded:", retryErr);
+      }
+    }
   }, [documents, activeDocId, user, tracker, interviews]);
 
   const activeDocument = documents.find((d) => d.id === activeDocId) || documents[0] || INITIAL_DOCUMENTS[0];
@@ -2824,29 +2853,37 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     return newId;
   };
 
-  const duplicateDocument = (id: string) => {
-    const source = documents.find((d) => d.id === id) || activeDocument;
-    const newId = "doc-" + Date.now().toString(36);
-    const copy: ResumeDocument = {
-      ...JSON.parse(JSON.stringify(source)),
-      id: newId,
-      title: `${source.title} (Copy)`,
-      updatedAt: new Date().toISOString(),
-    };
-    setDocuments((prev) => [copy, ...prev]);
-    setActiveDocId(newId);
-    return newId;
-  };
-
-  const deleteDocument = (id: string) => {
+  const deleteDocument = async (id: string): Promise<boolean> => {
+    const snapshotDoc = documents.find((d) => d.id === id) || null;
+    const snapshotIndex = documents.findIndex((d) => d.id === id);
+    const prevActive = activeDocId;
     setDocuments((prev) => {
       const filtered = prev.filter((d) => d.id !== id);
-      if (filtered.length === 0) return INITIAL_DOCUMENTS;
-      if (activeDocId === id) {
-        setActiveDocId(filtered[0].id);
+      if (prevActive === id) {
+        setActiveDocId(filtered[0]?.id || "");
       }
       return filtered;
     });
+    try {
+      await apiDeleteDocument(id);
+      try {
+        localStorage.removeItem(`farnavi_print_snapshot_${id}`);
+      } catch {}
+      return true;
+    } catch (err) {
+      console.error("[store] deleteDocument failed, rolling back:", err);
+      if (snapshotDoc) {
+        setDocuments((prev) => {
+          if (prev.some((d) => d.id === id)) return prev;
+          const next = [...prev];
+          const idx = snapshotIndex >= 0 && snapshotIndex <= next.length ? snapshotIndex : 0;
+          next.splice(idx, 0, snapshotDoc);
+          return next;
+        });
+        if (prevActive === id) setActiveDocId(id);
+      }
+      return false;
+    }
   };
 
   const saveVersionSnapshot = (label: string) => {
@@ -3050,6 +3087,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       language: remote.language || 'English',
       updatedAt: remote.updatedAt || new Date().toISOString(),
       atsScore: Number(remote.score) || 95,
+      pinned: Boolean(remote.pinned),
       activeTab: (remote.activeTab === 'cover' || remote.activeTab === 'references' ? remote.activeTab : 'resume'),
       style: nextStyle,
       sectionOrder: normalizeSectionOrder(remote.sectionOrder, remoteVis),
@@ -3210,6 +3248,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           ...d,
           title: patch.title ?? (seriesChanged && SERIES_CATALOG.some((sc) => d.title === `${sc.name} Resume`) ? `${tpl.name} Resume` : d.title),
           seriesId: nextSeries,
+          pinned: patch.pinned !== undefined ? Boolean(patch.pinned) : d.pinned,
           activeTab: nextTab,
           style: nextStyle,
           sectionOrder: nextSectionOrder,
@@ -3219,6 +3258,102 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         };
       })
     );
+  };
+
+  const buildDbPayloadFromDoc = (doc: ResumeDocument, overrides: Record<string, any> = {}) => {
+    const legacy = mapResumeDocToLegacyDoc(doc);
+    return {
+      id: doc.id,
+      type: legacy.type || "resume",
+      title: doc.title || "Untitled Resume",
+      seriesId: doc.seriesId || "11",
+      activeTab: doc.activeTab || "resume",
+      language: doc.language || "English",
+      accent: legacy.accent || "#202124",
+      font: legacy.font || "Merriweather",
+      score: Number.isFinite(doc.atsScore) ? doc.atsScore : 0,
+      pinned: Boolean(doc.pinned),
+      content: legacy.content || {},
+      settings: legacy.settings || {},
+      visibility: legacy.visibility || {},
+      sectionOrder: doc.sectionOrder || [],
+      ...overrides,
+    };
+  };
+
+  const duplicateDocument = async (id: string): Promise<string | null> => {
+    const source = documents.find((d) => d.id === id) || activeDocument;
+    if (!source) return null;
+    try {
+      let remoteCopy = await apiDuplicateDocument(id);
+      if (!remoteCopy) {
+        const newId = "doc-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6);
+        remoteCopy = await apiUpsertDocument(
+          buildDbPayloadFromDoc(source, {
+            id: newId,
+            title: `${source.title} (Copy)`,
+            pinned: false,
+          })
+        );
+      }
+      if (!remoteCopy?.id) return null;
+      upsertDocFromRemote(remoteCopy);
+      setActiveDocId(remoteCopy.id);
+      return remoteCopy.id;
+    } catch (err) {
+      console.error("[store] duplicateDocument failed:", err);
+      return null;
+    }
+  };
+
+  const renameDoc = async (id: string, rawTitle: string): Promise<boolean> => {
+    const nextTitle = String(rawTitle || "").trim();
+    if (!nextTitle) return false;
+    const target = documents.find((d) => d.id === id);
+    if (!target) return false;
+    const prevTitle = target.title;
+    updateDoc(id, { title: nextTitle });
+    try {
+      await apiPatchDocument(id, { title: nextTitle });
+      return true;
+    } catch (err: any) {
+      if (err?.status === 404) {
+        try {
+          await apiUpsertDocument(buildDbPayloadFromDoc({ ...target, title: nextTitle }));
+          return true;
+        } catch (upErr) {
+          console.error("[store] renameDoc upsert fallback failed:", upErr);
+        }
+      } else {
+        console.error("[store] renameDoc failed, rolling back:", err);
+      }
+      updateDoc(id, { title: prevTitle });
+      return false;
+    }
+  };
+
+  const togglePinDoc = async (id: string, nextPinned: boolean): Promise<boolean> => {
+    const target = documents.find((d) => d.id === id);
+    if (!target) return false;
+    const prevPinned = Boolean(target.pinned);
+    updateDoc(id, { pinned: nextPinned });
+    try {
+      await apiPatchDocument(id, { pinned: nextPinned });
+      return true;
+    } catch (err: any) {
+      if (err?.status === 404) {
+        try {
+          await apiUpsertDocument(buildDbPayloadFromDoc({ ...target, pinned: nextPinned }));
+          return true;
+        } catch (upErr) {
+          console.error("[store] togglePinDoc upsert fallback failed:", upErr);
+        }
+      } else {
+        console.error("[store] togglePinDoc failed, rolling back:", err);
+      }
+      updateDoc(id, { pinned: prevPinned });
+      return false;
+    }
   };
 
     const [authenticated, setAuthenticated] = useState<boolean>(false);
@@ -3364,9 +3499,9 @@ return (
         signOut,
         updateDoc,
         removeDoc: deleteDocument,
-        duplicateDoc: (id) => {
-          duplicateDocument(id);
-        },
+        renameDoc,
+        togglePinDoc,
+        duplicateDoc: (id) => duplicateDocument(id),
         addTrack: addTrackDb,
         moveTrack: moveTrackDb,
         updateTrack: updateTrackDb,
