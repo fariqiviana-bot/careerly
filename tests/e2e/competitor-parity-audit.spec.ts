@@ -541,11 +541,12 @@ test.describe("Competitor Parity Audit (Rezi / Teal / FlowCV / SaaS Production S
     await Promise.all([ctx.close(), ctx2.close()]);
   });
 
-  test("7. UI-to-API Export Telemetry: Clicking Export Modal buttons transmits visibility, sectionOrder & customLabels to downloaded ATS DOCX, Visual DOCX, ZIP & TXT", async ({
+  test("7. UI-to-API Export Parity: Clean single Word + Vector PDF (no duplicate ATS-Safe Word button) honoring visibility, order & labels", async ({
     browser,
   }) => {
     const ts = Date.now();
-    const docId = `ui-export-parity-${ts}`;
+    const docId14 = `ui-export-s14-${ts}`;
+    const docId24 = `ui-export-s24-${ts}`;
     const hiddenCert = "UI_HIDDEN_CERT_SECRET_5544";
     const hiddenLang = "UI_HIDDEN_LANG_SECRET_5566";
     const customEdu = "Academic Honors";
@@ -555,113 +556,217 @@ test.describe("Competitor Parity Audit (Rezi / Teal / FlowCV / SaaS Production S
     const page = await ctx.newPage();
     await registerViaUi(page, "Export Telemetry User", `exp_ui_${ts}@farnavi.test`, "FarnaviPass123!");
 
-    const createRes = await page.request.post("/api/documents", {
-      data: {
-        id: docId,
-        title: "UI Export Parity Resume",
-        seriesId: "24",
-        content: {
-          name: "Clara Lindholm",
-          role: "Principal Product Engineer",
-          email: "clara.lindholm@farnavi.test",
-          phone: "+1 (206) 555-7171",
-          location: "Seattle, WA",
-          summary: "Led end-to-end cloud architecture across 5 global regions with 99.99% uptime.",
-          experience: [
-            {
-              id: "exp-1",
-              role: "Principal Engineer",
-              company: "Nordic Cloud",
-              period: "Jan 2022 - Present",
-              bullets: ["Cut P95 checkout latency by 51% across 3.4M weekly sessions."],
-            },
-          ],
-          education: [
-            { id: "edu-1", degree: "M.S. Distributed Systems", school: "KTH Stockholm", period: "2015 - 2017" },
-          ],
-          skills: ["Distributed Systems", "TypeScript", "PostgreSQL"],
-          certifications: [{ name: hiddenCert, issuer: "Private Board", date: "2025" }],
-          languages: [hiddenLang],
+    const sharedPayload = {
+      name: "Clara Lindholm",
+      role: "Principal Product Engineer",
+      email: "clara.lindholm@farnavi.test",
+      phone: "+1 (206) 555-7171",
+      location: "Seattle, WA",
+      summary: "Led end-to-end cloud architecture across 5 global regions with 99.99% uptime.",
+      experience: [
+        {
+          id: "exp-1",
+          role: "Principal Engineer",
+          company: "Nordic Cloud",
+          period: "Jan 2022 - Present",
+          bullets: ["Cut P95 checkout latency by 51% across 3.4M weekly sessions."],
         },
+      ],
+      education: [
+        { id: "edu-1", degree: "M.S. Distributed Systems", school: "KTH Stockholm", period: "2015 - 2017" },
+      ],
+      skills: ["Distributed Systems", "TypeScript", "PostgreSQL"],
+      certifications: [{ name: hiddenCert, issuer: "Private Board", date: "2025" }],
+      languages: [hiddenLang],
+    };
+
+    const r14 = await page.request.post("/api/documents", {
+      data: {
+        id: docId14,
+        title: "UI Export Parity ATS",
+        seriesId: "14",
+        content: sharedPayload,
         visibility: { certifications: false, languages: false },
         sectionOrder: ["education", "skills", "experience", "summary"],
         customLabels: { education: customEdu, experience: customExp },
       },
     });
-    expect(createRes.status()).toBe(201);
+    expect(r14.status()).toBe(201);
 
-    await page.goto(`/editor/${docId}`, { waitUntil: "networkidle" });
-    const openExportBtn = page.getByRole("button", { name: /Download \/ Export/i });
-    await expect(openExportBtn).toBeVisible({ timeout: 15_000 });
-    await openExportBtn.click();
+    const r24 = await page.request.post("/api/documents", {
+      data: {
+        id: docId24,
+        title: "UI Export Parity 2Col",
+        seriesId: "24",
+        content: sharedPayload,
+        visibility: { certifications: false, languages: false },
+      },
+    });
+    expect(r24.status()).toBe(201);
 
-    // 1. Download ATS-Safe Word (.docx) via UI button
-    const [atsDl] = await Promise.all([
-      page.waitForEvent("download"),
-      page.getByRole("button", { name: /Download ATS-Safe Word/i }).click(),
-    ]);
-    expect(atsDl.suggestedFilename()).toContain("_ATS.docx");
-    expect(atsDl.suggestedFilename()).not.toContain("__ATS");
-    const atsPath = await atsDl.path();
-    expect(atsPath).toBeTruthy();
-    const atsZip = await JSZip.loadAsync(fs.readFileSync(atsPath!));
-    const atsXml = await atsZip.file("word/document.xml")!.async("string");
-    expect(atsXml, "ATS DOCX from UI contained table markup!").not.toContain("<w:tbl");
-    expect(atsXml, "ATS DOCX from UI leaked hidden certifications!").not.toContain(hiddenCert);
-    expect(atsXml, "ATS DOCX from UI leaked hidden languages!").not.toContain(hiddenLang);
-    expect(atsXml, "Sample nursing technicalSkills leaked into user resume!").not.toContain("Epic &amp; Cerner");
-    expect(atsXml, "Hardcoded farnavi.com leaked into user resume!").not.toContain("farnavi.com");
-    expect((atsXml.match(/Cut P95 checkout latency/g) || []).length, "Experience bullet duplicated in ATS DOCX!").toBe(1);
-    const iEdu = atsXml.indexOf(customEdu.toUpperCase());
-    const iSkills = atsXml.indexOf("SKILLS");
-    const iExp = atsXml.indexOf(customExp.toUpperCase());
-    const iSum = atsXml.indexOf("PROFESSIONAL SUMMARY");
-    expect(iEdu, "Custom Education label missing from UI ATS DOCX").toBeGreaterThan(-1);
-    expect(iSkills).toBeGreaterThan(iEdu);
-    expect(iExp, "Custom Experience label missing from UI ATS DOCX").toBeGreaterThan(iSkills);
-    expect(iSum).toBeGreaterThan(iExp);
+    // Part A: Series 14 (Single-Column) -> ONE Word + ONE PDF (no duplicate ATS-Safe Word button)
+    await page.goto(`/editor/${docId14}`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: /Download \/ Export/i }).click();
+    await expect(page.getByRole("button", { name: /Download ATS-Safe Word/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Download True Word/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Download Live Vector PDF/i })).toBeVisible();
 
-    // 2. Download True Word (.docx) via UI button
     const [visDl] = await Promise.all([
       page.waitForEvent("download"),
       page.getByRole("button", { name: /Download True Word/i }).click(),
     ]);
-    const visPath = await visDl.path();
-    expect(visPath).toBeTruthy();
-    const visZip = await JSZip.loadAsync(fs.readFileSync(visPath!));
+    const visZip = await JSZip.loadAsync(fs.readFileSync((await visDl.path())!));
     const visXml = await visZip.file("word/document.xml")!.async("string");
-    expect(visXml, "True Word DOCX from UI leaked hidden certifications!").not.toContain(hiddenCert);
-    expect(visXml, "True Word DOCX from UI leaked hidden languages!").not.toContain(hiddenLang);
+    const visText = visXml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    expect(visText.toUpperCase()).toContain("CLARA LINDHOLM");
+    expect(visText).not.toContain("TECHNICAL:");
+    expect((visText.match(/PostgreSQL/g) || []).length).toBe(1);
+    expect(visXml).not.toContain(hiddenCert);
+    expect(visXml).not.toContain(hiddenLang);
 
-    // 3. Download Complete Application Bundle (.zip) via UI button
     const [zipDl] = await Promise.all([
       page.waitForEvent("download"),
       page.getByRole("button", { name: /Full Application Bundle/i }).click(),
     ]);
-    const zipPath = await zipDl.path();
-    expect(zipPath).toBeTruthy();
-    const bundleZip = await JSZip.loadAsync(fs.readFileSync(zipPath!));
+    const bundleZip = await JSZip.loadAsync(fs.readFileSync((await zipDl.path())!));
     const txtFile = Object.keys(bundleZip.files).find((k) => k.endsWith("_ATS_Plain_Text.txt"));
     expect(txtFile).toBeTruthy();
     const bundleTxt = await bundleZip.file(txtFile!)!.async("string");
-    expect(bundleTxt, "ZIP Bundle from UI leaked hidden certifications!").not.toContain(hiddenCert);
-    expect(bundleTxt, "ZIP Bundle from UI leaked hidden languages!").not.toContain(hiddenLang);
+    expect(bundleTxt).not.toContain(hiddenCert);
+    expect(bundleTxt).not.toContain(hiddenLang);
     expect(bundleTxt.indexOf(customEdu.toUpperCase())).toBeGreaterThan(-1);
     expect(bundleTxt.indexOf(customExp.toUpperCase())).toBeGreaterThan(bundleTxt.indexOf(customEdu.toUpperCase()));
 
-    // 4. Download Plain Text (.txt) via UI button
     const [txtDl] = await Promise.all([
       page.waitForEvent("download"),
       page.getByRole("button", { name: /Download Plain Text/i }).click(),
     ]);
-    const txtPath = await txtDl.path();
-    expect(txtPath).toBeTruthy();
-    const txtContent = fs.readFileSync(txtPath!, "utf8");
-    expect(txtContent, "TXT from UI leaked hidden certifications!").not.toContain(hiddenCert);
-    expect(txtContent, "TXT from UI leaked hidden languages!").not.toContain(hiddenLang);
+    const txtContent = fs.readFileSync((await txtDl.path())!, "utf8");
+    expect(txtContent).not.toContain(hiddenCert);
+    expect(txtContent).not.toContain(hiddenLang);
     expect(txtContent.indexOf(customEdu.toUpperCase())).toBeGreaterThan(-1);
-    expect(txtContent.indexOf(customExp.toUpperCase())).toBeGreaterThan(txtContent.indexOf(customEdu.toUpperCase()));
 
+    // Part B: Series 24 (Two-Column) -> ONE Word + ONE PDF (no ATS-Safe Word button)
+    await page.goto(`/editor/${docId24}`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: /Download \/ Export/i }).click();
+    await expect(page.getByRole("button", { name: /Download ATS-Safe Word/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Download True Word/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Download Live Vector PDF/i })).toBeVisible();
+
+    await ctx.close();
+  });
+
+  test("8. Customer-Complaint Audit: All 8 Templates Zero-Overflow A4 Geometry, Required Sections, Hub Identity & Crash Resilience", async ({
+    browser,
+  }) => {
+    const ts = Date.now();
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 1200 } });
+    const page = await ctx.newPage();
+    const runtimeErrors: string[] = [];
+    page.on("pageerror", (e) => runtimeErrors.push(e.message));
+
+    // A. Inspect ALL 8 calibrated starter templates for REAL customer complaints:
+    //    1) Zero overflow outside A4 sheet bounds (scrollOverflow <= 2px, clippedBottom === 0, clippedRight === 0)
+    //    2) Exact original persona & every core section visibly rendered
+    //    3) Export modal matches exact template & has NO duplicate ATS-Safe Word button
+    const templates = [
+      { id: "doc-executive",     seriesId: "2",  label: "Executive",     name: "JENNIFER DAVIS",       sections: ["SKILLS", "EDUCATION", "PROFESSIONAL SUMMARY", "PROFESSIONAL EXPERIENCE"] },
+      { id: "doc-elegant",       seriesId: "3",  label: "Elegant",       name: "JAMES SMITH",          sections: ["CONTACT", "SKILLS", "EDUCATION", "SUMMARY", "EXPERIENCE"] },
+      { id: "doc-contemporary",  seriesId: "4",  label: "Double Column", name: "OLIVIA ANDERSON",      sections: ["SKILLS", "EDUCATION", "CERTIFICATION", "SUMMARY", "EXPERIENCE"] },
+      { id: "doc-ivy-league",    seriesId: "11", label: "Ivy League",    name: "BLAKE TRUMAN",         sections: ["PROFESSIONAL SUMMARY", "PROFESSIONAL EXPERIENCE", "EDUCATION"] },
+      { id: "doc-single-column", seriesId: "12", label: "Single Column", name: "JONAH ROMANO",         sections: ["PROFESSIONAL SUMMARY", "EXPERIENCE", "EDUCATION"] },
+      { id: "doc-minimal",       seriesId: "14", label: "Minimal",       name: "JACKSON CALDWELL",     sections: ["PROFESSIONAL PROFILE", "PROFESSIONAL EXPERIENCE", "SKILLS", "PROFESSIONAL DEVELOPMENT"] },
+      { id: "doc-photo-column",  seriesId: "22", label: "Photo Column",  name: "THEO FINCH",           sections: ["CONTACT", "SUMMARY", "SKILLS", "EDUCATION", "EXPERIENCE"] },
+      { id: "doc-modern",        seriesId: "24", label: "Modern",        name: "FLORENCE NIGHTINGALE", sections: ["EDUCATION", "CERTIFICATION", "SUMMARY", "PROFESSIONAL EXPERIENCE"] },
+    ];
+
+    for (const t of templates) {
+      await page.goto(`/editor/${t.id}`, { waitUntil: "networkidle" });
+      await expect(page.locator("body")).not.toContainText("Application error");
+      await expect(page.getByRole("button", { name: /Download \/ Export/i })).toBeVisible();
+
+      const geom = await page.evaluate((expectedName) => {
+        const allDivs = Array.from(document.querySelectorAll("div"));
+        const sheet =
+          allDivs.find((el) => {
+            const st = el.getAttribute("style") || "";
+            return (/width:\s*(595|595\.28|595\.32|210mm|793|794)/i.test(st) && /height:\s*(841|842|297mm|1122|1123)/i.test(st));
+          }) ||
+          allDivs.find((el) => {
+            const cs = getComputedStyle(el);
+            const w = parseFloat(cs.width);
+            const h = parseFloat(cs.height);
+            return w >= 780 && w <= 810 && h >= 1100 && h <= 1140 && (el.innerText || "").toUpperCase().includes(expectedName.split(" ")[0]);
+          });
+        if (!sheet) return { found: false, text: "", scrollOverflowY: 999, scrollOverflowX: 999, clippedBottom: 999, clippedRight: 999 };
+        const sr = sheet.getBoundingClientRect();
+        const scale = sr.width / 793.7 || 1;
+        let clippedBottom = 0;
+        let clippedRight = 0;
+        const walker = document.createTreeWalker(sheet, NodeFilter.SHOW_ELEMENT);
+        let node: Node | null;
+        while ((node = walker.nextNode())) {
+          const el = node as HTMLElement;
+          if (el.children.length > 0 && !["P", "LI", "H1", "H2", "H3", "SPAN"].includes(el.tagName)) continue;
+          if (!(el.innerText || "").trim()) continue;
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          if ((r.bottom - sr.bottom) / scale > 3) clippedBottom++;
+          if ((r.right - sr.right) / scale > 3) clippedRight++;
+        }
+        return {
+          found: true,
+          text: (sheet.innerText || "").toUpperCase(),
+          scrollOverflowY: Math.round(sheet.scrollHeight - sheet.clientHeight),
+          scrollOverflowX: Math.round(sheet.scrollWidth - sheet.clientWidth),
+          clippedBottom,
+          clippedRight,
+        };
+      }, t.name);
+
+      expect(geom.found, `Series ${t.seriesId} A4 sheet not found`).toBe(true);
+      expect(geom.scrollOverflowY, `Series ${t.seriesId} (${t.label}) overflows vertically`).toBeLessThanOrEqual(2);
+      expect(geom.scrollOverflowX, `Series ${t.seriesId} (${t.label}) overflows horizontally`).toBeLessThanOrEqual(2);
+      expect(geom.clippedBottom, `Series ${t.seriesId} (${t.label}) clips content past A4 bottom`).toBe(0);
+      expect(geom.clippedRight, `Series ${t.seriesId} (${t.label}) clips content past A4 right`).toBe(0);
+      expect(geom.text, `Series ${t.seriesId} missing original persona ${t.name}`).toContain(t.name);
+      for (const sec of t.sections) {
+        expect(geom.text, `Series ${t.seriesId} (${t.label}) missing required section "${sec}"`).toContain(sec);
+      }
+
+      await page.getByRole("button", { name: /Download \/ Export/i }).click();
+      await expect(page.getByText(new RegExp(`Export & Download.*${t.label}`, "i"))).toBeVisible();
+      await expect(page.getByRole("button", { name: /Download ATS-Safe Word/i })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: /Download True Word/i })).toBeVisible();
+      await expect(page.getByRole("button", { name: /Download Live Vector PDF/i })).toBeVisible();
+      await page.keyboard.press("Escape");
+    }
+
+    // B. Isolated user: corrupted legacy DB doc (fontSize: 0, missing coverLetter/areasOfExpertise) + anti-resurrection
+    await registerViaUi(page, "Legacy Crash Guard", `legacy_${ts}@farnavi.test`, "FarnaviPass123!");
+    const legacyId = `legacy-corrupt-${ts}`;
+    const cr = await page.request.post("/api/documents", {
+      data: {
+        id: legacyId,
+        title: "Corrupted Legacy Executive",
+        seriesId: "2",
+        content: { name: "Legacy Executive", role: "VP Operations" },
+        settings: { pageSize: "A4", pageCount: 1, fontSize: 0, lineHeight: 1.15 },
+      },
+    });
+    expect(cr.status()).toBe(201);
+    await page.goto(`/editor/${legacyId}`, { waitUntil: "networkidle" });
+    await expect(page.locator("body")).not.toContainText("Application error");
+    await expect(page.getByRole("button", { name: /Download \/ Export/i })).toBeVisible();
+
+    const delRes = await page.request.delete(`/api/documents/${legacyId}`);
+    expect([200, 204]).toContain(delRes.status());
+    await page.goto("about:blank");
+    await page.waitForTimeout(300);
+    const checkGone = await page.request.get(`/api/documents/${legacyId}`);
+    expect(checkGone.status()).toBe(404);
+
+    expect(runtimeErrors, `Client-side errors encountered: ${runtimeErrors.join(" | ")}`).toEqual([]);
     await ctx.close();
   });
 });

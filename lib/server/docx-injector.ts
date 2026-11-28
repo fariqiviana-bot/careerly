@@ -505,8 +505,11 @@ function runInjectionPass(
       return replaceIndentedContinuation(seg.xml, proSkills.slice(8, 12).join(" - "));
     }
     if (/^technical:\s+/i.test(t)) {
-      const srcTech = techSkills.length > 0 ? techSkills : proSkills.slice(0, 4);
-      return replaceAfterColonRun(seg.xml, "TECHNICAL", srcTech.slice(0, 4).join(" - "));
+      if (techSkills.length === 0) {
+        if (!/<w:(?:sectPr|bookmarkStart|bookmarkEnd)\b/.test(seg.xml)) return "";
+        return replaceParagraphText(seg.xml, "");
+      }
+      return replaceAfterColonRun(seg.xml, "TECHNICAL", techSkills.slice(0, 4).join(" - "));
     }
     if (/^data entry\s*-\s*google workspace/i.test(t)) {
       const srcTech = techSkills.length > 0 ? techSkills : [];

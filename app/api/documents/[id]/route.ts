@@ -106,6 +106,19 @@ export async function PATCH(
     if (d.customLabels !== undefined) data.customLabelsJson = JSON.stringify(d.customLabels);
     if (d.headerFooter !== undefined) data.headerFooterJson = JSON.stringify(d.headerFooter);
 
+    // Proactive slug collision check (prevents prisma:error P2002 log noise)
+    if (data.slug) {
+      const slugOwner = await prisma.document.findFirst({
+        where: { slug: data.slug, NOT: { id } },
+        select: { id: true },
+      });
+      if (slugOwner) {
+        return NextResponse.json(
+          { error: "This public URL slug is already taken. Please choose another one." },
+          { status: 409 }
+        );
+      }
+    }
     let saved;
     if (!existing) {
       if (req.nextUrl.searchParams.get("upsert") !== "1") {
@@ -114,7 +127,7 @@ export async function PATCH(
       const SEEDED_DOC_IDS = new Set(["doc-executive","doc-ivy-league","doc-elegant","doc-photo-column","doc-modern","doc-contemporary","doc-minimal","doc-single-column"]);
       const existingAny = await prisma.document.findUnique({ where: { id }, select: { userId: true } });
       if (existingAny && existingAny.userId !== user.id) {
-        if (SEEDED_DOC_IDS.has(id)) {
+        if (SEEDED_DOC_IDS.has(id) && existingAny.userId === "local-workspace-user") {
           saved = await prisma.document.update({ where: { id }, data: { ...data, userId: user.id } });
         } else {
           return NextResponse.json({ error: "Document not found" }, { status: 404 });

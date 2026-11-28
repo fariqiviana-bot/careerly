@@ -209,32 +209,39 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
     }
   }, [sp]);
 
+  const [hydratedTick, setHydratedTick] = useState(0);
+  const latestDocRef = useRef(doc);
+  latestDocRef.current = doc;
+
   // 1. Hydrate from SQLite backend on open (or seed into DB if first time opening)
   useEffect(() => {
     if (!doc?.id || hydratedDocRef.current === doc.id) return;
     initialSeriesRef.current = String(doc.series || doc.template || '11');
     let cancelled = false;
 
-    const buildPayload = () => ({
-      id: doc.id,
-      type: doc.type || "resume",
-      title: doc.title || "Untitled Resume",
-      seriesId: String(doc.series || doc.template || "11"),
-      activeTab: doc.activeTab || "resume",
-      language: doc.language || "English",
-      accent: doc.accent || "#202124",
-      font: doc.font || "Merriweather",
-      score: calculateDocScore(doc.content).score,
-      pinned: Boolean(doc.pinned),
-      label: doc.label || null,
-      targetJobTitle: doc.tailoredJobTitle || null,
-      targetCompany: doc.tailoredCompany || null,
-      targetJd: doc.tailoredJd || null,
-      content: doc.content,
-      settings: doc.settings || {},
-      visibility: doc.visibility || {},
-      sectionOrder: doc.sectionOrder || [],
-    });
+    const buildPayload = () => {
+      const cur = latestDocRef.current || doc;
+      return {
+        id: cur.id,
+        type: cur.type || "resume",
+        title: cur.title || "Untitled Resume",
+        seriesId: String(cur.series || cur.template || "11"),
+        activeTab: cur.activeTab || "resume",
+        language: cur.language || "English",
+        accent: cur.accent || "#202124",
+        font: cur.font || "Merriweather",
+        score: calculateDocScore(cur.content).score,
+        pinned: Boolean(cur.pinned),
+        label: cur.label || null,
+        targetJobTitle: cur.tailoredJobTitle || null,
+        targetCompany: cur.tailoredCompany || null,
+        targetJd: cur.tailoredJd || null,
+        content: cur.content,
+        settings: cur.settings || {},
+        visibility: cur.visibility || {},
+        sectionOrder: cur.sectionOrder || [],
+      };
+    };
 
     (async () => {
       setSaveState("syncing");
@@ -246,6 +253,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
         if (remote) {
           if (remote.updatedAt) serverUpdatedAtRef.current = remote.updatedAt;
           hydratedDocRef.current = doc.id;
+          setHydratedTick((t) => t + 1);
           lastSavedSigRef.current = JSON.stringify({
             title: remote.title,
             seriesId: remote.seriesId,
@@ -287,6 +295,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
           if (created?.updatedAt) serverUpdatedAtRef.current = created.updatedAt;
           if (cancelled) return;
           hydratedDocRef.current = doc.id;
+          setHydratedTick((t) => t + 1);
           lastSavedSigRef.current = JSON.stringify({
             title: payload.title,
             seriesId: payload.seriesId,
@@ -311,6 +320,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
       } catch {
         if (!cancelled) {
           hydratedDocRef.current = doc.id;
+          setHydratedTick((t) => t + 1);
           setSaveState("offline");
         }
       }
@@ -644,7 +654,7 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [currentSig, doc?.id, flushAutosave]);
+  }, [currentSig, doc?.id, hydratedTick, flushAutosave]);
 
   useEffect(() => {
     const onOnline = () => {
@@ -1474,22 +1484,6 @@ function EditorStudioInner({ doc }: { doc: Doc }) {
                   Download True Word (.docx)
                 </span>
                 <Badge className="bg-[#e6f0e8] text-[10px] text-[#33613d] hover:bg-[#e6f0e8]">{["11", "12", "14"].includes(sId) ? "100% ATS-Native" : "1:1 Visual \u2192 Word"}</Badge>
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-between rounded-xl border-emerald-700/25 bg-emerald-50/40 text-foreground hover:bg-emerald-50"
-                disabled={Boolean(exportBusy)}
-                onClick={() => handleExportLiveDocx(doc.activeTab === "cover" ? "cover" : doc.activeTab === "references" ? "references" : "resume", "ats")}
-              >
-                <span className="flex items-center gap-2">
-                  {exportBusy?.startsWith("docx-ats") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
-                  Download ATS-Safe Word (.docx)
-                </span>
-                <Badge variant="secondary" className="text-[10px]">Workday / Greenhouse</Badge>
               </Button>
               {!["11", "12", "14"].includes(sId) && (
                 <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">

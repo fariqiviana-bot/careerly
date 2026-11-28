@@ -64,11 +64,25 @@ export async function POST(req: NextRequest) {
     const SEEDED_DOC_IDS = new Set(["doc-executive","doc-ivy-league","doc-elegant","doc-photo-column","doc-modern","doc-contemporary","doc-minimal","doc-single-column"]);
     const existingOwner = await prisma.document.findUnique({ where: { id }, select: { userId: true } });
     if (existingOwner && existingOwner.userId !== user.id) {
-      if (!(SEEDED_DOC_IDS.has(id))) {
+      if (!(SEEDED_DOC_IDS.has(id) && existingOwner.userId === "local-workspace-user")) {
         return NextResponse.json({ error: "Document belongs to another user" }, { status: 403 });
       }
     }
 
+    // Proactive slug collision check (prevents prisma:error P2002 log noise)
+    const normalizedSlug = d.slug !== undefined ? (d.slug ? d.slug.toLowerCase() : null) : undefined;
+    if (normalizedSlug) {
+      const slugOwner = await prisma.document.findFirst({
+        where: { slug: normalizedSlug, NOT: { id } },
+        select: { id: true },
+      });
+      if (slugOwner) {
+        return NextResponse.json(
+          { error: "This public URL slug is already taken. Please choose another one." },
+          { status: 409 }
+        );
+      }
+    }
     const saved = await prisma.document.upsert({
       where: { id },
       update: {

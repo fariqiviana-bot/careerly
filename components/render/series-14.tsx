@@ -947,6 +947,7 @@ export function Series14Exact({
   const isCustomS14Doc =
     Boolean(c.fullName && String(c.fullName).trim()) &&
     String(c.fullName).trim().toLowerCase() !== "enter your name here" &&
+    String(c.fullName).trim().toLowerCase() !== "jackson caldwell" &&
     !/^(enter your name|your name|name here|first last)/i.test(String(c.fullName).trim());
 
   const rawTechSkills: string[] = Array.isArray(c.technicalSkills) ? c.technicalSkills : [];

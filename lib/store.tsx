@@ -60,6 +60,10 @@ export type Content = {
   languages?: any[];
   projects?: any[];
   publications?: any[];
+  areasOfExpertise?: string[];
+  photoUrl?: string;
+  coverLetter?: any;
+  customSections?: any[];
   accomplishments?: string;
   powerStatement?: string;
   experience: Exp[];
@@ -2445,8 +2449,14 @@ function normalizeSectionOrder(
   return out;
 }
 function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
-  const tpl = SERIES_CATALOG.find((s) => s.id === d?.seriesId) || SERIES_CATALOG[0];
+  const seriesKey = String(d?.seriesId || "2");
+  const tpl = SERIES_CATALOG.find((s) => s.id === seriesKey) || SERIES_CATALOG[0];
   const baseSettings = defaultSettings(tpl.columns === 2);
+  const fallbackContent = SAMPLE_CONTENT_BY_SERIES[seriesKey] || SAMPLE_CONTENT_BY_SERIES["2"];
+  const src: any = d.content || fallbackContent;
+  const cl: any = (src.coverLetter && typeof src.coverLetter === "object" ? src.coverLetter : fallbackContent.coverLetter) || {};
+  const rawFont = d.style?.fontScale ? Math.round((d.style.fontScale / 100) * 10) : 10;
+  const safeFontSize = Number.isFinite(rawFont) && rawFont >= 7 && rawFont <= 16 ? rawFont : 10;
   return {
     id: d.id,
     type: d.activeTab === "cover" ? "cover" : "resume",
@@ -2473,7 +2483,7 @@ function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
       ...baseSettings,
       pageSize: d.style?.pageSize || "A4",
       pageCount: d.style?.pageCount || 1,
-      fontSize: d.style?.fontScale ? Math.round((d.style.fontScale / 100) * 10) : 10,
+      fontSize: safeFontSize,
       lineHeight: d.style?.lineSpacing || 1.35,
       sectionSpacing: d.style?.sectionGapPx || 14,
       pageMargin: d.style?.pageMarginMm ? +(d.style.pageMarginMm / 25.4).toFixed(2) : 0.5,
@@ -2481,58 +2491,59 @@ function mapResumeDocToLegacyDoc(d: ResumeDocument): Doc {
     createdAt: d.updatedAt,
     updatedAt: d.updatedAt,
     content: {
-      name: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).fullName,
-      firstName: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).firstName,
-      lastName: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).lastName,
-      role: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).profession || (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).title || "",
-      email: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).email || "",
-      phone: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).phone || "",
-      location: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).location,
-      linkedin: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).linkedin,
-      website: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).website || "",
-      summary: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).summary,
-      skills: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).professionalSkills || [],
-      technicalSkills: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).technicalSkills || [],
+      name: src.fullName || "",
+      firstName: src.firstName,
+      lastName: src.lastName,
+      role: src.profession || src.title || "",
+      email: src.email || "",
+      phone: src.phone || "",
+      location: src.location || "",
+      linkedin: src.linkedin || "",
+      website: src.website || "",
+      photo: src.photoUrl || "",
+      photoUrl: src.photoUrl || "",
+      summary: src.summary || "",
+      areasOfExpertise: Array.isArray(src.areasOfExpertise) ? src.areasOfExpertise : [],
+      skills: Array.isArray(src.professionalSkills) ? src.professionalSkills : [],
+      technicalSkills: Array.isArray(src.technicalSkills) ? src.technicalSkills : [],
       sectionOrder: (d.sectionOrder || []).map((s: any) => (typeof s === "string" ? s : s?.id)).filter(Boolean),
-      experience: ((d.content || SAMPLE_CONTENT_BY_SERIES["2"]).experience || []).map((e) => ({
+      experience: (Array.isArray(src.experience) ? src.experience : []).map((e: any) => ({
         id: e.id,
-        role: e.title,
-        company: e.company,
-        location: e.location,
-        period: e.period,
+        role: e.title || e.role || "",
+        company: e.company || "",
+        location: e.location || "",
+        period: e.period || "",
         showOverview: Boolean(e.summaryParagraph),
         overview: e.summaryParagraph || "",
-        bullets: e.bullets || [],
-        description: (e.bullets || []).join("\n"),
+        bullets: Array.isArray(e.bullets) ? e.bullets : [],
+        description: (Array.isArray(e.bullets) ? e.bullets : []).join("\n"),
       })),
-      education: ((d.content || SAMPLE_CONTENT_BY_SERIES["2"]).education || []).map((ed) => ({
+      education: (Array.isArray(src.education) ? src.education : []).map((ed: any) => ({
         id: ed.id,
-        degree: ed.degree,
-        school: ed.school,
-        location: ed.location,
-        period: ed.date,
+        degree: ed.degree || "",
+        school: ed.school || "",
+        location: ed.location || "",
+        period: ed.date || ed.period || "",
       })),
-      certifications: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).certifications || [],
-      courses: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).courses || [],
-      awards: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).awards || [],
-      volunteering: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).volunteering || [],
-      memberships: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).memberships || [],
-      interests: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).interests || [],
-      references: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).references || [],
-      languages: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).languages || [],
-      projects: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).projects || [],
-      publications: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).publications || [],
+      certifications: Array.isArray(src.certifications) ? src.certifications : [],
+      courses: Array.isArray(src.courses) ? src.courses : [],
+      awards: Array.isArray(src.awards) ? src.awards : [],
+      volunteering: Array.isArray(src.volunteering) ? src.volunteering : [],
+      memberships: Array.isArray(src.memberships) ? src.memberships : [],
+      interests: Array.isArray(src.interests) ? src.interests : [],
+      references: Array.isArray(src.references) ? src.references : [],
+      languages: Array.isArray(src.languages) ? src.languages : [],
+      projects: Array.isArray(src.projects) ? src.projects : [],
+      publications: Array.isArray(src.publications) ? src.publications : [],
+      customSections: Array.isArray(src.customSections) ? src.customSections : [],
+      coverLetter: cl,
       extras: ["Certifications", "Courses", "Awards", "Volunteering"],
       extraDetails: {},
       letter: {
-        to: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).coverLetter.recipientName,
-        company: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).coverLetter.companyName,
-        subject: (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).coverLetter.reSubject || "Application",
-        body: [
-          (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).coverLetter.openingParagraph,
-          (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).coverLetter.bodyParagraph,
-          (d.content || SAMPLE_CONTENT_BY_SERIES["2"]).coverLetter.closingParagraph,
-        ]
+        to: cl.recipientName || "",
+        company: cl.companyName || "",
+        subject: cl.reSubject || "Application",
+        body: [cl.openingParagraph, cl.bodyParagraph, cl.closingParagraph]
           .filter(Boolean)
           .join("\n\n"),
       },
@@ -2613,7 +2624,7 @@ export interface UnifiedAppStore {
 
 export const JUST_CREATED_DOC_IDS = new Set<string>();
 const StoreContext = createContext<UnifiedAppStore | null>(null);
-const STORAGE_KEY = "farnavi_store_v35";
+const STORAGE_KEY = "farnavi_store_v36";
 
 export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [documents, setDocuments] = useState<ResumeDocument[]>(INITIAL_DOCUMENTS);
@@ -2888,7 +2899,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         ...doc.content,
         profession: dict.profession,
         summary: dict.summary,
-        experience: doc.content.experience.map((exp, idx) => ({
+        experience: (doc.content.experience || []).map((exp, idx) => ({
           ...exp,
           title: dict.jobTitle,
           company: dict.companyName,
@@ -2897,13 +2908,13 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           summaryParagraph: undefined,
           bullets: dict.bullets,
         })),
-        education: doc.content.education.map((ed) => ({
+        education: (doc.content.education || []).map((ed) => ({
           ...ed,
           degree: dict.degreeTitle,
           school: dict.universityName,
           location: dict.location,
         })),
-        certifications: doc.content.certifications.map((cert) => ({
+        certifications: (doc.content.certifications || []).map((cert) => ({
           ...cert,
           name: dict.certName,
           issuer: dict.orgName,
@@ -2964,7 +2975,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       pageSize: rSettings.pageSize === 'Letter' ? 'Letter' : 'A4',
       pageCount: (rSettings.pageCount === 2 ? 2 : rSettings.pageCount === 3 ? 3 : 1) as 1 | 2 | 3,
       accentColor: remote.accent || baseStyle.accentColor,
-      fontScale: rSettings.fontSize ? Math.round((Number(rSettings.fontSize) / 10) * 100) : baseStyle.fontScale,
+      fontScale: Number(rSettings.fontSize) >= 7 && Number(rSettings.fontSize) <= 16 ? Math.round((Number(rSettings.fontSize) / 10) * 100) : baseStyle.fontScale,
       lineSpacing: Number(rSettings.lineHeight) || baseStyle.lineSpacing,
       sectionGapPx: Number(rSettings.sectionSpacing) || baseStyle.sectionGapPx,
       pageMarginMm: rSettings.pageMargin ? +(Number(rSettings.pageMargin) * 25.4).toFixed(1) : baseStyle.pageMarginMm,
@@ -2993,7 +3004,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
             ? c.professionalSkills
             : [],
           technicalSkills: Array.isArray(c.technicalSkills) ? c.technicalSkills : [],
-          areasOfExpertise: Array.isArray(c.areasOfExpertise) ? c.areasOfExpertise : [],
+          areasOfExpertise: Array.isArray(c.areasOfExpertise) ? c.areasOfExpertise : (String(c.name || c.fullName || "").trim().toLowerCase() === String(baseContent.fullName || "").trim().toLowerCase() ? baseContent.areasOfExpertise : []),
           experience: Array.isArray(c.experience)
             ? c.experience.map((e: any) => ({
                 id: e.id || 'exp-' + Math.random().toString(36).slice(2, 7),
@@ -3025,8 +3036,9 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           languages: Array.isArray(c.languages) ? c.languages : [],
           projects: Array.isArray(c.projects) ? c.projects : [],
           publications: Array.isArray(c.publications) ? c.publications : [],
-          photoUrl: c.photoUrl ?? c.photo ?? "",
-          coverLetter: c.coverLetter ? { ...baseContent.coverLetter, ...c.coverLetter } : baseContent.coverLetter,
+          photoUrl: c.photoUrl ?? c.photo ?? (String(c.name || c.fullName || "").trim().toLowerCase() === String(baseContent.fullName || "").trim().toLowerCase() ? (baseContent.photoUrl || "") : ""),
+          customSections: Array.isArray(c.customSections) ? c.customSections : [],
+          coverLetter: c.coverLetter && typeof c.coverLetter === "object" ? { ...baseContent.coverLetter, ...c.coverLetter } : baseContent.coverLetter,
           references: Array.isArray(c.references) ? c.references : [],
         }
       : baseContent;
@@ -3094,7 +3106,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
             const maxP = tpl.pages.length as 1 | 2 | 3;
             nextStyle.pageCount = Math.min(patch.settings.pageCount, maxP) as 1 | 2 | 3;
           }
-          if (patch.settings.fontSize) nextStyle.fontScale = Math.round((patch.settings.fontSize / 10) * 100);
+          if (Number(patch.settings.fontSize) >= 7 && Number(patch.settings.fontSize) <= 16) nextStyle.fontScale = Math.round((Number(patch.settings.fontSize) / 10) * 100);
           if (patch.settings.lineHeight) nextStyle.lineSpacing = patch.settings.lineHeight;
           if (patch.settings.sectionSpacing) nextStyle.sectionGapPx = patch.settings.sectionSpacing;
           if (patch.settings.pageMargin) nextStyle.pageMarginMm = +(patch.settings.pageMargin * 25.4).toFixed(1);
@@ -3117,6 +3129,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
           if (Array.isArray(patch.content.languages)) nextContent.languages = patch.content.languages;
           if (Array.isArray(patch.content.projects)) nextContent.projects = patch.content.projects;
           if (Array.isArray(patch.content.publications)) nextContent.publications = patch.content.publications;
+          if (Array.isArray(patch.content.customSections)) nextContent.customSections = patch.content.customSections;
         }
 
         if (patch.content) {
@@ -3231,7 +3244,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         const [dbTracks, dbInterviews, dbDocs] = await Promise.all([
           apiListTracker(),
           apiListInterviews(),
-          me.authenticated ? apiListDocuments() : Promise.resolve(null),
+          apiListDocuments(),
         ]);
         if (cancelled) return;
 
@@ -3250,6 +3263,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
         } else {
           if (dbTracks.length > 0) setTracker(dbTracks as TrackItem[]);
           if (dbInterviews.length > 0) setInterviews(dbInterviews as Interview[]);
+          // Always hydrate demo workspace cards from DB so /documents matches /editor/[id] 1:1
+          if (Array.isArray(dbDocs) && dbDocs.length > 0) {
+            dbDocs.forEach((rd) => upsertDocFromRemote(rd));
+          }
         }
       } catch (err) {
         console.warn("[store] DB workspace hydration warning:", err);
@@ -3433,17 +3450,17 @@ export function templateContentForSeries(seriesId?: string): Content {
       Courses: (src.courses || []).map((c) => `${c.title} - ${c.institution} (${c.date})`).join("\n"),
     },
     letter: {
-      to: src.coverLetter.recipientName,
-      company: src.coverLetter.companyName,
-      subject: src.coverLetter.reSubject || "Application",
+      to: src.coverLetter?.recipientName || "",
+      company: src.coverLetter?.companyName || "",
+      subject: src.coverLetter?.reSubject || "Application",
       body: [
-        src.coverLetter.greeting,
-        src.coverLetter.openingParagraph,
-        src.coverLetter.bodyParagraph,
-        src.coverLetter.closingParagraph,
-        src.coverLetter.signOff,
-        src.coverLetter.signatureText,
-      ].join("\n\n"),
+        src.coverLetter?.greeting,
+        src.coverLetter?.openingParagraph,
+        src.coverLetter?.bodyParagraph,
+        src.coverLetter?.closingParagraph,
+        src.coverLetter?.signOff,
+        src.coverLetter?.signatureText,
+      ].filter(Boolean).join("\n\n"),
     },
   };
 }

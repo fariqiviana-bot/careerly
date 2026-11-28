@@ -56,7 +56,7 @@ export async function apiPatchDocument(
   payload: Record<string, any>,
   opts?: { signal?: AbortSignal; keepalive?: boolean }
 ) {
-  const res = await fetch(`/api/documents/${encodeURIComponent(id)}?upsert=1`, {
+  const res = await fetch(`/api/documents/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

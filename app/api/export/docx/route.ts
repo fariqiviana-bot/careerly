@@ -47,6 +47,15 @@ export async function POST(req: NextRequest) {
     }
 
     const d = parsed.data;
+    const SINGLE_COL_ATS_SERIES = new Set(["11", "12", "14"]);
+    if (d.mode === "ats" && !SINGLE_COL_ATS_SERIES.has(String(d.seriesId))) {
+      return NextResponse.json(
+        {
+          error: "ATS single-column Word export is only available for ATS-Native single-column templates (Series 11, 12, 14). For two-column templates, use Vector PDF for ATS portals or True Word (.docx) for 1:1 visual editing.",
+        },
+        { status: 400 }
+      );
+    }
     const { buffer } = d.mode === "ats"
       ? await generateAtsSafeDocxBuffer({
           seriesId: d.seriesId,

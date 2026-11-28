@@ -97,6 +97,7 @@ test.describe("Data Integrity, Persistence, Concurrency & Duplicate Isolation", 
     await page.goto(`/editor/${docId}`, { waitUntil: "networkidle" });
 
     const assertAllFieldsPresent = async (stage: string) => {
+      await expect(page.getByText("Loading document from workspace...")).toBeHidden({ timeout: 15_000 }).catch(() => {});
       const bodyText = await page.locator("body").innerText();
       expect(bodyText, `[${stage}] Name missing`).toMatch(/Viana/i);
       expect(bodyText, `[${stage}] Last name missing`).toMatch(/Fariqi/i);

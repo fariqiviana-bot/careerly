@@ -313,64 +313,89 @@ test.describe("Farnavi Full-Stack Automated QA Suite", () => {
     await request.delete(`/api/documents/${docId}`);
   });
 
-  test("7. All 8 calibrated templates render inside Studio with zero runtime errors", async ({ page }) => {
+  test("7. All 8 calibrated templates render inside Studio with zero runtime errors", async ({ page, request }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
-    await page.goto("/editor/doc-executive", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("button", { name: /Designer & Layout/i })).toBeVisible();
-    await page.getByRole("button", { name: /Designer & Layout/i }).click();
+    // Use a disposable document so starter doc-executive is NEVER overwritten in DB
+    const tmpId = `qa-tpl-switch-${Date.now()}`;
+    const cr = await request.post("/api/documents", {
+      data: {
+        id: tmpId,
+        title: "QA Template Switch Scratch",
+        seriesId: "2",
+        content: { name: "QA Switcher", role: "Architect", email: "qa@farnavi.test" },
+      },
+    });
+    expect([200, 201]).toContain(cr.status());
 
-    // Click all 8 template preview cards dynamically from the 2-column template grid
-    const cards = page.locator("div.grid.grid-cols-2 button:has(img)");
-    await expect(cards).toHaveCount(8);
+    try {
+      await page.goto(`/editor/${tmpId}`, { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("button", { name: /Designer & Layout/i })).toBeVisible();
+      await page.getByRole("button", { name: /Designer & Layout/i }).click();
 
-    for (let i = 0; i < 8; i++) {
-      await cards.nth(i).click();
-      await page.waitForTimeout(150);
+      const cards = page.locator("div.grid.grid-cols-2 button:has(img)");
+      await expect(cards).toHaveCount(8);
+
+      for (let i = 0; i < 8; i++) {
+        await cards.nth(i).click();
+        await page.waitForTimeout(150);
+      }
+
+      await expect(page.locator("body")).not.toContainText("NaN");
+      await expect(page.locator("body")).not.toContainText("Invalid Date");
+      expect(errors, `Template switch runtime errors: ${errors.join(" | ")}`).toEqual([]);
+    } finally {
+      await page.goto("about:blank").catch(() => {});
+      await request.delete(`/api/documents/${encodeURIComponent(tmpId)}`).catch(() => {});
     }
-
-    await expect(page.locator("body")).not.toContainText("NaN");
-    await expect(page.locator("body")).not.toContainText("Invalid Date");
-    expect(errors, `Template switch runtime errors: ${errors.join(" | ")}`).toEqual([]);
   });
 
-  test("8. Series 22 (Photo Column) & Series 24 (Modern) open with exact identity and export DOCX, ZIP, TXT, PDF", async ({ page }) => {
+  test("8. Series 22 (Photo Column) & Series 24 (Modern) open with exact identity and export DOCX, ZIP, TXT, PDF", async ({ page, request }) => {
     const targets = [
       { cardName: "Photo Column", expectedFilePrefix: "THEO_FINCH" },
       { cardName: "Modern", expectedFilePrefix: "FLORENCE_NIGHTINGALE" },
     ];
+    const createdIds: string[] = [];
 
-    for (const t of targets) {
-      await page.goto("/templates", { waitUntil: "domcontentloaded" });
-      const card = page.locator("div.grid > div.group").filter({ hasText: t.cardName }).first();
-      await card.locator("[role='button']").first().click();
-      await page.getByRole("button", { name: /Live in Studio/i }).click();
-      await page.waitForURL(/\/editor\//, { timeout: 15000 });
+    try {
+      for (const t of targets) {
+        await page.goto("/templates", { waitUntil: "domcontentloaded" });
+        const card = page.locator("div.grid > div.group").filter({ hasText: t.cardName }).first();
+        await card.locator("[role='button']").first().click();
+        await page.getByRole("button", { name: /Live in Studio/i }).click();
+        await page.waitForURL(/\/editor\//, { timeout: 15000 });
+        const docId = page.url().split("/editor/")[1]?.split("?")[0] || "";
+        if (docId) createdIds.push(docId);
 
-      await page.getByRole("button", { name: /Download \/ Export/i }).click();
+        await page.getByRole("button", { name: /Download \/ Export/i }).click();
 
-      const dlDocx = page.waitForEvent("download", { timeout: 12000 });
-      await page.getByRole("button", { name: /Download True Word/i }).click();
-      const docx = await dlDocx;
-      expect(docx.suggestedFilename().toUpperCase()).toContain(t.expectedFilePrefix);
+        const dlDocx = page.waitForEvent("download", { timeout: 12000 });
+        await page.getByRole("button", { name: /Download True Word/i }).click();
+        const docx = await dlDocx;
+        expect(docx.suggestedFilename().toUpperCase()).toContain(t.expectedFilePrefix);
 
-      const dlZip = page.waitForEvent("download", { timeout: 12000 });
-      await page.getByRole("button", { name: /Full Application Bundle/i }).click();
-      const zip = await dlZip;
-      expect(zip.suggestedFilename().toUpperCase()).toContain(t.expectedFilePrefix);
+        const dlZip = page.waitForEvent("download", { timeout: 12000 });
+        await page.getByRole("button", { name: /Full Application Bundle/i }).click();
+        const zip = await dlZip;
+        expect(zip.suggestedFilename().toUpperCase()).toContain(t.expectedFilePrefix);
 
-      const dlTxt = page.waitForEvent("download", { timeout: 12000 });
-      await page.getByRole("button", { name: /Download Plain Text/i }).click();
-      const txt = await dlTxt;
-      expect(txt.suggestedFilename().toUpperCase()).toContain(t.expectedFilePrefix);
+        const dlTxt = page.waitForEvent("download", { timeout: 12000 });
+        await page.getByRole("button", { name: /Download Plain Text/i }).click();
+        const txt = await dlTxt;
+        expect(txt.suggestedFilename().toUpperCase()).toContain(t.expectedFilePrefix);
 
-      const popPdf = page.waitForEvent("popup", { timeout: 12000 });
-      await page.getByRole("button", { name: /Download Live Vector PDF/i }).click();
-      const pdfWin = await popPdf;
-      await pdfWin.waitForURL(/\/print\//, { timeout: 12000 });
-      await pdfWin.close();
+        const popPdf = page.waitForEvent("popup", { timeout: 12000 });
+        await page.getByRole("button", { name: /Download Live Vector PDF/i }).click();
+        const pdfWin = await popPdf;
+        await pdfWin.waitForURL(/\/print\//, { timeout: 12000 });
+        await pdfWin.close();
+      }
+    } finally {
+      for (const id of createdIds) {
+        await request.delete(`/api/documents/${encodeURIComponent(id)}`).catch(() => {});
+      }
     }
   });
 });

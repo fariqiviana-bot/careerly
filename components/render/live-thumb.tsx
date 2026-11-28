@@ -15,6 +15,8 @@ function docToResumeContent(doc: Doc): ResumeContent {
   const c: any = doc.content || {};
   return {
     fullName: c.name || "",
+    firstName: c.firstName,
+    lastName: c.lastName,
     profession: c.role || "",
     phone: c.phone || "",
     email: c.email || "",
